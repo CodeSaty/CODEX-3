@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cultura Festival | Dashboard</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Optical QR Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- Client-side QR Code Generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            fest: {
+              rose: '#e11d48',
+              amber: '#d97706',
+              emerald: '#059669',
+              sky: '#0284c7',
+              stone: '#fafaf9',
+              dark: '#292524'
+            }
+          },
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #f5f5f4; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.6);
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #e11d48, #d97706);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen text-fest-dark flex overflow-hidden selection:bg-fest-rose selection:text-white font-sans relative">
+
+  <!-- Soft animated background gradient -->
+  <div class="fixed inset-0 z-0 opacity-40 pointer-events-none" style="background: radial-gradient(circle at 10% 20%, rgba(225,29,72,0.1) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(217,119,6,0.1) 0%, transparent 40%);"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 glass-card border-r border-stone-200 flex flex-col z-20 shrink-0 relative">
+    <div class="p-6 border-b border-stone-100 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md">
+        <i data-lucide="tent" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-serif font-semibold tracking-wide text-fest-dark leading-tight">Cultura</h1>
+        <p class="text-[10px] text-stone-500 uppercase tracking-widest font-semibold">Festival Hub</p>
+      </div>
+    </div>
+    
+    <nav class="flex-1 p-4 space-y-2 mt-4 text-sm font-medium">
+      <a href="/" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        Dashboard
+      </a>
+      <a href="/analytics.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+        Insights
+      </a>
+      <a href="/attendees.html" class="flex items-center gap-3 p-3 rounded-xl bg-rose-50 text-fest-rose">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        Guests
+      </a>
+      <a href="/recharge.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="wallet" class="w-5 h-5"></i>
+        Recharge & Coins
+      </a>
+      <a href="/scanner.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="qr-code" class="w-5 h-5"></i>
+        Field Scanner
+      </a>
+      <a href="/settings.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+        Operations
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 flex flex-col relative z-10 h-screen overflow-hidden">
+    
+    <!-- TOP HEADER -->
+    <header class="h-20 glass-card border-b border-stone-200 flex items-center justify-between px-8 shrink-0">
+      
+      <!-- NLP Search Form -->
+      <form id="nlp-form" class="relative w-full max-w-xl">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-rose-600">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </div>
+        <input type="text" id="nlp-input" class="w-full bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 text-sm font-medium rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 block pl-10 pr-24 p-2.5 shadow-sm transition-all placeholder-stone-500 dark:placeholder-stone-400" placeholder="Ask Assistant (e.g. 'VIPs in Artisan Market?', 'Pass counts?')...">
+        <div class="absolute inset-y-1.5 right-1.5 flex items-center gap-1.5">
+          <kbd class="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400 border border-stone-200 dark:border-stone-700">⌘K</kbd>
+          <button type="submit" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold tracking-wide transition-colors shadow-sm cursor-pointer">
+            ASK
+          </button>
+        </div>
+      </form>
+      
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 text-xs px-4 py-2 rounded-xl bg-white border border-stone-200 shadow-sm font-medium">
+           <span id="poll-indicator" class="w-2.5 h-2.5 rounded-full bg-stone-300 transition-all duration-300"></span>
+           <span class="text-stone-500">Live Sync:</span>
+           <span id="last-sync" class="text-emerald-600 font-semibold">00:00</span>
+        </div>
+      </div>
+    </header>
+
+    
+    <!-- ATTENDEES SCROLLABLE AREA -->
+    <div class="flex-1 overflow-y-auto p-8 no-scrollbar relative">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <div class="flex items-center gap-3">
+            <h2 class="text-2xl font-serif font-bold text-fest-dark">Guest Directory</h2>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+              <i data-lucide="coins" class="w-3.5 h-3.5 text-amber-600"></i> 1 ₹ = 1 Fest Coin
+            </span>
+          </div>
+          <p class="text-stone-500 text-sm mt-1">Click any attendee's name or the Manage button to open their management drawer (revoke pass, give access, or top-up coins).</p>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+          <a href="/recharge.html" class="flex items-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl font-bold shadow-sm transition-colors text-sm">
+            <i data-lucide="wallet" class="w-4 h-4 text-amber-600"></i> Recharge Portal
+          </a>
+          <button id="open-add-modal" class="flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold shadow-sm transition-colors text-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i> Register Guest
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl border border-stone-200 overflow-hidden">
+        <table class="w-full text-left text-sm text-stone-600">
+          <thead class="bg-stone-50 border-b border-stone-200 text-xs uppercase text-stone-500 font-bold">
+            <tr>
+              <th class="px-6 py-4">Name (Click to Manage)</th>
+              <th class="px-6 py-4">Role</th>
+              <th class="px-6 py-4">Ticket Type</th>
+              <th class="px-6 py-4">Fest Coins</th>
+              <th class="px-6 py-4">Pass Status</th>
+              <th class="px-6 py-4 text-center">QR Pass</th>
+              <th class="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="attendees-table-body" class="divide-y divide-stone-100">
+             <!-- Populated by JS -->
+             <tr><td colspan="7" class="px-6 py-8 text-center text-stone-400">Loading guests...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- ADD ATTENDEE MODAL -->
+    <div id="add-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm transition-opacity duration-300">
+      <div class="glass-card w-full max-w-md p-6 rounded-3xl border border-stone-200 relative shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-bold text-fest-dark font-serif">Register New Guest</h2>
+            <p class="text-xs text-stone-500 mt-0.5">Generates instant digital QR wristband (0 initial Fest Coins; top-up via Payment Portal)</p>
+          </div>
+          <button id="close-add-modal" class="p-2 text-stone-400 hover:text-stone-600 rounded-full hover:bg-stone-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <form id="add-attendee-form" class="space-y-4 font-medium text-sm">
+          <div>
+            <label class="block text-stone-600 mb-1">Full Name</label>
+            <input type="text" id="att-name" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-rose-500 focus:outline-none" placeholder="e.g. Maya Chen" required>
+          </div>
+          <div>
+            <label class="block text-stone-600 mb-1">Role</label>
+            <select id="att-role" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white">
+              <option value="General">General</option>
+              <option value="Early Bird">Early Bird</option>
+              <option value="VIP">VIP</option>
+              <option value="Organizer">Staff</option>
+              <option value="Sponsor">Sponsor</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-stone-600 mb-1">Ticket Type</label>
+            <input type="text" id="att-ticket" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-rose-500 focus:outline-none" placeholder="e.g. GA Full Fest Pass" required>
+          </div>
+          <button type="submit" id="star-portal-btn" class="w-full py-4 mt-4 relative overflow-hidden rounded-xl font-bold text-white shadow-xl group cursor-pointer border-none bg-stone-900 transition-all duration-300">
+            <canvas id="portal-canvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity duration-500"></canvas>
+            <span id="star-portal-btn-label" class="relative z-10 tracking-widest text-sm uppercase group-hover:text-cyan-200 transition-colors drop-shadow-md">Register & Issue QR Pass</span>
+            <div class="absolute inset-0 border-2 border-cyan-500/0 group-hover:border-cyan-500/50 rounded-xl transition-all duration-500 pointer-events-none"></div>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TERMINATE / REVOKE QR PASS MODAL -->
+    <div id="terminate-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm transition-opacity duration-300">
+      <div class="glass-card w-full max-w-md p-6 rounded-3xl border border-rose-200 bg-white shadow-2xl relative">
+        <button onclick="closeTerminateModal()" class="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-600 rounded-full hover:bg-stone-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-3">
+          <i data-lucide="shield-alert" class="w-6 h-6"></i>
+        </div>
+        <h3 class="font-serif font-bold text-xl text-fest-dark">Terminate QR Pass</h3>
+        <p class="text-xs text-stone-500 mt-1 mb-4">
+          Revoking this pass will immediately invalidate the attendee's QR wristband, blocking all checkpoint entry and cashless Fest Coin transactions.
+        </p>
+        
+        <div class="p-3 bg-stone-50 rounded-xl border border-stone-200 mb-4 text-xs text-stone-700">
+          <div class="font-bold text-stone-900" id="term-guest-name">Guest Name</div>
+          <div class="text-[11px] font-mono text-stone-500 mt-0.5 truncate" id="term-guest-hash">Hash: --</div>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-stone-600 uppercase mb-1">Select Revocation Reason</label>
+            <select id="term-reason-select" class="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-500">
+              <option value="Lost or Stolen Wristband">Lost or Stolen Wristband</option>
+              <option value="Security Violation / Misconduct">Security Violation / Misconduct</option>
+              <option value="Counterfeit or Duplicate Pass">Counterfeit or Duplicate Pass</option>
+              <option value="Payment Dispute / Chargeback">Payment Dispute / Chargeback</option>
+              <option value="Administrative Freeze">Administrative Freeze</option>
+              <option value="Other">Custom Reason (specified below)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-stone-600 uppercase mb-1">Additional Log Notes (Optional)</label>
+            <input type="text" id="term-custom-reason" class="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" placeholder="e.g. Reported missing at Zone B entrance">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-6">
+          <button type="button" onclick="closeTerminateModal()" class="py-2.5 px-4 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-100 text-xs font-bold">
+            Cancel
+          </button>
+          <button type="button" id="confirm-terminate-btn" onclick="confirmTerminateQR()" class="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-lg shadow-rose-200 flex items-center justify-center gap-1.5">
+            <i data-lucide="ban" class="w-4 h-4"></i> Revoke Pass
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REINSTATE / REGENERATE MODAL -->
+    <div id="reinstate-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm transition-opacity duration-300">
+      <div class="glass-card w-full max-w-md p-6 rounded-3xl border border-emerald-200 bg-white shadow-2xl relative">
+        <button onclick="closeReinstateModal()" class="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-600 rounded-full hover:bg-stone-100">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
+          <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+        </div>
+        <h3 class="font-serif font-bold text-xl text-fest-dark">Reactivate or Issue New QR</h3>
+        <p class="text-xs text-stone-500 mt-1 mb-4">
+          Choose whether to restore the previous QR code or generate a fresh, secure replacement QR code for this attendee.
+        </p>
+
+        <div class="p-3 bg-stone-50 rounded-xl border border-stone-200 mb-4 text-xs text-stone-700">
+          <div class="font-bold text-stone-900" id="reinstate-guest-name">Guest Name</div>
+          <div class="text-[11px] text-rose-600 mt-0.5" id="reinstate-guest-status">Status: Terminated</div>
+        </div>
+
+        <div class="space-y-3">
+          <button type="button" onclick="confirmReinstate(false)" class="w-full p-4 rounded-2xl border border-stone-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-left transition-all group flex items-start gap-3">
+            <div class="p-2 rounded-xl bg-stone-100 group-hover:bg-emerald-100 text-stone-600 group-hover:text-emerald-700 mt-0.5">
+              <i data-lucide="check-circle" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-fest-dark group-hover:text-emerald-900">Restore Existing QR Code</div>
+              <div class="text-xs text-stone-500 mt-0.5">Unblocks the existing wristband and allows the current QR hash to scan again.</div>
+            </div>
+          </button>
+
+          <button type="button" onclick="confirmReinstate(true)" class="w-full p-4 rounded-2xl border border-emerald-300 bg-emerald-50/30 hover:bg-emerald-50 text-left transition-all group flex items-start gap-3">
+            <div class="p-2 rounded-xl bg-emerald-100 text-emerald-700 mt-0.5">
+              <i data-lucide="sparkles" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-emerald-900">Issue Fresh QR Pass (Recommended)</div>
+              <div class="text-xs text-emerald-700 mt-0.5">Generates a brand new cryptographic hash. Old wristbands remain completely permanently dead.</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTENDEE QR BADGE MODAL -->
+    <div id="attendee-qr-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm transition-opacity duration-300">
+      <div class="w-full max-w-sm p-6 rounded-3xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 relative shadow-2xl text-center">
+        <button id="close-qr-modal-btn" onclick="closeAttendeeQRModal()" class="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-700 dark:hover:text-white rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <div id="modal-status-pill-container" class="mb-2">
+          <!-- Active or Terminated Header Pill -->
+        </div>
+
+        <h3 id="modal-pass-heading" class="font-serif font-bold text-lg text-stone-900 dark:text-white mb-0.5">Official Festival QR Pass</h3>
+        <p id="modal-pass-subtext" class="text-xs text-stone-500 dark:text-stone-400 mb-3">Scannable digital badge for check-in & Fest Coin payments.</p>
+
+        <!-- QR Display Canvas Box -->
+        <div id="qr-badge-card-container" class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 shadow-sm flex flex-col items-center relative overflow-hidden">
+          
+          <!-- Terminated Watermark Overlay -->
+          <div id="qr-terminated-overlay" class="hidden absolute inset-0 bg-stone-950/85 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center p-4 text-white">
+            <div class="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center mb-2 shadow-lg animate-pulse">
+              <i data-lucide="ban" class="w-6 h-6"></i>
+            </div>
+            <div class="font-black text-sm tracking-widest text-rose-300 uppercase border-2 border-rose-500 bg-rose-950/90 px-3 py-1 rounded-lg rotate-[-8deg] shadow-lg">PASS REVOKED</div>
+            <div id="qr-terminated-reason-text" class="text-[11px] text-stone-200 mt-3 font-medium text-center max-w-[200px]">Terminated by Administration</div>
+          </div>
+
+          <div id="attendee-modal-qrcode" class="p-3 bg-white rounded-xl shadow-md border border-stone-200 mb-3 flex items-center justify-center min-h-[170px] min-w-[170px]"></div>
+          
+          <h4 id="attendee-modal-name" class="font-serif font-bold text-base text-stone-900 dark:text-white">Guest Name</h4>
+          <div class="flex items-center gap-2 mt-1">
+            <span id="attendee-modal-role" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">VIP</span>
+            <span id="attendee-modal-ticket" class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">Standard</span>
+            <span id="attendee-modal-coins" class="text-xs font-mono font-bold text-amber-500 dark:text-amber-400">🪙 1,000</span>
+          </div>
+          <p id="attendee-modal-hash" class="font-mono text-[9px] text-stone-400 mt-2 truncate max-w-[220px]">--</p>
+        </div>
+
+        <!-- Direct Actions -->
+        <div class="space-y-2 mt-4">
+          <div class="grid grid-cols-2 gap-2">
+            <a id="open-in-scanner-link" href="/scanner.html" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5">
+              <i data-lucide="scan" class="w-3.5 h-3.5"></i> Field Terminal
+            </a>
+            <button type="button" onclick="printPassBadge()" class="py-2.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+              <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print Badge
+            </button>
+          </div>
+
+          <!-- Quick Revoke / Reinstate from modal -->
+          <div id="modal-manage-controls" class="pt-1">
+            <!-- Injected by showAttendeeQRModal -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE-OUT GUEST MANAGEMENT DRAWER -->
+    <div id="guest-manage-drawer-backdrop" class="hidden fixed inset-0 z-40 bg-black/75 backdrop-blur-sm transition-opacity duration-300" onclick="closeGuestManageDrawer()"></div>
+
+    <div id="guest-manage-drawer" class="fixed inset-y-0 right-0 z-50 w-full sm:w-[500px] bg-stone-900 text-stone-100 shadow-2xl border-l border-stone-800 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col overflow-hidden">
+      <!-- Drawer Header (Dark High-Contrast) -->
+      <div class="p-5 border-b border-stone-800 flex items-center justify-between bg-stone-950 shrink-0 shadow-sm">
+        <div class="flex items-center gap-3.5">
+          <div id="drawer-init-circle" class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white flex items-center justify-center text-sm font-black shadow-md shrink-0"></div>
+          <div class="min-w-0">
+            <h3 id="drawer-name" class="font-serif font-bold text-xl text-white leading-tight truncate">Guest Name</h3>
+            <div class="flex items-center gap-2 mt-1">
+              <span id="drawer-role" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-stone-800 text-rose-300 border border-stone-700 uppercase tracking-wide">Role</span>
+              <span id="drawer-ticket" class="text-xs text-stone-400 font-medium truncate">Ticket</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <a id="drawer-open-recharge-btn" href="/recharge.html" class="p-2.5 text-stone-400 hover:text-amber-400 hover:bg-stone-800/80 rounded-xl transition-colors cursor-pointer" title="Open Top-up Hub for this guest">
+            <i data-lucide="wallet" class="w-5 h-5"></i>
+          </a>
+          <button type="button" onclick="closeGuestManageDrawer()" class="p-2.5 text-stone-400 hover:text-white hover:bg-stone-800/80 rounded-xl transition-colors cursor-pointer" title="Close drawer (Esc)">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Drawer Scrollable Body -->
+      <div class="flex-1 overflow-y-auto p-5 pb-24 space-y-5 text-sm text-stone-200 no-scrollbar">
+
+        <!-- SECTION 1: PASS STATUS & ACCESS CONTROLS -->
+        <div class="p-4.5 rounded-2xl border border-stone-800 bg-stone-950 shadow-md space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase font-bold text-stone-300 tracking-wider flex items-center gap-1.5">
+              <i data-lucide="shield" class="w-3.5 h-3.5 text-rose-500"></i> Pass Access Control
+            </span>
+            <div id="drawer-status-badge">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- QR Visual Card (Solid dark frame with pure white scannable QR container) -->
+          <div class="flex items-center gap-4 bg-stone-900 p-4 rounded-xl border border-stone-800 relative overflow-hidden shadow-sm">
+            <!-- VOID Overlay -->
+            <div id="drawer-qr-void-overlay" class="hidden absolute inset-0 bg-stone-950/90 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center text-white text-center p-2">
+              <div class="font-black text-xs uppercase tracking-widest text-rose-400 border border-rose-500/80 bg-rose-950/80 px-2.5 py-1 rounded-lg rotate-[-6deg] shadow-lg">VOID / REVOKED</div>
+              <span id="drawer-qr-void-reason" class="text-[10px] text-stone-300 mt-2 font-medium line-clamp-1">Pass revoked by admin</span>
+            </div>
+
+            <div id="drawer-qr-container" class="w-20 h-20 bg-white p-1 rounded-xl shrink-0 flex items-center justify-center border border-stone-600 shadow-md"></div>
+
+            <div class="min-w-0 flex-1">
+              <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Pass Hash</div>
+              <p id="drawer-hash" class="font-mono text-xs font-bold text-stone-100 truncate mt-0.5 select-all">--</p>
+              <div class="flex items-center gap-3 mt-2.5">
+                <button type="button" onclick="copyDrawerHash()" class="text-xs font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer transition-colors">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i> <span id="copy-hash-label">Copy Hash</span>
+                </button>
+                <span class="text-stone-600">·</span>
+                <button type="button" onclick="showAttendeeQRModal(currentDrawerAttendee)" class="text-xs font-bold text-stone-300 hover:text-white flex items-center gap-1 cursor-pointer transition-colors">
+                  <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i> Full Badge
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pass Control Actions Area -->
+          <div id="drawer-pass-actions" class="pt-1">
+            <!-- Dynamic: Revoke button or Give Access Again options -->
+          </div>
+        </div>
+
+        <!-- SECTION 2: FEST COINS & RUPEE WALLET (1 INR = 1 COIN) -->
+        <div class="p-4.5 rounded-2xl border border-amber-900/60 bg-stone-950 shadow-md space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1.5">
+                <i data-lucide="coins" class="w-4 h-4 text-amber-400"></i> Fest Coin Balance
+              </span>
+              <p class="text-[11px] text-stone-400 mt-1">Conversion Ratio: 1 Rupee = 1 Fest Coin</p>
+            </div>
+            <div class="text-right">
+              <div id="drawer-coin-balance" class="text-2xl font-mono font-black text-amber-400 tracking-tight">🪙 0</div>
+              <div id="drawer-inr-equiv" class="text-xs font-mono font-bold text-stone-300 mt-0.5">₹0 INR</div>
+            </div>
+          </div>
+
+          <!-- Fast In-Drawer Top-up Box (High-Contrast Dark Subcard) -->
+          <div class="bg-stone-900 p-4 rounded-xl border border-stone-800 shadow-inner space-y-3">
+            <div class="flex items-center justify-between text-xs font-bold text-stone-200">
+              <span class="flex items-center gap-1.5"><i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> Quick Rupee Top-up</span>
+              <span class="text-emerald-400 font-mono text-[11px] bg-emerald-950/80 px-2.5 py-0.5 rounded-lg border border-emerald-800 font-bold">1 ₹ = 1 🪙</span>
+            </div>
+
+            <!-- Quick Amount Packs -->
+            <div class="grid grid-cols-4 gap-2">
+              <button type="button" onclick="setDrawerRechargeAmount(100)" class="py-2 px-2 rounded-xl bg-stone-800 hover:bg-amber-950 hover:border-amber-600 hover:text-amber-300 text-stone-100 text-xs font-bold transition-all text-center border border-stone-700 cursor-pointer shadow-sm">+₹100</button>
+              <button type="button" onclick="setDrawerRechargeAmount(250)" class="py-2 px-2 rounded-xl bg-stone-800 hover:bg-amber-950 hover:border-amber-600 hover:text-amber-300 text-stone-100 text-xs font-bold transition-all text-center border border-stone-700 cursor-pointer shadow-sm">+₹250</button>
+              <button type="button" onclick="setDrawerRechargeAmount(500)" class="py-2 px-2 rounded-xl bg-stone-800 hover:bg-amber-950 hover:border-amber-600 hover:text-amber-300 text-stone-100 text-xs font-bold transition-all text-center border border-stone-700 cursor-pointer shadow-sm">+₹500</button>
+              <button type="button" onclick="setDrawerRechargeAmount(1000)" class="py-2 px-2 rounded-xl bg-stone-800 hover:bg-amber-950 hover:border-amber-600 hover:text-amber-300 text-stone-100 text-xs font-bold transition-all text-center border border-stone-700 cursor-pointer shadow-sm">+₹1,000</button>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <div class="relative flex-1">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-amber-400 font-bold text-xs">₹</span>
+                <input type="number" id="drawer-recharge-input" min="1" max="50000" placeholder="Rupees" class="w-full pl-7 pr-3 py-2.5 rounded-xl border border-stone-700 bg-stone-950 text-white text-xs font-bold focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none">
+              </div>
+              <select id="drawer-recharge-method" class="text-xs border border-stone-700 rounded-xl px-3 py-2.5 bg-stone-950 font-bold text-stone-200 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <option value="UPI">UPI</option>
+                <option value="Cash Desk">Cash Desk</option>
+                <option value="Card">Card</option>
+              </select>
+              <button type="button" id="drawer-recharge-btn" onclick="executeDrawerRecharge()" class="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer">
+                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-stone-800 text-[11px]">
+              <span class="text-stone-400">Need dynamic UPI QR or receipt?</span>
+              <a id="drawer-full-portal-link" href="/recharge.html" class="font-bold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors">
+                Open Recharge Hub <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: ATTENDEE ACTIVITY & LEDGER HISTORY -->
+        <div class="p-4.5 rounded-2xl border border-stone-800 bg-stone-950 shadow-md space-y-3.5">
+          <div class="flex items-center justify-between border-b border-stone-800 pb-2.5">
+            <span class="text-xs uppercase font-bold text-stone-300 tracking-wider">Activity History</span>
+            <div class="flex gap-1 bg-stone-900 p-1 rounded-xl border border-stone-800 text-xs font-bold">
+              <button type="button" onclick="switchDrawerTab('recharges')" id="dtab-recharges" class="px-3 py-1 rounded-lg bg-stone-800 text-white shadow-sm font-bold transition-all cursor-pointer">Top-ups</button>
+              <button type="button" onclick="switchDrawerTab('spending')" id="dtab-spending" class="px-3 py-1 rounded-lg text-stone-400 hover:text-white font-bold transition-all cursor-pointer">Spending</button>
+              <button type="button" onclick="switchDrawerTab('scans')" id="dtab-scans" class="px-3 py-1 rounded-lg text-stone-400 hover:text-white font-bold transition-all cursor-pointer">Scans</button>
+            </div>
+          </div>
+
+          <!-- Tab 1: Recharges List -->
+          <div id="drawer-panel-recharges" class="space-y-2">
+            <div class="text-center py-6 text-stone-500 text-xs">Loading recharge history...</div>
+          </div>
+
+          <!-- Tab 2: Spending List -->
+          <div id="drawer-panel-spending" class="hidden space-y-2">
+            <div class="text-center py-6 text-stone-500 text-xs">Loading spending history...</div>
+          </div>
+
+          <!-- Tab 3: Zone Scans List -->
+          <div id="drawer-panel-scans" class="hidden space-y-2">
+            <div class="text-center py-6 text-stone-500 text-xs">Loading scan history...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      fetchAttendees();
+      
+      const modal = document.getElementById('add-modal');
+      document.getElementById('open-add-modal').addEventListener('click', () => {
+        modal.classList.remove('hidden');
+      });
+      document.getElementById('close-add-modal').addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+      
+      document.getElementById('add-attendee-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('star-portal-btn');
+        const lbl = document.getElementById('star-portal-btn-label');
+        lbl.textContent = "Registering...";
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch('/register_attendee', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('att-name').value,
+                    role: document.getElementById('att-role').value,
+                    ticket_type: document.getElementById('att-ticket').value
+                })
+            });
+            if (res.ok) {
+                const regData = await res.json();
+                e.target.reset();
+                modal.classList.add('hidden');
+                await fetchAttendees();
+                if (regData && regData.attendee) {
+                  showAttendeeQRModal(regData.attendee);
+                }
+            } else {
+                alert("Server returned an error. Registration failed.");
+            }
+        } catch(err) {
+            console.error(err);
+            alert("Error registering guest.");
+        }
+        lbl.textContent = "Complete Registration";
+        btn.disabled = false;
+      });
+    });
+
+    let currentModalQrInstance = null;
+    let drawerQrInstance = null;
+    let selectedAttendeeForAction = null;
+    let currentDrawerAttendee = null;
+    let currentDrawerHistory = null;
+    let allAttendeesCache = [];
+
+    window.showAttendeeQRModal = function(attendee, isNew = false) {
+      if (!attendee) return;
+      selectedAttendeeForAction = attendee;
+      const modal = document.getElementById('attendee-qr-modal');
+      const isTerminated = attendee.status === 'terminated';
+
+      document.getElementById('modal-pass-heading').textContent = isNew 
+        ? "🎉 Registration Complete!" 
+        : "Official Festival QR Pass";
+      document.getElementById('modal-pass-subtext').textContent = isNew
+        ? "Attendee wristband pass activated with 0 Fest Coins (Top-up via Payment Portal)."
+        : "Scannable digital badge for checkpoint entry & Fest Coin payments.";
+
+      const statusContainer = document.getElementById('modal-status-pill-container');
+      const overlay = document.getElementById('qr-terminated-overlay');
+      const reasonText = document.getElementById('qr-terminated-reason-text');
+
+      if (isTerminated) {
+        overlay.classList.remove('hidden');
+        reasonText.textContent = `Revoked: ${attendee.termination_reason || 'Administrative Order'}`;
+        statusContainer.innerHTML = `
+          <span class="px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-700 border border-rose-300 inline-flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> PASS TERMINATED / REVOKED
+          </span>
+        `;
+      } else {
+        overlay.classList.add('hidden');
+        statusContainer.innerHTML = `
+          <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> ACTIVE VALID PASS
+          </span>
+        `;
+      }
+
+      document.getElementById('attendee-modal-name').textContent = attendee.name;
+      document.getElementById('attendee-modal-role').textContent = attendee.role;
+      document.getElementById('attendee-modal-ticket').textContent = attendee.ticket_type || 'Standard';
+      document.getElementById('attendee-modal-coins').textContent = `🪙 ${(attendee.fest_coins ?? 0).toLocaleString()}`;
+      document.getElementById('attendee-modal-hash').textContent = `HASH: ${attendee.qr_code_hash}`;
+      
+      const link = document.getElementById('open-in-scanner-link');
+      if (link) {
+        link.href = `/scanner.html`;
+      }
+
+      // Render crisp QR code
+      const qrContainer = document.getElementById('attendee-modal-qrcode');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: attendee.qr_code_hash,
+        width: 160,
+        height: 160,
+        colorDark: isTerminated ? '#991b1b' : '#1c1917',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      // Contextual manage controls
+      const manageControls = document.getElementById('modal-manage-controls');
+      if (isTerminated) {
+        manageControls.innerHTML = `
+          <button type="button" onclick="closeAttendeeQRModal(); openGuestManageDrawer(selectedAttendeeForAction);" class="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Give Access Again / Manage Pass
+          </button>
+        `;
+      } else {
+        manageControls.innerHTML = `
+          <button type="button" onclick="closeAttendeeQRModal(); openGuestManageDrawer(selectedAttendeeForAction);" class="w-full py-2 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Manage Pass & Coins Drawer
+          </button>
+        `;
+      }
+
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    };
+
+    window.closeAttendeeQRModal = function() {
+      const modal = document.getElementById('attendee-qr-modal');
+      modal.classList.add('hidden');
+    };
+
+    // Print pass badge
+    window.printPassBadge = function() {
+      window.print();
+    };
+
+    // ─────────────────────── SLIDE-OUT GUEST MANAGEMENT DRAWER LOGIC ───────────────────────
+
+    window.openGuestManageDrawer = async function(attendeeIdOrObj) {
+      // 1. Immediately open drawer and backdrop
+      document.body.classList.add('drawer-open');
+      const drawer = document.getElementById('guest-manage-drawer');
+      const backdrop = document.getElementById('guest-manage-drawer-backdrop');
+      if (backdrop) backdrop.classList.remove('hidden');
+      if (drawer) {
+        drawer.classList.remove('translate-x-full');
+        drawer.classList.add('translate-x-0');
+      }
+
+      let attendee = typeof attendeeIdOrObj === 'object' ? attendeeIdOrObj : allAttendeesCache.find(a => a._id === attendeeIdOrObj);
+      if (!attendee && typeof attendeeIdOrObj === 'string') {
+        try {
+          const res = await fetch(`/api/attendee/${attendeeIdOrObj}/history`);
+          if (res.ok) {
+            const data = await res.json();
+            attendee = data.attendee;
+            currentDrawerHistory = data;
+          }
+        } catch (e) {
+          console.error('Error fetching attendee for drawer:', e);
+        }
+      }
+      if (!attendee) return;
+      currentDrawerAttendee = attendee;
+      selectedAttendeeForAction = attendee;
+
+      try {
+        renderDrawerHeaderAndStatus(attendee);
+      } catch (err) {
+        console.error('Error rendering drawer header:', err);
+      }
+
+      // Fetch full history from server
+      try {
+        const res = await fetch(`/api/attendee/${attendee._id}/history`);
+        if (res.ok) {
+          currentDrawerHistory = await res.json();
+          currentDrawerAttendee = currentDrawerHistory.attendee || currentDrawerAttendee;
+          renderDrawerHeaderAndStatus(currentDrawerAttendee);
+          renderDrawerHistory(currentDrawerHistory);
+        }
+      } catch (err) {
+        console.error('Error fetching attendee history:', err);
+      }
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    window.closeGuestManageDrawer = function() {
+      document.body.classList.remove('drawer-open');
+      const drawer = document.getElementById('guest-manage-drawer');
+      const backdrop = document.getElementById('guest-manage-drawer-backdrop');
+      if (drawer) {
+        drawer.classList.add('translate-x-full');
+        drawer.classList.remove('translate-x-0');
+      }
+      if (backdrop) {
+        setTimeout(() => {
+          backdrop.classList.add('hidden');
+        }, 200);
+      }
+    };
+
+    function renderDrawerHeaderAndStatus(attendee) {
+      if (!attendee) return;
+      const isTerminated = attendee.status === 'terminated';
+
+      // Header fields (Dark High-Contrast)
+      const circleEl = document.getElementById('drawer-init-circle');
+      if (circleEl) {
+        circleEl.textContent = (attendee.name || '').substring(0, 2).toUpperCase();
+        circleEl.className = `w-11 h-11 rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 text-white flex items-center justify-center text-sm font-black shadow-md shrink-0`;
+      }
+      const nameEl = document.getElementById('drawer-name');
+      if (nameEl) {
+        nameEl.textContent = attendee.name || 'Guest';
+        nameEl.className = `font-serif font-bold text-xl ${isTerminated ? 'line-through text-stone-500' : 'text-white'} leading-tight truncate`;
+      }
+      const roleEl = document.getElementById('drawer-role');
+      if (roleEl) roleEl.textContent = attendee.role || 'General';
+      const ticketEl = document.getElementById('drawer-ticket');
+      if (ticketEl) ticketEl.textContent = attendee.ticket_type || 'Standard';
+      const hashEl = document.getElementById('drawer-hash');
+      if (hashEl) hashEl.textContent = attendee.qr_code_hash || '--';
+
+      const portalLink = document.getElementById('drawer-open-recharge-btn');
+      if (portalLink) portalLink.href = `/recharge.html?attendee_id=${attendee._id}`;
+      const fullPortalLink = document.getElementById('drawer-full-portal-link');
+      if (fullPortalLink) fullPortalLink.href = `/recharge.html?attendee_id=${attendee._id}`;
+
+      // Status Badge (Dark High-Contrast)
+      const statusBadge = document.getElementById('drawer-status-badge');
+      if (statusBadge) {
+        if (isTerminated) {
+          statusBadge.innerHTML = `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-950 text-rose-300 border border-rose-700 shadow-sm">
+              <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-rose-400"></i> Revoked / Void
+            </span>
+          `;
+        } else {
+          statusBadge.innerHTML = `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-700 shadow-sm">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> Active & Valid
+            </span>
+          `;
+        }
+      }
+
+      // QR visual + Void overlay
+      const voidOverlay = document.getElementById('drawer-qr-void-overlay');
+      const voidReason = document.getElementById('drawer-qr-void-reason');
+      if (voidOverlay) {
+        if (isTerminated) {
+          voidOverlay.classList.remove('hidden');
+          if (voidReason) voidReason.textContent = attendee.termination_reason || 'Administrative revocation';
+        } else {
+          voidOverlay.classList.add('hidden');
+        }
+      }
+
+      // Render crisp QR in drawer safely
+      const qrBox = document.getElementById('drawer-qr-container');
+      if (qrBox && typeof QRCode !== 'undefined' && attendee.qr_code_hash) {
+        qrBox.innerHTML = '';
+        try {
+          new QRCode(qrBox, {
+            text: attendee.qr_code_hash,
+            width: 72,
+            height: 72,
+            colorDark: isTerminated ? '#991b1b' : '#0c0a09',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } catch (e) {
+          console.warn('QR Code generation in drawer:', e);
+        }
+      }
+
+      // Pass Actions: Revoke or Give Access Again
+      const passActions = document.getElementById('drawer-pass-actions');
+      if (isTerminated) {
+        passActions.innerHTML = `
+          <div class="p-3.5 rounded-xl bg-rose-950/70 border border-rose-800 text-xs text-rose-200 space-y-3">
+            <div class="flex items-start gap-2.5">
+              <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i>
+              <div>
+                <p class="font-bold text-rose-100">Pass Currently Suspended</p>
+                <p class="text-[11px] text-rose-300 mt-0.5">${attendee.termination_reason || 'Revoked by festival admin'}</p>
+                ${attendee.terminated_at ? `<p class="text-[10px] text-rose-400 mt-0.5">Revoked on: ${new Date(attendee.terminated_at).toLocaleString()}</p>` : ''}
+              </div>
+            </div>
+            
+            <div class="pt-2 border-t border-rose-800/80">
+              <p class="text-[11px] font-bold text-emerald-400 mb-2 flex items-center gap-1.5">
+                <i data-lucide="key" class="w-3.5 h-3.5 text-emerald-400"></i> Restore Attendee Access:
+              </p>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="drawerConfirmReinstate(false)" class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer" title="Unblock original QR wristband">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i> Restore Pass
+                </button>
+                <button type="button" onclick="drawerConfirmReinstate(true)" class="py-2.5 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-emerald-300 border border-emerald-700 font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 text-center cursor-pointer" title="Issue completely fresh QR code">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Issue New QR
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        passActions.innerHTML = `
+          <div id="drawer-revoke-box">
+            <button type="button" onclick="toggleDrawerRevokeForm()" class="w-full py-2.5 px-3 rounded-xl bg-stone-800 hover:bg-rose-950 hover:border-rose-600 hover:text-rose-300 text-stone-200 border border-stone-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
+              <i data-lucide="ban" class="w-3.5 h-3.5 text-rose-400"></i> Revoke / Terminate Pass Access
+            </button>
+            
+            <div id="drawer-revoke-form" class="hidden mt-3 p-4 rounded-xl bg-stone-900 border border-rose-900/80 text-xs space-y-3 shadow-lg">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-rose-300">Revocation Reason</span>
+                <button type="button" onclick="toggleDrawerRevokeForm()" class="text-stone-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+              </div>
+              <select id="drawer-revoke-select" class="w-full text-xs border border-stone-700 rounded-xl p-2.5 bg-stone-950 text-white font-medium focus:ring-1 focus:ring-rose-500 focus:outline-none">
+                <option value="Lost or Stolen Wristband">Lost or Stolen Wristband</option>
+                <option value="Security / Code of Conduct Violation">Security / Code of Conduct Violation</option>
+                <option value="Administrative Hold">Administrative Hold</option>
+                <option value="Payment Disputed / Chargeback">Payment Disputed / Chargeback</option>
+                <option value="Ticket Cancelled or Refunded">Ticket Cancelled or Refunded</option>
+                <option value="Other">Other Reason</option>
+              </select>
+              <input type="text" id="drawer-revoke-notes" placeholder="Optional notes (e.g. Incident report #12)" class="w-full text-xs border border-stone-700 rounded-xl p-2.5 bg-stone-950 text-white placeholder-stone-500 focus:ring-1 focus:ring-rose-500 focus:outline-none">
+              <div class="flex items-center gap-2 pt-1">
+                <button type="button" id="drawer-confirm-revoke-btn" onclick="drawerConfirmRevoke()" class="flex-1 py-2.5 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-1.5 cursor-pointer">
+                  <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Confirm Revoke Pass
+                </button>
+                <button type="button" onclick="toggleDrawerRevokeForm()" class="px-4 py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-xl font-bold text-xs cursor-pointer">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Coins & Rupee display
+      const coins = attendee.fest_coins ?? 0;
+      document.getElementById('drawer-coin-balance').textContent = `🪙 ${coins.toLocaleString()}`;
+      document.getElementById('drawer-inr-equiv').textContent = `₹${coins.toLocaleString()} INR`;
+
+      lucide.createIcons();
+    }
+
+    window.toggleDrawerRevokeForm = function() {
+      const form = document.getElementById('drawer-revoke-form');
+      if (form) {
+        form.classList.toggle('hidden');
+        lucide.createIcons();
+      }
+    };
+
+    window.drawerConfirmRevoke = async function() {
+      if (!currentDrawerAttendee) return;
+      const selectVal = document.getElementById('drawer-revoke-select').value;
+      const notes = (document.getElementById('drawer-revoke-notes').value || '').trim();
+      const reason = notes ? `${selectVal} - ${notes}` : selectVal;
+
+      const btn = document.getElementById('drawer-confirm-revoke-btn');
+      if (btn) {
+        btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Revoking...`;
+        btn.disabled = true;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/attendee/${currentDrawerAttendee._id}/terminate_qr`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': sessionStorage.getItem('adminKey') || localStorage.getItem('adminKey') || ''
+          },
+          body: JSON.stringify({ reason })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          currentDrawerAttendee = data.attendee;
+          renderDrawerHeaderAndStatus(currentDrawerAttendee);
+          await fetchAttendees();
+        } else {
+          alert('Failed to revoke attendee pass.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error revoking pass.');
+      } finally {
+        if (btn) btn.disabled = false;
+        lucide.createIcons();
+      }
+    };
+
+    window.drawerConfirmReinstate = async function(regenerate) {
+      if (!currentDrawerAttendee) return;
+      try {
+        const res = await fetch(`/api/admin/attendee/${currentDrawerAttendee._id}/reinstate_qr`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': sessionStorage.getItem('adminKey') || localStorage.getItem('adminKey') || ''
+          },
+          body: JSON.stringify({ regenerate })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          currentDrawerAttendee = data.attendee;
+          renderDrawerHeaderAndStatus(currentDrawerAttendee);
+          await fetchAttendees();
+        } else {
+          alert('Failed to reinstate attendee pass.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error reinstating pass.');
+      }
+    };
+
+    window.copyDrawerHash = function() {
+      if (!currentDrawerAttendee) return;
+      navigator.clipboard.writeText(currentDrawerAttendee.qr_code_hash);
+      const lbl = document.getElementById('copy-hash-label');
+      if (lbl) {
+        lbl.textContent = 'Copied!';
+        setTimeout(() => { lbl.textContent = 'Copy Hash'; }, 1800);
+      }
+    };
+
+    window.setDrawerRechargeAmount = function(amt) {
+      const input = document.getElementById('drawer-recharge-input');
+      if (input) input.value = amt;
+    };
+
+    window.executeDrawerRecharge = async function() {
+      if (!currentDrawerAttendee) return;
+      const input = document.getElementById('drawer-recharge-input');
+      const methodSelect = document.getElementById('drawer-recharge-method');
+      const amt = parseInt(input.value, 10);
+
+      if (isNaN(amt) || amt <= 0) {
+        alert('Please enter a valid rupee amount (greater than 0).');
+        return;
+      }
+
+      const btn = document.getElementById('drawer-recharge-btn');
+      const origHtml = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Adding...`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/recharge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            attendee_id: currentDrawerAttendee._id,
+            inr_amount: amt,
+            payment_method: methodSelect.value,
+            operator_mode: 'self_service',
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          currentDrawerAttendee = data.attendee;
+          renderDrawerHeaderAndStatus(currentDrawerAttendee);
+          input.value = '';
+
+          // Add to recharges panel if open
+          if (currentDrawerHistory) {
+            currentDrawerHistory.recharges = [data.recharge, ...(currentDrawerHistory.recharges || [])];
+            renderDrawerHistory(currentDrawerHistory);
+          }
+
+          await fetchAttendees();
+          btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-white"></i> Done!`;
+          setTimeout(() => { btn.innerHTML = origHtml; btn.disabled = false; lucide.createIcons(); }, 1400);
+        } else {
+          alert(data.detail || 'Failed to process recharge.');
+          btn.innerHTML = origHtml;
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error completing recharge.');
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+      }
+      lucide.createIcons();
+    };
+
+    window.switchDrawerTab = function(tab) {
+      ['recharges', 'spending', 'scans'].forEach(t => {
+        const panel = document.getElementById(`drawer-panel-${t}`);
+        const btn = document.getElementById(`dtab-${t}`);
+        if (t === tab) {
+          panel.classList.remove('hidden');
+          btn.className = 'px-3 py-1 rounded-lg bg-stone-800 text-white font-bold shadow-sm transition-all cursor-pointer';
+        } else {
+          panel.classList.add('hidden');
+          btn.className = 'px-3 py-1 rounded-lg text-stone-400 hover:text-white font-bold transition-all cursor-pointer';
+        }
+      });
+      lucide.createIcons();
+    };
+
+    function renderDrawerHistory(history) {
+      if (!history) return;
+
+      // Recharges tab
+      const rPanel = document.getElementById('drawer-panel-recharges');
+      const recharges = history.recharges || [];
+      if (recharges.length === 0) {
+        rPanel.innerHTML = '<div class="text-center py-6 text-stone-500 text-xs">No rupee top-ups recorded yet.</div>';
+      } else {
+        rPanel.innerHTML = recharges.map(r => `
+          <div class="p-3 rounded-xl bg-stone-900 border border-stone-800 flex items-center justify-between text-xs shadow-sm">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center font-bold">₹</div>
+              <div>
+                <p class="font-bold text-white">₹${(r.inr_amount || 0).toLocaleString()} <span class="text-emerald-400 font-mono font-bold">+${(r.coins_added || 0).toLocaleString()} 🪙</span></p>
+                <p class="text-[10px] text-stone-400">${r.payment_method || 'UPI'} · ${new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono text-stone-400 truncate max-w-[90px]">${r.payment_ref || ''}</span>
+          </div>
+        `).join('');
+      }
+
+      // Spending tab
+      const sPanel = document.getElementById('drawer-panel-spending');
+      const spending = history.transactions || [];
+      if (spending.length === 0) {
+        sPanel.innerHTML = '<div class="text-center py-6 text-stone-500 text-xs">No vendor purchases recorded yet.</div>';
+      } else {
+        sPanel.innerHTML = spending.map(s => `
+          <div class="p-3 rounded-xl bg-stone-900 border border-stone-800 flex items-center justify-between text-xs shadow-sm">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-amber-950 text-amber-400 border border-amber-800 flex items-center justify-center font-bold">🪙</div>
+              <div>
+                <p class="font-bold text-white">${s.stall_name || 'Vendor Stall'}</p>
+                <p class="text-[10px] text-stone-400">${s.zone_name || 'Food Court'} · ${new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              </div>
+            </div>
+            <span class="font-mono font-bold text-rose-400">-${(s.amount || 0).toLocaleString()} 🪙</span>
+          </div>
+        `).join('');
+      }
+
+      // Scans tab
+      const scPanel = document.getElementById('drawer-panel-scans');
+      const scans = history.scans || [];
+      if (scans.length === 0) {
+        scPanel.innerHTML = '<div class="text-center py-6 text-stone-500 text-xs">No checkpoint scans logged yet.</div>';
+      } else {
+        scPanel.innerHTML = scans.map(sc => `
+          <div class="p-3 rounded-xl bg-stone-900 border border-stone-800 flex items-center justify-between text-xs shadow-sm">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-sky-950 text-sky-400 border border-sky-800 flex items-center justify-center font-bold"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i></div>
+              <div>
+                <p class="font-bold text-white">${sc.zone_name}</p>
+                <p class="text-[10px] text-stone-400">${new Date(sc.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-800">+10 pts</span>
+          </div>
+        `).join('');
+      }
+
+      lucide.createIcons();
+    }
+
+    // ─────────────────────── ATTENDEES TABLE FETCH & RENDER ───────────────────────
+
+    async function fetchAttendees() {
+      const tbody = document.getElementById('attendees-table-body');
+      try {
+        const res = await fetch('/api/admin/attendees', {
+            headers: { 'X-Admin-Key': sessionStorage.getItem('adminKey') || localStorage.getItem('adminKey') || '' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          allAttendeesCache = data.attendees || [];
+          tbody.innerHTML = '';
+          if (allAttendeesCache.length === 0) {
+             tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-stone-400">No guests found.</td></tr>';
+             return;
+          }
+          allAttendeesCache.forEach(a => {
+            const isTerminated = a.status === 'terminated';
+            const roleCol = a.role === 'VIP' ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-stone-600 bg-stone-100 border-stone-200';
+            const tr = document.createElement('tr');
+            if (isTerminated) {
+              tr.className = 'bg-rose-50/20';
+            }
+            tr.innerHTML = `
+              <td class="px-6 py-4 font-bold text-fest-dark flex items-center gap-3 cursor-pointer group guest-name-cell" title="Click to manage ${a.name}">
+                 <div class="w-8 h-8 rounded-full ${isTerminated ? 'bg-rose-100 text-rose-700' : 'bg-stone-200 text-stone-600 group-hover:bg-rose-100 group-hover:text-rose-700'} flex items-center justify-center text-xs init-circle font-black transition-colors shrink-0"></div>
+                 <div class="min-w-0">
+                   <div class="name-span ${isTerminated ? 'line-through text-stone-400' : 'text-stone-800 group-hover:text-rose-600'} transition-colors flex items-center gap-2">
+                     <span class="truncate"></span>
+                     <span class="text-[10px] text-stone-400 font-medium border border-stone-200 rounded px-1 group-hover:border-rose-300 group-hover:text-rose-600 inline-flex items-center gap-0.5 shrink-0">
+                       <i data-lucide="sliders" class="w-2.5 h-2.5"></i> Manage
+                     </span>
+                   </div>
+                   ${isTerminated ? `<div class="text-[10px] text-rose-600 font-semibold truncate max-w-[150px]">${a.termination_reason || 'Revoked'}</div>` : ''}
+                 </div>
+              </td>
+              <td class="px-6 py-4"><span class="px-2.5 py-1 rounded-lg border text-xs font-bold ${roleCol} role-span"></span></td>
+              <td class="px-6 py-4 ticket-td font-medium"></td>
+              <td class="px-6 py-4 font-mono font-bold text-amber-600 coins-td"></td>
+              <td class="px-6 py-4">
+                ${isTerminated 
+                  ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 shadow-sm"><i data-lucide="shield-alert" class="w-3 h-3 text-rose-600"></i> Revoked</span>`
+                  : `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm"><i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i> Active</span>`
+                }
+              </td>
+              <td class="px-6 py-4 text-center">
+                 <button class="px-2.5 py-1 rounded-xl ${isTerminated ? 'bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-200' : 'bg-stone-100 hover:bg-rose-50 hover:text-rose-600 border-stone-200'} border text-xs font-bold transition-all shadow-sm flex items-center gap-1 mx-auto show-qr-btn">
+                   <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+                   <span>${isTerminated ? 'Inspect Void' : 'View QR'}</span>
+                 </button>
+              </td>
+              <td class="px-6 py-4 text-right">
+                 <div class="flex items-center justify-end gap-1.5">
+                   <button type="button" class="px-2.5 py-1 text-xs font-bold rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:border-rose-300 transition-all shadow-xs flex items-center gap-1 manage-btn" title="Open Management Drawer">
+                     <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+                     <span>Manage</span>
+                   </button>
+                   ${isTerminated
+                     ? `<button type="button" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors reinst-btn" title="Reactivate or Issue New QR"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>`
+                     : `<button type="button" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors term-btn" title="Terminate / Revoke QR Pass"><i data-lucide="ban" class="w-4 h-4"></i></button>`
+                   }
+                   <button type="button" class="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors delete-btn" title="Remove Guest"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                 </div>
+              </td>
+            `;
+            tr.querySelector('.init-circle').textContent = (a.name || '').substring(0,2).toUpperCase();
+            tr.querySelector('.name-span span').textContent = a.name;
+            tr.querySelector('.role-span').textContent = a.role;
+            tr.querySelector('.ticket-td').textContent = a.ticket_type;
+            tr.querySelector('.coins-td').textContent = `🪙 ${(a.fest_coins ?? 0).toLocaleString()}`;
+            
+            // Name cell click opens management drawer!
+            tr.querySelector('.guest-name-cell').onclick = (e) => {
+              if (e) e.stopPropagation();
+              openGuestManageDrawer(a);
+            };
+            tr.querySelector('.manage-btn').onclick = (e) => {
+              if (e) e.stopPropagation();
+              openGuestManageDrawer(a);
+            };
+            tr.querySelector('.show-qr-btn').onclick = (e) => {
+              if (e) e.stopPropagation();
+              showAttendeeQRModal(a);
+            };
+            
+            const termBtn = tr.querySelector('.term-btn');
+            if (termBtn) termBtn.onclick = (e) => {
+              if (e) e.stopPropagation();
+              openGuestManageDrawer(a);
+            };
+
+            const reinstBtn = tr.querySelector('.reinst-btn');
+            if (reinstBtn) reinstBtn.onclick = (e) => {
+              if (e) e.stopPropagation();
+              openGuestManageDrawer(a);
+            };
+
+            tr.querySelector('.delete-btn').onclick = (e) => {
+              if (e) e.stopPropagation();
+              deleteAttendee(a._id);
+            };
+            tbody.appendChild(tr);
+          });
+          lucide.createIcons();
+        }
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-rose-500">Error loading data</td></tr>';
+      }
+    }
+    
+    window.deleteAttendee = async function(id) {
+        if(!confirm("Are you sure you want to remove this guest?")) return;
+        try {
+            await fetch('/api/admin/delete_attendee/' + id, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Key': sessionStorage.getItem('adminKey') || localStorage.getItem('adminKey') || '' }
+            });
+            fetchAttendees();
+        } catch(err) {
+            console.error(err);
+        }
+    };
+    // === STAR PORTAL BUTTON LOGIC ===
+    const portalCanvas = document.getElementById('portal-canvas');
+    if (portalCanvas) {
+      const pCtx = portalCanvas.getContext('2d');
+      let stars = [];
+      let isPortalHovered = false;
+
+      function initPortal() {
+        portalCanvas.width = portalCanvas.offsetWidth || 300;
+        portalCanvas.height = portalCanvas.offsetHeight || 60;
+        stars = [];
+        for(let i=0; i<80; i++) {
+          stars.push({
+            x: Math.random() * portalCanvas.width - portalCanvas.width/2,
+            y: Math.random() * portalCanvas.height - portalCanvas.height/2,
+            z: Math.random() * portalCanvas.width
+          });
+        }
+      }
+
+      const portalBtn = document.getElementById('star-portal-btn');
+      portalBtn.addEventListener('mouseenter', () => isPortalHovered = true);
+      portalBtn.addEventListener('mouseleave', () => isPortalHovered = false);
+
+      let animationId = null;
+
+      function drawPortal() {
+        if (document.getElementById('add-modal').classList.contains('hidden')) {
+            animationId = null;
+            return;
+        }
+
+        pCtx.fillStyle = isPortalHovered ? '#0a0a0a' : '#1c1917';
+        pCtx.fillRect(0, 0, portalCanvas.width, portalCanvas.height);
+        
+        const cx = portalCanvas.width / 2;
+        const cy = portalCanvas.height / 2;
+        
+        pCtx.fillStyle = '#06b6d4';
+        
+        for(let i=0; i<stars.length; i++) {
+          let s = stars[i];
+          s.z -= isPortalHovered ? 12 : 1;
+          
+          if(s.z <= 0) {
+            s.x = Math.random() * portalCanvas.width - portalCanvas.width/2;
+            s.y = Math.random() * portalCanvas.height - portalCanvas.height/2;
+            s.z = portalCanvas.width;
+          }
+          
+          let k = 128.0 / s.z;
+          let px = s.x * k + cx;
+          let py = s.y * k + cy;
+          let size = (1 - s.z / portalCanvas.width) * (isPortalHovered ? 2.5 : 1.2);
+          
+          pCtx.beginPath();
+          pCtx.arc(px, py, size, 0, Math.PI*2);
+          pCtx.fill();
+          
+          if (isPortalHovered) {
+            let prevK = 128.0 / (s.z + 12);
+            let prevPx = s.x * prevK + cx;
+            let prevPy = s.y * prevK + cy;
+            pCtx.strokeStyle = `rgba(6, 182, 212, ${1 - s.z / portalCanvas.width})`;
+            pCtx.lineWidth = size;
+            pCtx.beginPath();
+            pCtx.moveTo(px, py);
+            pCtx.lineTo(prevPx, prevPy);
+            pCtx.stroke();
+          }
+        }
+        animationId = requestAnimationFrame(drawPortal);
+      }
+
+      document.getElementById('open-add-modal').addEventListener('click', () => {
+        setTimeout(() => {
+            initPortal();
+            if (!animationId) drawPortal();
+        }, 50);
+      });
+    }
+
+  </script>
+  <script src="/nlp-assistant.js"></script>
+</body>
+</html>

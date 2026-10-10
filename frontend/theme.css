@@ -1,0 +1,243 @@
+/* ==========================================================================
+   Cultura — theme layer
+   Dark-mode overrides for the Tailwind utilities used across the dashboard.
+   Selectors are prefixed with `html.dark` so they outrank the Tailwind CDN
+   styles (which are injected later at runtime) and also cover classes that
+   are assigned dynamically from JavaScript.
+   ========================================================================== */
+
+/* ---- Smooth theme switch ------------------------------------------------- */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color .4s ease, border-color .4s ease, color .4s ease, box-shadow .4s ease !important;
+}
+
+/* ---- Background host (Structure Flow) ------------------------------------ */
+#structure-flow-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .7s ease, visibility 0s linear .7s;
+  background: radial-gradient(ellipse 120% 70% at 50% 115%, rgba(225, 29, 72, 0.15) 0%, transparent 60%),
+              radial-gradient(ellipse 80% 50% at 85% -10%, rgba(217, 119, 6, 0.15) 0%, transparent 60%),
+              #f5f5f4;
+}
+html.dark #structure-flow-bg {
+  background: radial-gradient(ellipse 120% 70% at 50% 115%, rgba(190, 18, 60, .35) 0%, transparent 60%),
+              radial-gradient(ellipse 80% 50% at 85% -10%, rgba(91, 33, 182, .25) 0%, transparent 60%),
+              #0c0a09;
+}
+#structure-flow-bg.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .7s ease, visibility 0s;
+}
+/* Top vignette so the header area stays readable over the field. */
+#structure-flow-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(12, 10, 9, .75) 0%, rgba(12, 10, 9, .15) 45%, rgba(12, 10, 9, 0) 70%);
+}
+
+/* ---- Theme toggle -------------------------------------------------------- */
+.theme-switch-wrap {
+  padding: 1rem 1.25rem 1.5rem;
+  border-top: 1px solid rgba(231, 229, 228, .8);
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.theme-switch-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: #a8a29e;
+}
+.theme-switch {
+  --idx: 1;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 4px;
+  border-radius: 14px;
+  background: #f5f5f4;
+  border: 1px solid #e7e5e4;
+}
+html[data-theme-choice="light"] .theme-switch { --idx: 0; }
+html[data-theme-choice="system"] .theme-switch { --idx: 1; }
+html[data-theme-choice="dark"] .theme-switch { --idx: 2; }
+.theme-switch-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, .15);
+  transform: translateX(calc(var(--idx) * 100%));
+  transition: transform .35s cubic-bezier(.65, 0, .35, 1), background .35s ease;
+}
+.theme-switch button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border-radius: 10px;
+  color: #a8a29e;
+  transition: color .25s ease, transform .2s ease;
+}
+.theme-switch button:hover { color: #57534e; }
+.theme-switch button:active { transform: scale(.92); }
+.theme-switch button[aria-checked="true"] { color: #e11d48; }
+.theme-switch button:focus-visible { outline: 2px solid #f43f5e; outline-offset: 2px; }
+
+html.dark .theme-switch-wrap { border-top-color: rgba(255, 255, 255, .06); }
+html.dark .theme-switch { background: rgba(255, 255, 255, .04); border-color: rgba(255, 255, 255, .08); }
+html.dark .theme-switch-thumb {
+  background: linear-gradient(135deg, rgba(244, 63, 94, .28), rgba(251, 191, 36, .22));
+  box-shadow: 0 0 18px -4px rgba(244, 63, 94, .6), inset 0 0 0 1px rgba(255, 255, 255, .08);
+}
+html.dark .theme-switch button { color: #78716c; }
+html.dark .theme-switch button:hover { color: #d6d3d1; }
+html.dark .theme-switch button[aria-checked="true"] { color: #fda4af; }
+
+/* ---- Base ----------------------------------------------------------------- */
+html.dark { color-scheme: dark; }
+html.dark body { background-color: #0c0a09; color: #e7e5e4; }
+
+html.dark .glass-card {
+  background: rgba(28, 25, 23, .55);
+  border-color: rgba(255, 255, 255, .07);
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .04);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+html.dark .gradient-text { background-image: linear-gradient(135deg, #fb7185, #fbbf24); }
+
+/* ---- Backgrounds ---------------------------------------------------------- */
+html.dark .bg-white { background-color: rgba(41, 37, 36, .6); }
+html.dark .bg-stone-50 { background-color: rgba(255, 255, 255, .03); }
+html.dark .bg-stone-100 { background-color: rgba(255, 255, 255, .06); }
+html.dark .bg-stone-200 { background-color: rgba(255, 255, 255, .1); }
+html.dark .bg-stone-300 { background-color: #57534e; }
+html.dark .bg-stone-800,
+html.dark .bg-fest-dark {
+  background-image: linear-gradient(135deg, #e11d48, #d97706);
+  background-color: transparent;
+  box-shadow: 0 6px 20px -6px rgba(225, 29, 72, .55);
+}
+html.dark .bg-stone-900\/40 { background-color: rgba(0, 0, 0, .6); }
+html.dark .bg-rose-50 { background-color: rgba(244, 63, 94, .12); }
+html.dark .bg-rose-100 { background-color: rgba(244, 63, 94, .18); }
+html.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, .12); }
+html.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, .18); }
+html.dark .bg-orange-50 { background-color: rgba(251, 146, 60, .1); }
+html.dark .bg-orange-50\/50 { background-color: rgba(251, 146, 60, .08); }
+html.dark .bg-orange-100 { background-color: rgba(251, 146, 60, .16); }
+
+html.dark .hover\:bg-stone-50:hover { background-color: rgba(255, 255, 255, .05); }
+html.dark .hover\:bg-stone-100:hover { background-color: rgba(255, 255, 255, .08); }
+html.dark .hover\:bg-stone-700:hover,
+html.dark .hover\:bg-stone-800:hover { filter: brightness(1.12); }
+html.dark .hover\:bg-rose-50:hover { background-color: rgba(244, 63, 94, .15); }
+
+/* ---- Borders -------------------------------------------------------------- */
+html.dark .border-stone-100 { border-color: rgba(255, 255, 255, .05); }
+html.dark .border-stone-200 { border-color: rgba(255, 255, 255, .08); }
+html.dark .border-rose-100 { border-color: rgba(244, 63, 94, .2); }
+html.dark .border-rose-200 { border-color: rgba(244, 63, 94, .3); }
+html.dark .border-orange-200 { border-color: rgba(251, 146, 60, .25); }
+html.dark .border-orange-300 { border-color: rgba(251, 146, 60, .4); }
+html.dark .hover\:border-rose-300:hover { border-color: rgba(244, 63, 94, .45); }
+html.dark .divide-stone-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, .05); }
+
+/* ---- Text ----------------------------------------------------------------- */
+html.dark .text-fest-dark { color: #fafaf9; }
+html.dark .text-stone-800 { color: #f5f5f4; }
+html.dark .text-stone-700 { color: #e7e5e4; }
+html.dark .text-stone-600 { color: #d6d3d1; }
+html.dark .text-stone-500 { color: #a8a29e; }
+html.dark .text-stone-400 { color: #8a8580; }
+html.dark .text-rose-600 { color: #fb7185; }
+html.dark .text-rose-700 { color: #fda4af; }
+html.dark .text-amber-600 { color: #fbbf24; }
+html.dark .text-amber-700 { color: #fcd34d; }
+html.dark .text-emerald-600 { color: #34d399; }
+html.dark .hover\:text-fest-dark:hover { color: #fff; }
+html.dark .hover\:text-stone-600:hover { color: #e7e5e4; }
+html.dark .hover\:text-rose-600:hover { color: #fda4af; }
+html.dark .placeholder-stone-400::placeholder { color: #78716c; }
+
+/* ---- Form controls -------------------------------------------------------- */
+html.dark select option { background: #1c1917; color: #e7e5e4; }
+
+/* ---- Festival NLP Assistant High-Contrast Readability -------------------- */
+#cultura-nlp-drawer {
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.25);
+}
+html.dark #cultura-nlp-drawer {
+  background-color: #0c0a09;
+  border-left-color: rgba(255, 255, 255, 0.1);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.7);
+}
+#cultura-nlp-drawer input {
+  color: #1c1917;
+}
+html.dark #cultura-nlp-drawer input {
+  color: #f5f5f4;
+  background-color: #1c1917;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+#cultura-nlp-drawer input::placeholder {
+  color: #78716c;
+}
+html.dark #cultura-nlp-drawer input::placeholder {
+  color: #a8a29e;
+}
+#nlp-output-text {
+  color: #1c1917;
+}
+html.dark #nlp-output-text {
+  color: #fafaf9;
+}
+
+/* ---- Guest Management Drawer — Premium Dark High-Contrast Theme ---- */
+#guest-manage-drawer {
+  background-color: #141210 !important;
+  color: #f5f5f4 !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.7) !important;
+}
+#guest-manage-drawer h3#drawer-name {
+  color: #ffffff !important;
+}
+#guest-manage-drawer input,
+#guest-manage-drawer select {
+  background-color: #0c0a09 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+#guest-manage-drawer input::placeholder {
+  color: #78716c !important;
+}
+
+/* Hide launcher when guest management drawer is open to prevent UI overlap */
+body.drawer-open #cultura-nlp-launcher {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(16px) scale(0.95);
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+

@@ -1,0 +1,8 @@
+{
+  "name": "Cultura Festival Hub",
+  "description": "Live festival crowd-management dashboard and intelligent event command center with real-time zone telemetry, crowd bottleneck alerts, and natural language analytics.",
+  "prompt": "Live festival crowd-management dashboard and intelligent event command center with real-time zone telemetry, crowd bottleneck alerts, and natural language analytics.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

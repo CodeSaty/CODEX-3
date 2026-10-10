@@ -1,0 +1,19 @@
+{
+  "name": "cultura-festival-hub",
+  "version": "1.0.0",
+  "description": "Live festival crowd-management dashboard and intelligent command center",
+  "type": "module",
+  "main": "backend/server.js",
+  "scripts": {
+    "dev": "python backend/main.py",
+    "build": "python -m py_compile backend/main.py backend/models.py backend/database.py",
+    "lint": "python -m py_compile backend/main.py backend/models.py backend/database.py",
+    "start": "python backend/main.py",
+    "start:node": "node backend/server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.28.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}

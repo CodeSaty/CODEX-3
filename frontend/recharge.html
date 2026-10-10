@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cultura Festival | Cashless Recharge Portal (1 ₹ = 1 Fest Coin)</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Optical QR Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- Client-side QR Code Generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            fest: {
+              rose: '#e11d48',
+              amber: '#d97706',
+              emerald: '#059669',
+              sky: '#0284c7',
+              stone: '#fafaf9',
+              dark: '#292524'
+            }
+          },
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #f5f5f4; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen text-fest-dark flex overflow-hidden selection:bg-amber-600 selection:text-white font-sans relative">
+
+  <!-- Background decorative glow -->
+  <div class="fixed inset-0 z-0 opacity-40 pointer-events-none" style="background: radial-gradient(circle at 80% 20%, rgba(217,119,6,0.12) 0%, transparent 40%), radial-gradient(circle at 20% 80%, rgba(225,29,72,0.08) 0%, transparent 40%);"></div>
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="w-64 glass-card border-r border-stone-200 flex flex-col z-20 shrink-0 relative">
+    <div class="p-6 border-b border-stone-100 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-rose-500 flex items-center justify-center text-white shadow-md">
+        <i data-lucide="tent" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-serif font-semibold tracking-wide text-fest-dark leading-tight">Cultura</h1>
+        <p class="text-[10px] text-stone-500 uppercase tracking-widest font-semibold">Festival Hub</p>
+      </div>
+    </div>
+    
+    <nav class="flex-1 p-4 space-y-2 mt-4 text-sm font-medium">
+      <a href="/" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        Dashboard
+      </a>
+      <a href="/analytics.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+        Insights
+      </a>
+      <a href="/attendees.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        Guests
+      </a>
+      <a href="/recharge.html" class="flex items-center gap-3 p-3 rounded-xl bg-amber-50 text-amber-800 font-bold">
+        <i data-lucide="wallet" class="w-5 h-5 text-amber-600"></i>
+        Recharge & Coins
+      </a>
+      <a href="/scanner.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="qr-code" class="w-5 h-5"></i>
+        Field Scanner
+      </a>
+      <a href="/settings.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+        Operations
+      </a>
+    </nav>
+
+    <!-- 1:1 Ratio Reminder in Sidebar -->
+    <div class="p-4 m-4 rounded-2xl bg-amber-500/10 border border-amber-200 text-xs text-amber-900 space-y-1.5">
+      <div class="font-bold flex items-center gap-1.5 text-amber-800">
+        <i data-lucide="repeat" class="w-4 h-4 text-amber-600"></i> Fixed Conversion
+      </div>
+      <p class="text-[11px] text-stone-600 leading-relaxed">
+        <strong>1 Indian Rupee (₹) = 1 Fest Coin (🪙)</strong>. Top-ups reflect across vendor stalls instantly.
+      </p>
+    </div>
+  </aside>
+
+  <!-- MAIN SCROLLABLE CONTENT -->
+  <main class="flex-1 flex flex-col relative z-10 h-screen overflow-hidden">
+    
+    <!-- TOP HEADER -->
+    <header class="h-20 glass-card border-b border-stone-200 flex items-center justify-between px-8 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+          <i data-lucide="wallet" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-serif font-bold text-fest-dark leading-tight">Cashless Economy Top-up Hub</h2>
+          <p class="text-xs text-stone-500">Official Rupee-to-Fest-Coin Conversion Portal</p>
+        </div>
+      </div>
+
+      <!-- Live Financial Telemetry Badges -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-bold shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Total Collected:</span>
+          <span id="metric-total-inr" class="font-mono text-emerald-700">₹0</span>
+        </div>
+        <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-bold shadow-sm">
+          <span>Coins Minted:</span>
+          <span id="metric-total-coins" class="font-mono text-amber-700">🪙 0</span>
+        </div>
+        <button type="button" onclick="window.openNLPAssistant('How many Fest Coins minted and total rupee revenue collected?')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all shadow-sm cursor-pointer" title="Ask Festival AI Assistant">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-rose-600"></i>
+          <span>Ask AI</span>
+        </button>
+        <a href="/attendees.html" class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold transition-colors">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Guest Directory
+        </a>
+      </div>
+    </header>
+
+    <!-- CONTENT WORKSPACE -->
+    <div class="flex-1 overflow-y-auto p-8 no-scrollbar space-y-6">
+
+      <!-- HERO BANNER: 1 RUPEE = 1 COIN -->
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-amber-500 via-amber-600 to-rose-600 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        <div class="relative z-10 max-w-xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-bold uppercase tracking-wider mb-2">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i> Official Exchange Rate
+          </div>
+          <h2 class="text-3xl font-serif font-black tracking-tight leading-tight">
+            1 Rupee (₹) = 1 Fest Coin (🪙)
+          </h2>
+          <p class="text-white/90 text-sm mt-1.5 leading-relaxed">
+            New attendees register with 0 default coins. Top-up here via UPI, GPay, PhonePe, Cards, or Cash Desk counters to enable immediate cashless spending at food stalls, bars, and craft markets.
+          </p>
+        </div>
+
+        <div class="relative z-10 flex items-center gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center shrink-0">
+          <div>
+            <div class="text-xs uppercase font-semibold text-white/80">You Pay</div>
+            <div class="text-2xl font-mono font-black mt-0.5">₹ 100 INR</div>
+          </div>
+          <div class="text-xl text-white/60 font-bold">➔</div>
+          <div>
+            <div class="text-xs uppercase font-semibold text-white/80">Guest Receives</div>
+            <div class="text-2xl font-mono font-black text-amber-200 mt-0.5">100 Coins 🪙</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PORTAL MODE TABS: ATTENDEE SELF-SERVICE VS STAFF CASHIER DESK -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 bg-stone-200 p-1 rounded-2xl">
+          <button type="button" id="tab-btn-self" onclick="switchPortalMode('self')" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-fest-dark shadow-sm transition-all">
+            <i data-lucide="user-check" class="w-4 h-4 text-rose-600"></i>
+            Attendee Self-Service Portal
+          </button>
+          <button type="button" id="tab-btn-staff" onclick="switchPortalMode('staff')" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-stone-600 hover:text-fest-dark transition-all">
+            <i data-lucide="store" class="w-4 h-4 text-amber-600"></i>
+            Staff Desk & Cashier POS
+          </button>
+        </div>
+        <div class="text-xs text-stone-500 font-medium">
+          Instant sync with field checkpoints & cashless registers
+        </div>
+      </div>
+
+      <!-- GRID WORKSPACE -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- LEFT COLUMN: RECHARGE FORM (Col 7) -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- ================= MODE 1: SELF-SERVICE PORTAL ================= -->
+          <div id="self-service-container" class="glass-card p-6 rounded-3xl border border-stone-200 space-y-6 shadow-sm">
+            
+            <!-- STEP 1: SELECT ATTENDEE -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-black">1</span>
+                  Select Attendee / Scan Wristband
+                </label>
+                <button type="button" onclick="startCameraScanner()" class="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1">
+                  <i data-lucide="camera" class="w-3.5 h-3.5"></i> Live Camera Scan
+                </button>
+              </div>
+
+              <!-- Optical Scanner Viewport (Hidden initially) -->
+              <div id="camera-scanner-wrapper" class="hidden p-4 rounded-2xl bg-stone-900 border border-stone-700 text-center space-y-3">
+                <div class="flex items-center justify-between text-xs text-stone-300 font-bold">
+                  <span class="flex items-center gap-1.5"><i data-lucide="scan" class="w-4 h-4 text-rose-500 animate-pulse"></i> Align Guest QR Code with Camera</span>
+                  <button type="button" onclick="stopCameraScanner()" class="text-stone-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+                <div id="recharge-qr-reader" class="w-full max-w-sm mx-auto overflow-hidden rounded-xl bg-black"></div>
+                <p class="text-[11px] text-stone-400">Position the physical QR pass or phone screen in frame.</p>
+              </div>
+
+              <!-- Attendee Search Input & Dropdown -->
+              <div class="relative">
+                <div class="relative flex items-center">
+                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-stone-400">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                  </span>
+                  <input type="text" id="attendee-search-input" oninput="handleAttendeeSearch(this.value)" placeholder="Search attendee by name, ticket type, or pass hash..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 bg-white text-stone-800 text-sm font-medium focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                </div>
+
+                <!-- Typeahead Dropdown -->
+                <div id="attendee-search-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white rounded-2xl border border-stone-200 shadow-xl z-30 divide-y divide-stone-100">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+              <!-- Selected Attendee Preview Card -->
+              <div id="selected-attendee-card" class="hidden p-4 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div id="selected-att-avatar" class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-black text-sm"></div>
+                  <div>
+                    <h4 id="selected-att-name" class="font-bold text-fest-dark text-sm">Guest Name</h4>
+                    <div class="flex items-center gap-2 mt-0.5 text-xs text-stone-500">
+                      <span id="selected-att-role" class="px-2 py-0.5 rounded bg-stone-200/70 text-stone-700 font-bold text-[10px]">VIP</span>
+                      <span id="selected-att-ticket">Ticket</span>
+                      <span class="text-stone-300">·</span>
+                      <span id="selected-att-status" class="font-bold text-emerald-700 flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Valid Pass</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[10px] uppercase font-bold text-stone-400">Current Balance</div>
+                  <div id="selected-att-balance" class="font-mono text-base font-black text-amber-600">🪙 0</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2: CHOOSE RUPEE AMOUNT -->
+            <div class="space-y-3">
+              <label class="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-black">2</span>
+                Choose Recharge Amount (1 ₹ = 1 🪙)
+              </label>
+
+              <!-- Quick Packs -->
+              <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                <button type="button" onclick="selectRechargePack(100)" class="pack-btn p-3 rounded-2xl border border-stone-200 bg-white hover:border-amber-500 hover:bg-amber-50/50 text-center transition-all group">
+                  <div class="text-sm font-black text-fest-dark group-hover:text-amber-800">₹100</div>
+                  <div class="text-[11px] font-mono text-amber-600 mt-0.5">+100 🪙</div>
+                </button>
+                <button type="button" onclick="selectRechargePack(250)" class="pack-btn p-3 rounded-2xl border border-stone-200 bg-white hover:border-amber-500 hover:bg-amber-50/50 text-center transition-all group">
+                  <div class="text-sm font-black text-fest-dark group-hover:text-amber-800">₹250</div>
+                  <div class="text-[11px] font-mono text-amber-600 mt-0.5">+250 🪙</div>
+                </button>
+                <button type="button" onclick="selectRechargePack(500)" class="pack-btn p-3 rounded-2xl border-2 border-amber-500 bg-amber-50/60 text-center transition-all group shadow-sm">
+                  <div class="text-sm font-black text-amber-900">₹500</div>
+                  <div class="text-[11px] font-mono font-bold text-amber-700 mt-0.5">+500 🪙</div>
+                </button>
+                <button type="button" onclick="selectRechargePack(1000)" class="pack-btn p-3 rounded-2xl border border-stone-200 bg-white hover:border-amber-500 hover:bg-amber-50/50 text-center transition-all group">
+                  <div class="text-sm font-black text-fest-dark group-hover:text-amber-800">₹1,000</div>
+                  <div class="text-[11px] font-mono text-amber-600 mt-0.5">+1,000 🪙</div>
+                </button>
+                <button type="button" onclick="selectRechargePack(2500)" class="pack-btn p-3 rounded-2xl border border-stone-200 bg-white hover:border-amber-500 hover:bg-amber-50/50 text-center transition-all group">
+                  <div class="text-sm font-black text-fest-dark group-hover:text-amber-800">₹2,500</div>
+                  <div class="text-[11px] font-mono text-amber-600 mt-0.5">+2,500 🪙</div>
+                </button>
+              </div>
+
+              <!-- Custom Amount Input with Live Calculator -->
+              <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between gap-4">
+                <div class="flex-1">
+                  <label class="text-[11px] font-bold text-stone-500">Custom Rupee Amount</label>
+                  <div class="relative mt-1">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-stone-400 font-bold text-base">₹</span>
+                    <input type="number" id="custom-inr-input" min="1" max="100000" value="500" oninput="handleCustomAmountInput(this.value)" class="w-full pl-8 pr-3 py-2 rounded-xl border border-stone-200 bg-white text-stone-900 font-mono font-black text-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                  </div>
+                </div>
+                <div class="text-right shrink-0">
+                  <span class="text-[11px] font-bold text-stone-500">Credited To Wristband</span>
+                  <div id="live-coins-preview" class="font-mono text-xl font-black text-amber-600 mt-1">🪙 500 Coins</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: PAYMENT METHOD -->
+            <div class="space-y-3">
+              <label class="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-black">3</span>
+                Payment Method (Fast Indian Gateways)
+              </label>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label class="payment-method-card flex flex-col items-center p-3 rounded-2xl border-2 border-amber-500 bg-amber-50/50 cursor-pointer text-center transition-all">
+                  <input type="radio" name="payment_method" value="UPI" checked class="hidden" onchange="selectPaymentMethod('UPI')">
+                  <i data-lucide="smartphone" class="w-5 h-5 text-amber-600 mb-1"></i>
+                  <span class="text-xs font-bold text-fest-dark">UPI Instant</span>
+                  <span class="text-[10px] text-stone-500">GPay, PhonePe, QR</span>
+                </label>
+                <label class="payment-method-card flex flex-col items-center p-3 rounded-2xl border border-stone-200 bg-white hover:border-amber-300 cursor-pointer text-center transition-all">
+                  <input type="radio" name="payment_method" value="Card" class="hidden" onchange="selectPaymentMethod('Card')">
+                  <i data-lucide="credit-card" class="w-5 h-5 text-stone-600 mb-1"></i>
+                  <span class="text-xs font-bold text-fest-dark">Debit / Credit</span>
+                  <span class="text-[10px] text-stone-500">Visa, RuPay, Master</span>
+                </label>
+                <label class="payment-method-card flex flex-col items-center p-3 rounded-2xl border border-stone-200 bg-white hover:border-amber-300 cursor-pointer text-center transition-all">
+                  <input type="radio" name="payment_method" value="NetBanking" class="hidden" onchange="selectPaymentMethod('NetBanking')">
+                  <i data-lucide="landmark" class="w-5 h-5 text-stone-600 mb-1"></i>
+                  <span class="text-xs font-bold text-fest-dark">Net Banking</span>
+                  <span class="text-[10px] text-stone-500">SBI, HDFC, ICICI</span>
+                </label>
+                <label class="payment-method-card flex flex-col items-center p-3 rounded-2xl border border-stone-200 bg-white hover:border-amber-300 cursor-pointer text-center transition-all">
+                  <input type="radio" name="payment_method" value="Wallet" class="hidden" onchange="selectPaymentMethod('Wallet')">
+                  <i data-lucide="layers" class="w-5 h-5 text-stone-600 mb-1"></i>
+                  <span class="text-xs font-bold text-fest-dark">Wallet</span>
+                  <span class="text-[10px] text-stone-500">Paytm, Amazon</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <button type="button" id="pay-submit-btn" onclick="initiateSelfPayment()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <i data-lucide="lock" class="w-4 h-4"></i>
+              <span id="pay-submit-label">Pay ₹500 & Add 500 Fest Coins</span>
+            </button>
+          </div>
+
+          <!-- ================= MODE 2: STAFF DESK / CASHIER POS ================= -->
+          <div id="staff-desk-container" class="hidden glass-card p-6 rounded-3xl border border-stone-200 space-y-6 shadow-sm">
+            <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="badge-check" class="w-4 h-4 text-amber-600"></i>
+                <span><strong>Desk Station:</strong> Cashier Counter 01 · North Gate Desk</span>
+              </div>
+              <span class="text-emerald-700 font-bold flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> POS Online</span>
+            </div>
+
+            <!-- Staff Attendee Selection -->
+            <div class="space-y-3">
+              <label class="text-xs font-bold text-stone-500 uppercase tracking-wider">Counter Attendee Lookup</label>
+              <div class="relative flex items-center">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-stone-400"><i data-lucide="search" class="w-4 h-4"></i></span>
+                <input type="text" id="staff-search-input" oninput="handleAttendeeSearch(this.value, true)" placeholder="Scan wristband or type attendee name..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 bg-white text-stone-800 text-sm font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+              </div>
+
+              <!-- Selected Guest Bar in Staff Mode -->
+              <div id="staff-selected-att-card" class="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div id="staff-att-avatar" class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-black text-sm">--</div>
+                  <div>
+                    <h4 id="staff-att-name" class="font-bold text-fest-dark text-sm">No Guest Selected</h4>
+                    <p id="staff-att-meta" class="text-xs text-stone-500">Please search or scan wristband</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[10px] uppercase font-bold text-stone-400">Current Coins</div>
+                  <div id="staff-att-coins" class="font-mono text-base font-black text-amber-600">🪙 0</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cash Denomination Quick Buttons -->
+            <div class="space-y-3">
+              <label class="text-xs font-bold text-stone-500 uppercase tracking-wider">Fast Cash Denominations</label>
+              <div class="grid grid-cols-5 gap-2">
+                <button type="button" onclick="setStaffCashAmount(100)" class="p-3 rounded-xl bg-white border border-stone-200 hover:border-amber-500 text-center font-black text-xs text-fest-dark transition-all">+₹100</button>
+                <button type="button" onclick="setStaffCashAmount(200)" class="p-3 rounded-xl bg-white border border-stone-200 hover:border-amber-500 text-center font-black text-xs text-fest-dark transition-all">+₹200</button>
+                <button type="button" onclick="setStaffCashAmount(500)" class="p-3 rounded-xl bg-amber-50 border-2 border-amber-400 text-center font-black text-xs text-amber-900 transition-all">+₹500</button>
+                <button type="button" onclick="setStaffCashAmount(1000)" class="p-3 rounded-xl bg-white border border-stone-200 hover:border-amber-500 text-center font-black text-xs text-fest-dark transition-all">+₹1,000</button>
+                <button type="button" onclick="setStaffCashAmount(2000)" class="p-3 rounded-xl bg-white border border-stone-200 hover:border-amber-500 text-center font-black text-xs text-fest-dark transition-all">+₹2,000</button>
+              </div>
+            </div>
+
+            <!-- Cash Tendered & Change Due Calculator -->
+            <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200 grid grid-cols-3 gap-4">
+              <div>
+                <label class="text-[11px] font-bold text-stone-500">Recharge (INR)</label>
+                <div class="relative mt-1">
+                  <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-stone-400 font-bold">₹</span>
+                  <input type="number" id="staff-recharge-amount" value="500" oninput="calculateChangeDue()" class="w-full pl-6 pr-2 py-2 rounded-lg border border-stone-200 font-mono font-bold text-sm bg-white">
+                </div>
+              </div>
+              <div>
+                <label class="text-[11px] font-bold text-stone-500">Cash Received</label>
+                <div class="relative mt-1">
+                  <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-stone-400 font-bold">₹</span>
+                  <input type="number" id="staff-tendered-amount" value="500" oninput="calculateChangeDue()" class="w-full pl-6 pr-2 py-2 rounded-lg border border-stone-200 font-mono font-bold text-sm bg-white">
+                </div>
+              </div>
+              <div class="text-right">
+                <label class="text-[11px] font-bold text-stone-500">Change Due</label>
+                <div id="staff-change-due" class="font-mono text-xl font-black text-emerald-600 mt-1.5">₹0</div>
+              </div>
+            </div>
+
+            <!-- Authorize Cash Submit -->
+            <button type="button" id="staff-submit-btn" onclick="initiateStaffCashPayment()" class="w-full py-4 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <i data-lucide="check-circle" class="w-5 h-5"></i>
+              <span>Accept Cash & Credit Fest Coins</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: LIVE RECHARGES LEDGER (Col 5) -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="glass-card p-6 rounded-3xl border border-stone-200 space-y-4 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-serif font-bold text-lg text-fest-dark">Recent Top-ups</h3>
+                <p class="text-xs text-stone-500">Real-time ledger of Indian Rupee conversions</p>
+              </div>
+              <button type="button" onclick="fetchRecharges()" class="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors" title="Refresh transactions">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Activity List Container -->
+            <div id="recharge-feed-list" class="space-y-2.5 max-h-[560px] overflow-y-auto no-scrollbar pr-1">
+              <div class="text-center py-10 text-stone-400 text-xs">Loading ledger activity...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ================= PAYMENT GATEWAY SIMULATION MODAL ================= -->
+  <div id="payment-gateway-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
+    <div class="glass-card w-full max-w-md p-6 rounded-3xl border border-stone-200 relative shadow-2xl bg-white space-y-5">
+      
+      <!-- Processing View -->
+      <div id="gateway-processing-view" class="py-8 text-center space-y-4">
+        <div class="w-16 h-16 rounded-full bg-amber-100 text-amber-600 mx-auto flex items-center justify-center animate-spin">
+          <i data-lucide="loader" class="w-8 h-8"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-fest-dark">Connecting to Bank Gateway...</h3>
+          <p id="gateway-subtext" class="text-xs text-stone-500 mt-1">Simulating encrypted UPI authorization with NPCI...</p>
+        </div>
+      </div>
+
+      <!-- UPI Dynamic QR View (Simulated) -->
+      <div id="gateway-upi-view" class="hidden space-y-4">
+        <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">UPI</span>
+            <div>
+              <h4 class="font-bold text-sm text-fest-dark">BHIM UPI Dynamic QR</h4>
+              <p class="text-[10px] text-stone-500">Scan with GPay, PhonePe, Paytm, or CRED</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeGatewayModal()" class="text-stone-400 hover:text-stone-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col items-center">
+          <div id="upi-qr-code-box" class="p-2 bg-white rounded-xl border border-stone-200 shadow-sm min-w-[150px] min-h-[150px] flex items-center justify-center"></div>
+          <div class="text-center mt-3">
+            <div id="upi-modal-amount" class="font-mono text-xl font-black text-amber-600">₹500 INR</div>
+            <p class="text-[11px] text-stone-500 mt-0.5">VPA: cultura.festival@hdfcbank</p>
+          </div>
+        </div>
+
+        <button type="button" onclick="confirmGatewayPaymentSuccess()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4"></i> Simulate Instant UPI Approval
+        </button>
+      </div>
+
+      <!-- Success Receipt View -->
+      <div id="gateway-success-view" class="hidden space-y-4 text-center">
+        <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+          <i data-lucide="check" class="w-8 h-8"></i>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-serif font-bold text-fest-dark">Payment Successful!</h3>
+          <p id="receipt-message" class="text-xs text-stone-500 mt-1">Fest Coins credited to guest wristband</p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-left space-y-2 text-xs">
+          <div class="flex justify-between">
+            <span class="text-stone-500">Attendee:</span>
+            <span id="receipt-att-name" class="font-bold text-fest-dark">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-stone-500">Amount Paid:</span>
+            <span id="receipt-amount" class="font-mono font-bold text-fest-dark">₹0 INR</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-stone-500">Coins Credited:</span>
+            <span id="receipt-coins" class="font-mono font-bold text-emerald-600">+0 🪙</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-stone-500">New Total Balance:</span>
+            <span id="receipt-balance" class="font-mono font-black text-amber-600">0 🪙</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-stone-500">Txn Reference:</span>
+            <span id="receipt-ref" class="font-mono text-stone-400 select-all">--</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="window.print()" class="flex-1 py-2.5 rounded-xl border border-stone-200 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print Receipt Slip
+          </button>
+          <button type="button" onclick="closeGatewayModal()" class="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all shadow-sm">
+            Done
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    let activeMode = 'self'; // 'self' or 'staff'
+    let selectedAttendee = null;
+    let selectedAmount = 500;
+    let selectedPaymentMethod = 'UPI';
+    let html5QrScannerInstance = null;
+    let allAttendeesCache = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      lucide.createIcons();
+      await fetchAllAttendees();
+      await fetchRecharges();
+
+      // Check URL parameters for pre-selected attendee
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlAttId = urlParams.get('attendee_id');
+      if (urlAttId) {
+        const matched = allAttendeesCache.find(a => a._id === urlAttId);
+        if (matched) {
+          selectAttendee(matched);
+        }
+      }
+    });
+
+    // Fetch attendees for search
+    async function fetchAllAttendees() {
+      try {
+        const res = await fetch('/api/attendees/search');
+        if (res.ok) {
+          const data = await res.json();
+          allAttendeesCache = data.attendees || [];
+          if (allAttendeesCache.length > 0 && !selectedAttendee) {
+            selectAttendee(allAttendeesCache[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching attendees for recharge:', err);
+      }
+    }
+
+    // Switch between Attendee Self-Service & Staff Desk
+    window.switchPortalMode = function(mode) {
+      activeMode = mode;
+      const selfCont = document.getElementById('self-service-container');
+      const staffCont = document.getElementById('staff-desk-container');
+      const tabSelf = document.getElementById('tab-btn-self');
+      const tabStaff = document.getElementById('tab-btn-staff');
+
+      if (mode === 'self') {
+        selfCont.classList.remove('hidden');
+        staffCont.classList.add('hidden');
+        tabSelf.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-fest-dark shadow-sm transition-all';
+        tabStaff.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-stone-600 hover:text-fest-dark transition-all';
+      } else {
+        selfCont.classList.add('hidden');
+        staffCont.classList.remove('hidden');
+        tabStaff.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-fest-dark shadow-sm transition-all';
+        tabSelf.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-stone-600 hover:text-fest-dark transition-all';
+        if (selectedAttendee) {
+          renderStaffSelectedAttendee(selectedAttendee);
+        }
+      }
+      lucide.createIcons();
+    };
+
+    // Attendee Search Typeahead
+    window.handleAttendeeSearch = function(query, isStaff = false) {
+      const dropdown = document.getElementById('attendee-search-dropdown');
+      const q = (query || '').toLowerCase().trim();
+
+      if (!q) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      const matches = allAttendeesCache.filter(a => 
+        (a.name && a.name.toLowerCase().includes(q)) ||
+        (a.ticket_type && a.ticket_type.toLowerCase().includes(q)) ||
+        (a.qr_code_hash && a.qr_code_hash.toLowerCase().includes(q))
+      ).slice(0, 8);
+
+      if (matches.length === 0) {
+        dropdown.innerHTML = '<div class="p-4 text-xs text-stone-400 text-center">No attendees matching this query</div>';
+        dropdown.classList.remove('hidden');
+        return;
+      }
+
+      dropdown.innerHTML = matches.map(a => `
+        <div onclick="selectAttendeeById('${a._id}')" class="p-3 hover:bg-amber-50/50 cursor-pointer flex items-center justify-between text-xs transition-colors">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-stone-100 font-bold flex items-center justify-center text-[10px] text-stone-600">${(a.name||'').substring(0,2).toUpperCase()}</div>
+            <div>
+              <p class="font-bold text-fest-dark">${a.name}</p>
+              <p class="text-[10px] text-stone-400">${a.role} · ${a.ticket_type || 'Standard'}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="font-mono font-bold text-amber-600">🪙 ${(a.fest_coins ?? 0).toLocaleString()}</span>
+            ${a.status === 'terminated' ? '<div class="text-[9px] text-rose-600 font-bold">REVOKED</div>' : ''}
+          </div>
+        </div>
+      `).join('');
+
+      dropdown.classList.remove('hidden');
+    };
+
+    window.selectAttendeeById = function(id) {
+      const a = allAttendeesCache.find(x => x._id === id);
+      if (a) selectAttendee(a);
+      document.getElementById('attendee-search-dropdown').classList.add('hidden');
+    };
+
+    function selectAttendee(attendee) {
+      selectedAttendee = attendee;
+
+      // Update Self Service Card
+      const card = document.getElementById('selected-attendee-card');
+      card.classList.remove('hidden');
+      document.getElementById('selected-att-avatar').textContent = (attendee.name || '').substring(0, 2).toUpperCase();
+      document.getElementById('selected-att-name').textContent = attendee.name;
+      document.getElementById('selected-att-role').textContent = attendee.role;
+      document.getElementById('selected-att-ticket').textContent = attendee.ticket_type || 'Standard';
+      document.getElementById('selected-att-balance').textContent = `🪙 ${(attendee.fest_coins ?? 0).toLocaleString()}`;
+      
+      const statusEl = document.getElementById('selected-att-status');
+      if (attendee.status === 'terminated') {
+        statusEl.className = 'font-bold text-rose-700 flex items-center gap-1';
+        statusEl.innerHTML = `<i data-lucide="shield-alert" class="w-3 h-3 text-rose-600"></i> PASS REVOKED (${attendee.termination_reason || 'Administrative hold'})`;
+      } else {
+        statusEl.className = 'font-bold text-emerald-700 flex items-center gap-1';
+        statusEl.innerHTML = `<i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i> Valid Pass`;
+      }
+
+      renderStaffSelectedAttendee(attendee);
+      lucide.createIcons();
+    }
+
+    function renderStaffSelectedAttendee(attendee) {
+      document.getElementById('staff-att-avatar').textContent = (attendee.name || '').substring(0, 2).toUpperCase();
+      document.getElementById('staff-att-name').textContent = attendee.name;
+      document.getElementById('staff-att-meta').textContent = `${attendee.role} · ${attendee.ticket_type || 'Standard'} ${attendee.status === 'terminated' ? '(REVOKED)' : ''}`;
+      document.getElementById('staff-att-coins').textContent = `🪙 ${(attendee.fest_coins ?? 0).toLocaleString()}`;
+    }
+
+    // Quick Pack Selection
+    window.selectRechargePack = function(amt) {
+      selectedAmount = amt;
+      document.getElementById('custom-inr-input').value = amt;
+      handleCustomAmountInput(amt);
+    };
+
+    window.handleCustomAmountInput = function(val) {
+      const amt = parseInt(val, 10) || 0;
+      selectedAmount = amt;
+      document.getElementById('live-coins-preview').textContent = `🪙 ${amt.toLocaleString()} Coins`;
+      document.getElementById('pay-submit-label').textContent = `Pay ₹${amt.toLocaleString()} & Add ${amt.toLocaleString()} Fest Coins`;
+    };
+
+    // Payment method selector
+    window.selectPaymentMethod = function(method) {
+      selectedPaymentMethod = method;
+      document.querySelectorAll('.payment-method-card').forEach(card => {
+        const inp = card.querySelector('input');
+        if (inp.value === method) {
+          card.className = 'payment-method-card flex flex-col items-center p-3 rounded-2xl border-2 border-amber-500 bg-amber-50/50 cursor-pointer text-center transition-all';
+        } else {
+          card.className = 'payment-method-card flex flex-col items-center p-3 rounded-2xl border border-stone-200 bg-white hover:border-amber-300 cursor-pointer text-center transition-all';
+        }
+      });
+    };
+
+    // Camera QR Scanner integration
+    window.startCameraScanner = function() {
+      const wrapper = document.getElementById('camera-scanner-wrapper');
+      wrapper.classList.remove('hidden');
+
+      if (!html5QrScannerInstance) {
+        html5QrScannerInstance = new Html5Qrcode('recharge-qr-reader');
+      }
+
+      html5QrScannerInstance.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          stopCameraScanner();
+          // Find attendee by hash
+          const match = allAttendeesCache.find(a => a.qr_code_hash === decodedText);
+          if (match) {
+            selectAttendee(match);
+          } else {
+            alert(`Scanned code (${decodedText}) does not match any registered festival pass.`);
+          }
+        },
+        () => {}
+      ).catch(err => {
+        console.warn('Camera scan failed to start:', err);
+      });
+      lucide.createIcons();
+    };
+
+    window.stopCameraScanner = function() {
+      const wrapper = document.getElementById('camera-scanner-wrapper');
+      wrapper.classList.add('hidden');
+      if (html5QrScannerInstance) {
+        html5QrScannerInstance.stop().catch(() => {});
+      }
+    };
+
+    // Initiate Self-Service Payment
+    window.initiateSelfPayment = function() {
+      if (!selectedAttendee) {
+        alert('Please search or scan an attendee wristband first.');
+        return;
+      }
+      if (selectedAttendee.status === 'terminated') {
+        alert(`SECURITY ALERT: Cannot recharge pass! Attendee's pass is REVOKED (${selectedAttendee.termination_reason || 'Administrative Hold'}). Please reinstate in Guest Directory first.`);
+        return;
+      }
+      if (selectedAmount <= 0) {
+        alert('Please enter a recharge amount greater than 0.');
+        return;
+      }
+
+      openGatewayModal();
+    };
+
+    function openGatewayModal() {
+      const modal = document.getElementById('payment-gateway-modal');
+      const procView = document.getElementById('gateway-processing-view');
+      const upiView = document.getElementById('gateway-upi-view');
+      const succView = document.getElementById('gateway-success-view');
+
+      modal.classList.remove('hidden');
+      procView.classList.remove('hidden');
+      upiView.classList.add('hidden');
+      succView.classList.add('hidden');
+
+      if (selectedPaymentMethod === 'UPI') {
+        setTimeout(() => {
+          procView.classList.add('hidden');
+          upiView.classList.remove('hidden');
+
+          document.getElementById('upi-modal-amount').textContent = `₹${selectedAmount.toLocaleString()} INR`;
+          const qrBox = document.getElementById('upi-qr-code-box');
+          qrBox.innerHTML = '';
+          const upiString = `upi://pay?pa=cultura.fest@bank&pn=CulturaFestival&am=${selectedAmount}&cu=INR&tn=FestCoins_${selectedAttendee.name}`;
+          new QRCode(qrBox, {
+            text: upiString,
+            width: 150,
+            height: 150,
+            colorDark: '#1c1917',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        }, 900);
+      } else {
+        setTimeout(() => {
+          confirmGatewayPaymentSuccess();
+        }, 1500);
+      }
+      lucide.createIcons();
+    }
+
+    window.closeGatewayModal = function() {
+      document.getElementById('payment-gateway-modal').classList.add('hidden');
+    };
+
+    // Confirm Payment & Record in Backend
+    window.confirmGatewayPaymentSuccess = async function() {
+      const procView = document.getElementById('gateway-processing-view');
+      const upiView = document.getElementById('gateway-upi-view');
+      const succView = document.getElementById('gateway-success-view');
+
+      upiView.classList.add('hidden');
+      procView.classList.remove('hidden');
+      document.getElementById('gateway-subtext').textContent = 'Confirming transaction and minting Fest Coins...';
+
+      try {
+        const res = await fetch('/api/recharge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            attendee_id: selectedAttendee._id,
+            inr_amount: selectedAmount,
+            payment_method: selectedPaymentMethod,
+            operator_mode: 'self_service',
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          selectedAttendee.fest_coins = data.attendee.fest_coins;
+          selectAttendee(selectedAttendee);
+
+          procView.classList.add('hidden');
+          succView.classList.remove('hidden');
+
+          document.getElementById('receipt-att-name').textContent = data.attendee.name;
+          document.getElementById('receipt-amount').textContent = `₹${data.recharge.inr_amount.toLocaleString()} INR`;
+          document.getElementById('receipt-coins').textContent = `+${data.recharge.coins_added.toLocaleString()} 🪙`;
+          document.getElementById('receipt-balance').textContent = `🪙 ${data.attendee.fest_coins.toLocaleString()}`;
+          document.getElementById('receipt-ref').textContent = data.recharge.payment_ref;
+
+          await fetchRecharges();
+        } else {
+          alert(data.detail || 'Payment could not be completed.');
+          closeGatewayModal();
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error communicating with server.');
+        closeGatewayModal();
+      }
+      lucide.createIcons();
+    };
+
+    // Staff Desk Functions
+    window.setStaffCashAmount = function(amt) {
+      document.getElementById('staff-recharge-amount').value = amt;
+      document.getElementById('staff-tendered-amount').value = amt;
+      calculateChangeDue();
+    };
+
+    window.calculateChangeDue = function() {
+      const recharge = parseInt(document.getElementById('staff-recharge-amount').value, 10) || 0;
+      const tendered = parseInt(document.getElementById('staff-tendered-amount').value, 10) || 0;
+      const change = Math.max(0, tendered - recharge);
+      document.getElementById('staff-change-due').textContent = `₹${change.toLocaleString()}`;
+    };
+
+    window.initiateStaffCashPayment = async function() {
+      if (!selectedAttendee) {
+        alert('Please search or scan an attendee wristband for the cashier desk.');
+        return;
+      }
+      if (selectedAttendee.status === 'terminated') {
+        alert(`SECURITY ALERT: Cannot recharge pass! Attendee's pass is REVOKED (${selectedAttendee.termination_reason || 'Administrative hold'}). Reinstate pass first.`);
+        return;
+      }
+
+      const rechargeAmt = parseInt(document.getElementById('staff-recharge-amount').value, 10) || 0;
+      if (rechargeAmt <= 0) {
+        alert('Please enter a valid cash amount.');
+        return;
+      }
+
+      const btn = document.getElementById('staff-submit-btn');
+      const origHtml = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Processing Cash Top-up...`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/recharge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            attendee_id: selectedAttendee._id,
+            inr_amount: rechargeAmt,
+            payment_method: 'Cash Desk',
+            operator_mode: 'staff_desk',
+            operator_name: 'Counter 01 - Cash Desk',
+            notes: 'Counter Cash Tendered'
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          selectedAttendee.fest_coins = data.attendee.fest_coins;
+          selectAttendee(selectedAttendee);
+
+          btn.className = 'w-full py-4 rounded-2xl bg-emerald-600 text-white font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2';
+          btn.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5"></i> Cash Accepted & Coins Credited!`;
+          setTimeout(() => {
+            btn.className = 'w-full py-4 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer';
+            btn.innerHTML = origHtml;
+            btn.disabled = false;
+            lucide.createIcons();
+          }, 1800);
+
+          await fetchRecharges();
+        } else {
+          alert(data.detail || 'Counter top-up failed.');
+          btn.innerHTML = origHtml;
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error completing cashier transaction.');
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+      }
+      lucide.createIcons();
+    };
+
+    // Fetch and display live recharges ledger
+    async function fetchRecharges() {
+      const feed = document.getElementById('recharge-feed-list');
+      try {
+        const res = await fetch('/api/recharges');
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.recharges || [];
+          const summary = data.summary || {};
+
+          // Update header telemetry metrics
+          document.getElementById('metric-total-inr').textContent = `₹${(summary.total_inr_collected || 0).toLocaleString()}`;
+          document.getElementById('metric-total-coins').textContent = `🪙 ${(summary.total_coins_issued || 0).toLocaleString()}`;
+
+          if (list.length === 0) {
+            feed.innerHTML = '<div class="text-center py-10 text-stone-400 text-xs">No transactions recorded yet.</div>';
+            return;
+          }
+
+          feed.innerHTML = list.map(r => {
+            const isCash = r.payment_method === 'Cash Desk';
+            return `
+              <div class="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-sm flex items-center justify-between text-xs hover:border-amber-300 transition-colors">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl ${isCash ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'} flex items-center justify-center font-bold text-sm shrink-0">
+                    ${isCash ? '<i data-lucide="store" class="w-4 h-4"></i>' : '₹'}
+                  </div>
+                  <div>
+                    <div class="font-bold text-fest-dark flex items-center gap-1.5">
+                      <span>${r.attendee_name}</span>
+                      <span class="text-[10px] text-stone-400 font-normal">(${r.operator_mode === 'staff_desk' ? 'Desk POS' : 'Self-Service'})</span>
+                    </div>
+                    <div class="text-[10px] text-stone-400 mt-0.5 flex items-center gap-1.5">
+                      <span class="font-medium text-stone-600">${r.payment_method}</span>
+                      <span>·</span>
+                      <span>${new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>·</span>
+                      <span class="font-mono">${r.payment_ref ? r.payment_ref.substring(0, 14) : ''}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="font-mono font-bold text-fest-dark">₹${(r.inr_amount || 0).toLocaleString()}</div>
+                  <div class="font-mono font-black text-amber-600 text-[11px] mt-0.5">+${(r.coins_added || 0).toLocaleString()} 🪙</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+          lucide.createIcons();
+        }
+      } catch (err) {
+        console.error('Error fetching recharges:', err);
+      }
+    }
+  </script>
+  <script src="/nlp-assistant.js"></script>
+</body>
+</html>
