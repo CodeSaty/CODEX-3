@@ -508,19 +508,43 @@
   }
 
   // Social Sentiment action helpers
-  window.nlpTriggerSpike = async function(btn) {
-    if (typeof window.triggerSimulatedSpike === 'function') {
-      return window.triggerSimulatedSpike();
+  async function refreshSentimentResponse() {
+    try {
+      const res = await fetch('/api/admin/nlp_query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Key': getAdminKey(),
+        },
+        body: JSON.stringify({ query: 'sentiment' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        renderAssistantResponse(data);
+        updateOnPageNLP('sentiment', data.response || data.answer, false, data);
+      }
+    } catch (err) {
+      console.error('Error refreshing sentiment response in assistant:', err);
     }
+  }
+
+  window.nlpTriggerSpike = async function(btn) {
     const orig = btn ? btn.textContent : '';
     if (btn) { btn.textContent = 'Injecting...'; btn.disabled = true; }
     try {
+      if (typeof window.triggerSimulatedSpike === 'function') {
+        await window.triggerSimulatedSpike();
+        if (btn) btn.textContent = 'Spike Injected! 🚨';
+        await refreshSentimentResponse();
+        return;
+      }
       const res = await fetch('/api/social/simulate_spike', {
         method: 'POST',
         headers: { 'X-Admin-Key': getAdminKey() }
       });
       if (res.ok) {
         if (btn) btn.textContent = 'Spike Injected! 🚨';
+        await refreshSentimentResponse();
       }
     } catch (e) {
       console.error(e);
@@ -530,18 +554,22 @@
   };
 
   window.nlpClearAlert = async function(btn) {
-    if (typeof window.dismissFrictionAlert === 'function') {
-      return window.dismissFrictionAlert();
-    }
     const orig = btn ? btn.textContent : '';
     if (btn) { btn.textContent = 'Resolving...'; btn.disabled = true; }
     try {
+      if (typeof window.dismissFrictionAlert === 'function') {
+        await window.dismissFrictionAlert();
+        if (btn) btn.textContent = 'Alert Resolved! ✅';
+        await refreshSentimentResponse();
+        return;
+      }
       const res = await fetch('/api/social/clear_alert', {
         method: 'POST',
         headers: { 'X-Admin-Key': getAdminKey() }
       });
       if (res.ok) {
         if (btn) btn.textContent = 'Alert Resolved! ✅';
+        await refreshSentimentResponse();
       }
     } catch (e) {
       console.error(e);
