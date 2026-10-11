@@ -1225,7 +1225,7 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
         elif active_incidents:
             answer = f"Active Security Alerts: {len(active_incidents)} pending incident(s) require dispatcher triage. Latest incident in {active_incidents[0].get('zone_name', 'Festival Grounds')}."
         else:
-            answer = f"All clear. Zero unresolved SOS incidents. Social sentiment is nominal across all 5 zones ({pos_pct}% positive)."
+            answer = f"All clear. Zero unresolved SOS incidents. Audience mood is {mood_rating.lower()} ({pos_pct}% positive)."
         metrics = [
             {"label": "Active Incidents", "value": str(len(active_incidents)), "alert": len(active_incidents) > 0},
             {"label": "Friction Alert", "value": "ACTIVE" if f_alert.get("active") else "NOMINAL", "alert": f_alert.get("active")},
