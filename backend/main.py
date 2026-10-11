@@ -1134,11 +1134,11 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
     else:
         mood_rating = "BALANCED"
 
-    is_sentiment = bool(re.search(r"sentiment|social|listening|mood|vibe|feedback|review|tweet|reaction|feeling|opinion|complaint|friction|triage|\bposts?\b", query))
+    is_sentiment = bool(re.search(r"sentiment|social|listening|mood|vibe|feedback|review|tweet|reaction|feeling|opinion|complaint|friction|\bposts?\b|(?:friction|sentiment|social|feedback)\s+triage", query)) and not bool(re.search(r"\bsos\b|emergency|medical|hazard", query))
     is_crowd = bool(re.search(r"crowd|bottleneck|congest|traffic|capacity|dens|packed|fullest|busy|divert", query))
     is_coin = bool(re.search(r"coin|recharge|inr|rupee|wallet|cash|money|top-up|balance|revenue|minted|fest coin", query))
     is_pass = bool(re.search(r"pass|attendee|guest|ticket|revok|terminat|status|register|vip", query)) and not is_crowd
-    is_incident = bool(re.search(r"incident|sos|alert|emergency|medical|security|logistics|hazard", query))
+    is_incident = bool(re.search(r"incident|\bsos\b|emergency|medical|security|logistics|hazard|\btriage\b", query))
 
     category = "general"
     answer = ""
