@@ -683,12 +683,12 @@ class DatabaseManager:
                 'active_diversion': active_div_map.get(z),
             })
 
-        # Recent 20 logs with attendee lookup
+        # Recent 10 logs with attendee lookup (reduced by 10 names for compact live guest feed)
         att_map = {a['_id']: a.get('name', 'Unknown') for a in all_attendees}
         sorted_logs = sorted(all_logs, key=lambda x: x.get('timestamp', ''), reverse=True)
-        recent_20 = []
-        for l in sorted_logs[:20]:
-            recent_20.append({
+        recent_10 = []
+        for l in sorted_logs[:10]:
+            recent_10.append({
                 'id': l.get('_id'),
                 'zone_name': l.get('zone_name'),
                 'timestamp': l.get('timestamp'),
@@ -750,12 +750,13 @@ class DatabaseManager:
 
         return {
             'zones': zones_stats,
-            'recent_logs': recent_20,
+            'recent_logs': recent_10,
             'total_attendees': total_attendees,
             'total_engagement': total_engagement,
             'financials': {
                 'total_revenue': total_revenue,
                 'transaction_volume': len(all_txs),
+                'live_transactions': len(all_txs),
                 'total_inr_recharged': total_inr_recharged,
                 'recharge_volume': len(all_recharges),
                 'conversion_ratio': '1 INR = 1 Coin',

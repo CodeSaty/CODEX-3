@@ -7,14 +7,15 @@ class AttendeeBase(BaseModel):
     name: str = Field(..., description="Full name of attendee", example="Aarav Sharma")
     role: str = Field(..., description="Ticket tier role (General, Early Bird, VIP, Organizer, Sponsor)", example="VIP")
     ticket_type: str = Field(..., description="Specific pass type", example="Platinum")
+    fest_coins: int = Field(1000, description="Current Fest Coin cashless balance", example=1000)
 
 class AttendeeCreate(AttendeeBase):
-    initial_coins: Optional[int] = Field(0, description="Initial Fest Coins balance", example=500)
+    initial_coins: Optional[int] = Field(None, description="Optional initial Fest Coins override", example=500)
 
 class AttendeeResponse(AttendeeBase):
     id: str = Field(..., alias="_id", description="Unique attendee ID")
     engagement_score: int = Field(0, description="Cumulative engagement points")
-    fest_coins: int = Field(0, description="Current Fest Coin balance")
+    fest_coins: int = Field(1000, description="Current Fest Coin balance")
     qr_code_hash: str = Field(..., description="Unique hexadecimal QR pass identifier")
     status: str = Field("active", description="Status: 'active' or 'terminated'")
     terminated_at: Optional[str] = Field(None, description="ISO timestamp if terminated")
@@ -60,15 +61,36 @@ class ScanResponse(BaseModel):
 
 # ─────────────────────── Fest Coin Cashless Transactions ───────────────────────
 class TransactionRequest(BaseModel):
-    qr_code_hash: str = Field(..., description="Attendee QR hash")
+    qr_code_hash: Optional[str] = Field(None, description="Attendee QR hash")
+    customer_id: Optional[str] = Field(None, description="Customer or Visitor ID from retail dataset")
+    attendee_id: Optional[str] = Field(None, description="Internal Attendee ID")
     amount: int = Field(..., gt=0, description="Amount of Fest Coins to deduct")
     stall_name: Optional[str] = Field("Vendor Stall", description="Name of vendor stall")
     zone_name: Optional[str] = Field("Food Court", description="Festival zone where transaction occurred")
+    category: Optional[str] = Field(None, description="Transaction retail category")
 
 class TransactionResponse(BaseModel):
     message: str
     transaction: Dict[str, Any]
     attendee: Dict[str, Any]
+
+# ─────────────────────── Live Social Sentiment & Triage ───────────────────────
+class SocialPost(BaseModel):
+    id: str
+    text: str
+    sentiment: str = Field("neutral", description="positive, neutral, or negative")
+    author: Optional[str] = "Festival Guest"
+    timestamp: str
+
+class FrictionAlert(BaseModel):
+    active: bool = False
+    negative_count_60s: int = 0
+    threshold: int = 8
+    window_seconds: int = 60
+    severity: str = "NORMAL"
+    message: str = "Sentiment is nominal across festival grounds."
+    triggered_at: Optional[str] = None
+    cooldown_until: Optional[str] = None
 
 # ─────────────────────── Rupee-to-Coin Cashless Top-up ───────────────────────
 class RechargeRequest(BaseModel):

@@ -802,9 +802,9 @@ app.get('/api/admin/stats', verifyAdmin, (req, res) => {
     };
   });
 
-  // Latest 20 logs
+  // Latest 10 logs (shortened by 10 names)
   const sortedLogs = [...zoneLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  const recent20 = sortedLogs.slice(0, 20).map((log) => {
+  const recent10 = sortedLogs.slice(0, 10).map((log) => {
     const att = attendees.get(log.attendee_id);
     return {
       id: log._id,
@@ -846,7 +846,7 @@ app.get('/api/admin/stats', verifyAdmin, (req, res) => {
 
   res.json({
     zones: zonesStats,
-    recent_logs: recent20,
+    recent_logs: recent10,
     total_attendees: totalAttendees,
     total_engagement: totalEngagement,
     financials: {

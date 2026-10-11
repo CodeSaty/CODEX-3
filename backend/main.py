@@ -4,16 +4,19 @@ import re
 import json
 import random
 import asyncio
+import hashlib
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 
 # Load .env from project root or backend folder
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 load_dotenv()
 
+import pandas as pd
 from fastapi import FastAPI, Request, Response, HTTPException, Header, Depends, Query, Path, status
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +28,7 @@ from models import (
     TerminateQrRequest, ReinstateQrRequest,
     ScanRequest, ScanResponse,
     TransactionRequest, TransactionResponse,
+    SocialPost, FrictionAlert,
     RechargeRequest, RechargeResponse, RechargesListResponse,
     IncidentCreate, IncidentResponse,
     DiversionCreate, DiversionResponse, ThrottleRequest,
@@ -44,56 +48,574 @@ def verify_admin(x_admin_key: Optional[str] = Header(None, alias="x-admin-key"))
         raise HTTPException(status_code=401, detail="Unauthorized Access")
     return True
 
-# Background crowd simulation task
-async def crowd_simulation_loop():
-    logger.info("Starting background festival crowd movement simulation loop (4s interval)...")
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. AUTHENTIC CROWD MOVEMENT (DinoFun World VAST Challenge Dataset Integration)
+# ─────────────────────────────────────────────────────────────────────────────
+# Attraction to festival zone mapping taxonomy
+ATTRACTION_ZONE_MAP: Dict[str, str] = {
+    # Thrill Rides & Stages -> Main Stage
+    "Flight of the Falcon": "Main Stage",
+    "Galactic Coaster": "Main Stage",
+    "Terror Trove": "Main Stage",
+    "Thunder Mountain": "Main Stage",
+    "Acrobat Amphitheater": "Main Stage",
+    "Main Stage": "Main Stage",
+    "Rock Amphitheater": "Main Stage",
+    "Sky Coaster": "Main Stage",
+    "Drop Tower": "Main Stage",
+    "Stunt Show": "Main Stage",
+    "Firework Plaza": "Main Stage",
+    "Atmosfear": "Main Stage",
+    "Wipeout": "Main Stage",
+    "Kite Flyer": "Main Stage",
+    "Thrill Rides": "Main Stage",
+
+    # Food Village & Stalls -> Food Court
+    "Food Village": "Food Court",
+    "Dino Diner": "Food Court",
+    "Paleo Pizza": "Food Court",
+    "Bronto Burger": "Food Court",
+    "Carnivore Grill": "Food Court",
+    "Pterodactyl Tacos": "Food Court",
+    "Ice Cream Oasis": "Food Court",
+    "Beer Garden": "Food Court",
+    "Sweet Treats": "Food Court",
+    "Coffee Kiosk": "Food Court",
+    "Tavern": "Food Court",
+    "Cretaceous Cafe": "Food Court",
+    "Snack Shack": "Food Court",
+
+    # Souvenirs & Crafts -> Artisan Market
+    "Dino Souvenirs": "Artisan Market",
+    "Jurassic Crafts": "Artisan Market",
+    "Artisan Bazaar": "Artisan Market",
+    "Amber Emporium": "Artisan Market",
+    "Gift Shop": "Artisan Market",
+    "Traders Post": "Artisan Market",
+    "Silk & Spice": "Artisan Market",
+    "Fossil Finds": "Artisan Market",
+    "Apparel Mart": "Artisan Market",
+
+    # Discovery & Exhibitions -> Cultural Pavilion
+    "Cultural Pavilion": "Cultural Pavilion",
+    "Prehistoric Museum": "Cultural Pavilion",
+    "Discovery Center": "Cultural Pavilion",
+    "Dino Safari": "Cultural Pavilion",
+    "Kiddie Carousel": "Cultural Pavilion",
+    "Fossil Dig Experience": "Cultural Pavilion",
+    "Herbivore Walkway": "Cultural Pavilion",
+    "Science Dome": "Cultural Pavilion",
+    "Heritage Hall": "Cultural Pavilion",
+
+    # VIP Lounges -> VIP Lounge
+    "VIP Lounge": "VIP Lounge",
+    "Rex Club VIP": "VIP Lounge",
+    "Fast Pass Lounge": "VIP Lounge",
+    "Executive Terrace": "VIP Lounge",
+    "Sky Deck Lounge": "VIP Lounge",
+    "Sponsor Oasis": "VIP Lounge",
+    "Platinum Veranda": "VIP Lounge",
+    "Clubhouse": "VIP Lounge",
+}
+
+def map_attraction_to_zone(attraction_name: str) -> str:
+    if not attraction_name or not isinstance(attraction_name, str):
+        return "Food Court"
+    name = attraction_name.strip()
+    if name in ATTRACTION_ZONE_MAP:
+        return ATTRACTION_ZONE_MAP[name]
+    low = name.lower()
+    if any(k in low for k in ["thrill", "coaster", "falcon", "terror", "stage", "theater", "music", "rock", "amphi", "tower", "drop", "stunt", "ride"]):
+        return "Main Stage"
+    if any(k in low for k in ["food", "diner", "pizza", "burger", "grill", "taco", "cream", "beer", "drink", "snack", "cafe", "eatery", "tavern"]):
+        return "Food Court"
+    if any(k in low for k in ["souvenir", "craft", "bazaar", "amber", "gift", "trader", "fossil", "market", "shop", "apparel", "merch"]):
+        return "Artisan Market"
+    if any(k in low for k in ["museum", "pavilion", "safari", "discovery", "carousel", "science", "dome", "gallery", "culture", "kiddie", "walk"]):
+        return "Cultural Pavilion"
+    if any(k in low for k in ["vip", "lounge", "club", "executive", "pass", "platinum", "oasis", "suite", "terrace", "deck"]):
+        return "VIP Lounge"
+    digest_val = int(hashlib.sha256(name.encode("utf-8")).hexdigest(), 16)
+    return ZONES[digest_val % len(ZONES)]
+
+class DinoFunMovementSimulator:
+    def __init__(self):
+        self.df: Optional[pd.DataFrame] = None
+        self.current_index = 0
+        self.dataset_loaded = False
+
+    def load_dataset(self):
+        paths_to_check = [
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "dinofun_checkins.csv"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "dinofun_checkins.csv"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "dinofun_checkins.csv"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dinofun_checkins.csv"),
+        ]
+        chosen_path = next((p for p in paths_to_check if os.path.exists(p)), None)
+        if not chosen_path:
+            # Self-generate sample DinoFun dataset so it functions out-of-the-box
+            target_path = paths_to_check[0]
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            from seed_real_traffic import generate_sample_dinofun_csv
+            chosen_path = generate_sample_dinofun_csv(target_path, num_records=3000)
+
+        try:
+            logger.info(f"Loading DinoFun World check-in dataset from: {chosen_path}")
+            df = pd.read_csv(chosen_path)
+            # Normalize column names
+            col_map = {}
+            for col in df.columns:
+                c_low = col.strip().lower()
+                if "time" in c_low: col_map[col] = "Timestamp"
+                elif "visitor" in c_low or "id" in c_low or "cust" in c_low: col_map[col] = "Visitor_ID"
+                elif "attract" in c_low or "loc" in c_low or "place" in c_low or "name" in c_low: col_map[col] = "Attraction_Name"
+            df = df.rename(columns=col_map)
+            self.df = df
+            self.dataset_loaded = True
+            logger.info(f"Successfully loaded {len(df)} DinoFun World check-in rows.")
+        except Exception as e:
+            logger.error(f"Error loading DinoFun dataset: {e}")
+            self.dataset_loaded = False
+
+    def get_next_movement(self) -> Optional[Dict[str, Any]]:
+        if not self.dataset_loaded or self.df is None or len(self.df) == 0:
+            return None
+        row = self.df.iloc[self.current_index % len(self.df)]
+        self.current_index += 1
+        attraction = str(row.get("Attraction_Name", "Main Stage"))
+        zone = map_attraction_to_zone(attraction)
+        return {
+            "visitor_id": str(row.get("Visitor_ID", f"VISITOR_{random.randint(1, 150)}")),
+            "attraction_name": attraction,
+            "zone_name": zone,
+            "timestamp": str(row.get("Timestamp", datetime.now(timezone.utc).isoformat()))
+        }
+
+dino_simulator = DinoFunMovementSimulator()
+
+async def crowd_movement_simulation_loop():
+    logger.info("Starting DinoFun World authentic crowd movement simulation loop (3.5s interval)...")
+    dino_simulator.load_dataset()
+
     while True:
         try:
-            await asyncio.sleep(4.0)
+            await asyncio.sleep(3.5)
+            movement = dino_simulator.get_next_movement()
             att_list = await db_manager.list_attendees(limit=250)
-            if att_list:
-                num_scans = random.randint(1, 2)
-                for _ in range(num_scans):
-                    att = random.choice(att_list)
-                    if att.get('status') == 'terminated':
-                        continue
-                    zone = random.choice(ZONES)
-                    
-                    # Check active diversions
-                    active_div = next(
-                        (d for d in db_manager.mem_diversions if d.get('active') and d.get('zone_name') == zone),
-                        None
-                    )
-                    if active_div and random.random() < 0.65:
-                        zone = active_div.get('target_zone', 'Food Court')
 
-                    await db_manager.log_zone_scan(att, zone)
+            if movement and att_list:
+                # Pick matching or random active attendee
+                att = random.choice(att_list)
+                if att.get('status') == 'terminated':
+                    continue
+
+                zone = movement["zone_name"]
+
+                # Check active diversions and re-route if diversion is active
+                active_div = next(
+                    (d for d in db_manager.mem_diversions if d.get('active') and d.get('zone_name') == zone),
+                    None
+                )
+                if active_div and random.random() < 0.65:
+                    zone = active_div.get('target_zone', 'Food Court')
+
+                await db_manager.log_zone_scan(att, zone)
         except asyncio.CancelledError:
-            logger.info("Crowd simulation background task cancelled.")
+            logger.info("Crowd movement simulation task cancelled.")
             break
         except Exception as e:
-            logger.warning(f"Error in simulation loop: {e}")
+            logger.warning(f"Error in crowd movement loop: {e}")
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. CASHLESS FEST COIN ECONOMY (Kaggle Retail Transactions Integration)
+# ─────────────────────────────────────────────────────────────────────────────
+class KaggleTransactionSimulator:
+    def __init__(self):
+        self.df: Optional[pd.DataFrame] = None
+        self.current_index = 0
+        self.dataset_loaded = False
+
+    def load_dataset(self):
+        paths_to_check = [
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "kaggle_retail_transactions.csv"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "kaggle_retail_transactions.csv"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "kaggle_retail_transactions.csv"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "kaggle_retail_transactions.csv"),
+        ]
+        chosen_path = next((p for p in paths_to_check if os.path.exists(p)), None)
+        if not chosen_path:
+            # Fallback auto-creation
+            target_path = paths_to_check[0]
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            categories = ['Food & Beverage', 'Fest Merchandise', 'Beverages & Cocktails', 'Artisan Crafts', 'Street Snacks', 'VIP Lounge Cocktails']
+            rows = []
+            for i in range(1, 1000):
+                rows.append({
+                    'Transaction_ID': f'TXN-{100000 + i}',
+                    'Customer_ID': f'CUST-{random.randint(1, 300):04d}',
+                    'Amount': random.randint(40, 250),
+                    'Category': random.choice(categories)
+                })
+            df_gen = pd.DataFrame(rows)
+            df_gen.to_csv(target_path, index=False)
+            chosen_path = target_path
+
+        try:
+            logger.info(f"Loading Kaggle Retail Transactions from: {chosen_path}")
+            df = pd.read_csv(chosen_path)
+            self.df = df
+            self.dataset_loaded = True
+            logger.info(f"Loaded {len(df)} Kaggle retail transactions.")
+        except Exception as e:
+            logger.error(f"Error loading Kaggle dataset: {e}")
+            self.dataset_loaded = False
+
+    def get_next_transaction(self) -> Optional[Dict[str, Any]]:
+        if not self.dataset_loaded or self.df is None or len(self.df) == 0:
+            return None
+        row = self.df.iloc[self.current_index % len(self.df)]
+        self.current_index += 1
+        cat = str(row.get("Category", "Food & Beverage"))
+        raw_amt = float(row.get("Amount", 50))
+        amt = max(10, min(int(raw_amt), 300))
+
+        # Map retail Category to Festival Stall & Zone
+        low = cat.lower()
+        if "vip" in low or "cocktail" in low:
+            stall = "VIP Lounge - Signature Cocktails"
+            zone = "VIP Lounge"
+        elif "merch" in low or "apparel" in low or "craft" in low:
+            stall = "Artisan Market - Silk & Spice Merch"
+            zone = "Artisan Market"
+        elif "beverage" in low or "drink" in low:
+            stall = "Main Stage - Beverage Bar"
+            zone = "Main Stage"
+        elif "culture" in low or "art" in low:
+            stall = "Cultural Pavilion - Craft Hub"
+            zone = "Cultural Pavilion"
+        else:
+            stall = "Food Court - Saffron Grill & Eatery"
+            zone = "Food Court"
+
+        return {
+            "transaction_id": str(row.get("Transaction_ID", f"TXN-{random.randint(10000, 99999)}")),
+            "customer_id": str(row.get("Customer_ID", f"CUST-{random.randint(1, 250)}")),
+            "amount": amt,
+            "category": cat,
+            "stall_name": stall,
+            "zone_name": zone,
+        }
+
+kaggle_simulator = KaggleTransactionSimulator()
+
+async def kaggle_transaction_simulation_loop():
+    logger.info("Starting Kaggle retail transactions background simulation loop (3.0s interval)...")
+    kaggle_simulator.load_dataset()
+
+    while True:
+        try:
+            await asyncio.sleep(3.0)
+            tx_data = kaggle_simulator.get_next_transaction()
+            if not tx_data:
+                continue
+
+            att_list = await db_manager.list_attendees(limit=250)
+            if not att_list:
+                continue
+
+            att = random.choice(att_list)
+            if att.get('status') == 'terminated':
+                continue
+
+            # Ensure attendee has sufficient coins; if low, auto-recharge
+            current_balance = att.get('fest_coins', 0)
+            req_amount = tx_data["amount"]
+            if current_balance < req_amount:
+                # Auto-recharge via UPI
+                await db_manager.create_recharge(
+                    attendee=att,
+                    inr_amount=500,
+                    payment_method="UPI - Auto Reload",
+                    operator_mode="self_service",
+                    notes="Autonomous cashless liquidity reload"
+                )
+                att = await db_manager.get_attendee_by_id(att['_id']) or att
+
+            # Execute coin deduction
+            await db_manager.create_transaction(
+                attendee=att,
+                amount=req_amount,
+                stall_name=tx_data["stall_name"],
+                zone_name=tx_data["zone_name"]
+            )
+        except asyncio.CancelledError:
+            logger.info("Kaggle transaction simulator task cancelled.")
+            break
+        except Exception as e:
+            logger.warning(f"Error in Kaggle transaction simulator: {e}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. LIVE SENTIMENT TRIAGE & FRICTION ALERT (Hugging Face validation.json)
+# ─────────────────────────────────────────────────────────────────────────────
+class SocialSentimentManager:
+    def __init__(self):
+        self.raw_posts: List[Dict[str, Any]] = []
+        self.positive_pool: List[Dict[str, Any]] = []
+        self.neutral_pool: List[Dict[str, Any]] = []
+        self.negative_pool: List[Dict[str, Any]] = []
+        self.recent_stream: List[Dict[str, Any]] = []
+        self.threshold: int = 8  # Elevated resistance threshold (requires >=8 complaints in 60s)
+        self.cooldown_until: Optional[datetime] = None  # Prevents alert flapping & false alarms
+        self.friction_alert: Dict[str, Any] = {
+            "active": False,
+            "negative_count_60s": 0,
+            "threshold": 8,
+            "window_seconds": 60,
+            "severity": "NORMAL",
+            "message": "Audience sentiment is nominal and positive across all festival sectors.",
+            "triggered_at": None,
+            "cooldown_until": None
+        }
+        self.dataset_loaded = False
+
+    def load_dataset(self):
+        paths_to_check = [
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "huggingface_sentiment.json"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "huggingface_sentiment.json"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "validation.json"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "validation.json"),
+        ]
+        chosen_path = next((p for p in paths_to_check if os.path.exists(p)), None)
+        if chosen_path:
+            try:
+                with open(chosen_path, "r", encoding="utf-8") as f:
+                    self.raw_posts = json.load(f)
+                self.dataset_loaded = True
+                self._partition_pools()
+                logger.info(f"Loaded {len(self.raw_posts)} Hugging Face social sentiment posts from {chosen_path}.")
+                return
+            except Exception as e:
+                logger.warning(f"Failed to read sentiment JSON ({e}). Falling back to internal generator.")
+
+        templates = [
+            ("Main stage visual lasers and sound acoustics are mind-blowing tonight! Pure magic! ✨", "positive"),
+            ("Fastest festival entry ever! Scanned my digital QR pass and got in within 3 seconds.", "positive"),
+            ("Fest Coins contactless payment is crazy fast at the food stalls. Zero lines! 🪙", "positive"),
+            ("The artisan pottery and silk clothing at the market are incredible. Picked up a souvenir!", "positive"),
+            ("VIP Lounge drinks are top-tier. Clean couches, chill ambient lighting, great respite.", "positive"),
+            ("Delicious saffron barbecue at Food Court! Staff was super polite and attentive.", "positive"),
+            ("Unannounced acoustic set just kicked off at Cultural Pavilion! Truly enchanting.", "positive"),
+            ("Water refill station near gate 2 is clean, cold, and free. Excellent organizer planning!", "positive"),
+            ("Heading over to Artisan Market to browse festival merchandise.", "neutral"),
+            ("Line at water station 1 is moving at an average pace.", "neutral"),
+            ("Notice: Northern parking express shuttles depart every 10 minutes.", "neutral"),
+            ("Currently in Food Court dining with friends before the midnight headliner.", "neutral"),
+            ("Just topped up 1,000 Fest Coins via UPI in the app without issues.", "neutral"),
+            ("Water refill queue at station 3 is completely blocked, valve is leaking everywhere! Fix this!", "negative"),
+            ("Massive bottleneck forming at Cultural Pavilion north entrance, people are pushing hard!", "negative"),
+            ("Long wait times at Food Court grill counter, waited 35 minutes for a single taco order.", "negative"),
+            ("Security bottleneck at Gate 2 perimeter! Only one scanner is operational, crowd getting restless.", "negative"),
+            ("Audio glitch and microphone feedback screeching during the headline set near stage left.", "negative"),
+            ("Overcrowding near the main pathway between Artisan Market and Main Stage, need diversion staff ASAP.", "negative"),
+            ("Restroom queue near sector B is backed up by 50 meters, sanitation staff needed immediately.", "negative"),
+        ]
+        authors = ['aarav_fest', 'priya_sound', 'rohan_travels', 'neha_beats', 'aditya_rave', 'ananya_live', 'vikram_t', 'tanvi_vibes']
+        self.raw_posts = []
+        for i in range(1000):
+            txt, lbl = random.choice(templates)
+            self.raw_posts.append({
+                "id": f"tweet_{10000 + i}",
+                "text": txt,
+                "label": lbl,
+                "author": f"@{random.choice(authors)}{random.randint(10, 99)}"
+            })
+        self.dataset_loaded = True
+        self._partition_pools()
+        logger.info(f"Initialized {len(self.raw_posts)} sentiment posts.")
+
+    def _partition_pools(self):
+        self.positive_pool = [p for p in self.raw_posts if str(p.get("label", "")).lower() == "positive"]
+        self.neutral_pool = [p for p in self.raw_posts if str(p.get("label", "")).lower() == "neutral"]
+        self.negative_pool = [p for p in self.raw_posts if str(p.get("label", "")).lower() == "negative"]
+
+    def sample_post(self) -> Dict[str, Any]:
+        if not self.raw_posts:
+            self.load_dataset()
+
+        # High resistance baseline: 90% positive, 8% neutral, 2% negative ambient drift
+        r = random.random()
+        if r < 0.90 and self.positive_pool:
+            item = random.choice(self.positive_pool)
+        elif r < 0.98 and self.neutral_pool:
+            item = random.choice(self.neutral_pool)
+        elif self.negative_pool:
+            item = random.choice(self.negative_pool)
+        else:
+            item = random.choice(self.raw_posts)
+
+        now_dt = datetime.now(timezone.utc)
+        post = {
+            "id": item.get("id", f"tweet_{random.randint(1000, 9999)}"),
+            "text": item.get("text", "Festival atmosphere is electrifying!"),
+            "sentiment": str(item.get("label", "neutral")).lower(),
+            "author": item.get("author", "@festival_guest"),
+            "timestamp": now_dt.isoformat(),
+            "_dt": now_dt,
+            "resolved": False
+        }
+        self.recent_stream.insert(0, post)
+        if len(self.recent_stream) > 100:
+            self.recent_stream = self.recent_stream[:100]
+
+        self._evaluate_friction_alert(now_dt)
+        return post
+
+    def inject_negative_spike(self, count: int = 8):
+        """Bypasses cooldown and immediately injects a burst of negative attendee feedback to test friction triage."""
+        self.cooldown_until = None
+        neg_posts = self.negative_pool or [p for p in self.raw_posts if str(p.get("label", "")).lower() == "negative"]
+        if not neg_posts:
+            neg_posts = [{"text": "Major bottleneck at Cultural Pavilion entrance! High friction!", "label": "negative", "author": "@alert_user"}]
+        now_dt = datetime.now(timezone.utc)
+        for i in range(count):
+            item = random.choice(neg_posts)
+            post = {
+                "id": f"spike_{random.randint(1000, 9999)}",
+                "text": item.get("text", "Overcrowding detected at festival bottleneck!"),
+                "sentiment": "negative",
+                "author": item.get("author", f"@guest_sos_{i}"),
+                "timestamp": now_dt.isoformat(),
+                "_dt": now_dt,
+                "resolved": False
+            }
+            self.recent_stream.insert(0, post)
+        if len(self.recent_stream) > 100:
+            self.recent_stream = self.recent_stream[:100]
+        self._evaluate_friction_alert(now_dt)
+
+    def resolve_alert(self, cooldown_seconds: int = 120) -> Dict[str, Any]:
+        """Operator resolution: Marks all recent complaints as resolved and activates resistance cooldown."""
+        now_dt = datetime.now(timezone.utc)
+        self.cooldown_until = now_dt + timedelta(seconds=cooldown_seconds)
+        for p in self.recent_stream:
+            p["resolved"] = True
+        self.friction_alert = {
+            "active": False,
+            "negative_count_60s": 0,
+            "threshold": self.threshold,
+            "window_seconds": 60,
+            "severity": "NORMAL",
+            "message": f"Triage acknowledged: System in {cooldown_seconds}s cooldown. Crowd operations stabilizing.",
+            "triggered_at": None,
+            "cooldown_until": self.cooldown_until.isoformat()
+        }
+        return self.friction_alert
+
+    def _evaluate_friction_alert(self, current_dt: datetime):
+        # Resistance Hysteresis: Suppress baseline alarms during active cooldown window
+        if self.cooldown_until and current_dt < self.cooldown_until:
+            rem = max(0, int((self.cooldown_until - current_dt).total_seconds()))
+            self.friction_alert["active"] = False
+            self.friction_alert["severity"] = "NORMAL"
+            self.friction_alert["message"] = f"Resistance cooldown active ({rem}s remaining): crowd flow stabilizing."
+            self.friction_alert["cooldown_until"] = self.cooldown_until.isoformat()
+            return
+        elif self.cooldown_until and current_dt >= self.cooldown_until:
+            self.cooldown_until = None
+
+        window_cutoff = current_dt - timedelta(seconds=60)
+        recent_60s = [p for p in self.recent_stream if p.get("_dt", current_dt) >= window_cutoff and not p.get("resolved", False)]
+        negative_count = sum(1 for p in recent_60s if p.get("sentiment") == "negative")
+
+        # Temporal Density Resistance Check:
+        # Require >= self.threshold (8 complaints) total in 60s
+        # AND at least 2 negative complaints in the last 20 seconds (ensures an active ongoing surge, not decaying residue)
+        burst_20s_cutoff = current_dt - timedelta(seconds=20)
+        recent_20s_neg = sum(1 for p in recent_60s if p.get("_dt", current_dt) >= burst_20s_cutoff and p.get("sentiment") == "negative")
+
+        is_cluster_active = (negative_count >= self.threshold) and (recent_20s_neg >= 2)
+
+        if is_cluster_active:
+            severity = "CRITICAL" if negative_count >= 10 else "WARNING"
+            self.friction_alert = {
+                "active": True,
+                "negative_count_60s": negative_count,
+                "threshold": self.threshold,
+                "window_seconds": 60,
+                "severity": severity,
+                "message": f"🚨 FRICTION ALERT ACTIVE: High negative sentiment cluster detected ({negative_count} complaints in last 60s)! Immediate crowd experience triage required.",
+                "triggered_at": current_dt.isoformat(),
+                "cooldown_until": None
+            }
+        else:
+            # Flap prevention: if transitioning from active -> inactive, establish automatic 60s cooldown
+            was_active = self.friction_alert.get("active", False)
+            if was_active:
+                self.cooldown_until = current_dt + timedelta(seconds=60)
+            self.friction_alert = {
+                "active": False,
+                "negative_count_60s": negative_count,
+                "threshold": self.threshold,
+                "window_seconds": 60,
+                "severity": "NORMAL",
+                "message": "Audience sentiment is nominal and positive across all festival sectors.",
+                "triggered_at": None,
+                "cooldown_until": self.cooldown_until.isoformat() if self.cooldown_until else None
+            }
+
+social_manager = SocialSentimentManager()
+
+async def social_sentiment_streaming_loop():
+    logger.info("Starting Social Listening live sentiment triage stream (4.5s interval)...")
+    social_manager.load_dataset()
+    while True:
+        try:
+            await asyncio.sleep(4.5)
+            social_manager.sample_post()
+        except asyncio.CancelledError:
+            logger.info("Social sentiment streaming task cancelled.")
+            break
+        except Exception as e:
+            logger.warning(f"Error in social sentiment streaming loop: {e}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# APPLICATION LIFESPAN & INITIALIZATION
+# ─────────────────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Connect to MongoDB Atlas (or in-memory fallback) and seed
+    # Connect database
     await db_manager.connect()
-    sim_task = asyncio.create_task(crowd_simulation_loop())
+
+    # Pre-seed DinoFun dataset if database is fresh
+    dino_simulator.load_dataset()
+    kaggle_simulator.load_dataset()
+    social_manager.load_dataset()
+
+    # Start all 3 background task loops
+    sim_crowd_task = asyncio.create_task(crowd_movement_simulation_loop())
+    sim_tx_task = asyncio.create_task(kaggle_transaction_simulation_loop())
+    sim_social_task = asyncio.create_task(social_sentiment_streaming_loop())
+
+    logger.info("All 3 Real-World Dataset Simulator Tasks Active (Crowd Movement, Fest Coins, Social Triage)!")
     yield
+
     # Shutdown
-    sim_task.cancel()
-    try:
-        await sim_task
-    except asyncio.CancelledError:
-        pass
+    sim_crowd_task.cancel()
+    sim_tx_task.cancel()
+    sim_social_task.cancel()
+    await asyncio.gather(sim_crowd_task, sim_tx_task, sim_social_task, return_exceptions=True)
+
     if db_manager.client:
         db_manager.client.close()
 
 # Initialize FastAPI app
 app = FastAPI(
     title="Cultura Festival Hub API",
-    description="Live festival crowd-management telemetry, pass checkpoint verification, and cashless Fest Coin economy powered by Python, FastAPI, Pydantic, and MongoDB Atlas (Motor).",
-    version="2.0.0",
+    description="Live festival crowd-management telemetry, pass checkpoint verification, cashless Fest Coin economy, and real-time social sentiment triage.",
+    version="2.5.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc"
@@ -108,7 +630,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# No-Cache Middleware for fresh development updates
+# No-Cache Middleware
 @app.middleware("http")
 async def add_no_cache_headers(request: Request, call_next):
     response = await call_next(request)
@@ -130,10 +652,9 @@ async def get_health():
         "database_status": status_info["connection_message"],
         "database_uri_configured": status_info["database_uri_configured"],
         "active_connections": 1,
-        "version": "2.0.0"
+        "version": "2.5.0"
     }
 
-# ─────────────────────── Canonical Zones ───────────────────────
 @app.get("/zones", tags=["Zones"])
 async def get_zones():
     return {"zones": ZONES}
@@ -141,11 +662,12 @@ async def get_zones():
 # ─────────────────────── Attendee Registration & Lookup ───────────────────────
 @app.post("/register_attendee", status_code=status.HTTP_201_CREATED, tags=["Attendees"])
 async def register_attendee(payload: AttendeeCreate):
+    initial_coins = payload.initial_coins if payload.initial_coins is not None else payload.fest_coins
     attendee = await db_manager.create_attendee(
         name=payload.name,
         role=payload.role,
         ticket_type=payload.ticket_type,
-        initial_coins=payload.initial_coins or 0
+        initial_coins=initial_coins
     )
     return {
         "message": "Attendee registered successfully",
@@ -182,22 +704,13 @@ async def scan_checkpoint(payload: ScanRequest):
     if not attendee:
         raise HTTPException(status_code=404, detail="Attendee not found")
 
-    # Security enforcement: Reject terminated passes
     if attendee.get("status") == "terminated":
         return JSONResponse(
             status_code=403,
             content={
-                "detail": f"SECURITY ALERT: QR Pass is REVOKED/TERMINATED ({attendee.get('termination_reason') or 'Access Revoked by Administration'})",
+                "detail": f"SECURITY ALERT: QR Pass is REVOKED/TERMINATED ({attendee.get('termination_reason') or 'Access Revoked'})",
                 "terminated": True,
-                "attendee": {
-                    "id": attendee["_id"],
-                    "name": attendee["name"],
-                    "role": attendee["role"],
-                    "ticket_type": attendee["ticket_type"],
-                    "status": attendee["status"],
-                    "terminated_at": attendee.get("terminated_at"),
-                    "termination_reason": attendee.get("termination_reason"),
-                }
+                "attendee": attendee
             }
         )
 
@@ -210,56 +723,104 @@ async def scan_checkpoint(payload: ScanRequest):
         "zone_log": log_entry
     }
 
-# ─────────────────────── Fest Coin Cashless Transactions ───────────────────────
-@app.post("/transaction", status_code=status.HTTP_201_CREATED, tags=["Fest Coins"])
-async def process_transaction(payload: TransactionRequest):
-    attendee = await db_manager.get_attendee_by_qr(payload.qr_code_hash)
+# ─────────────────────── Cashless Fest Coin Transactions ───────────────────────
+async def _execute_transaction_deduction(payload: TransactionRequest, is_simulator: bool = False):
+    has_identifier = bool(payload.qr_code_hash or payload.attendee_id or payload.customer_id)
+    attendee = None
+    if payload.qr_code_hash:
+        attendee = await db_manager.get_attendee_by_qr(payload.qr_code_hash)
+    elif payload.attendee_id:
+        attendee = await db_manager.get_attendee_by_id(payload.attendee_id)
+    elif payload.customer_id:
+        attendee = await db_manager.get_attendee_by_id(payload.customer_id)
+
+    if has_identifier:
+        if not attendee:
+            raise HTTPException(
+                status_code=404,
+                detail="Attendee not found for supplied identifier."
+            )
+    elif is_simulator:
+        att_list = await db_manager.list_attendees(limit=50)
+        attendee = next((a for a in att_list if a.get("status") != "terminated"), None)
+        if not attendee:
+            # Create an attendee if store is fresh
+            attendee = await db_manager.create_attendee(
+                name="Attendee General",
+                role="General",
+                ticket_type="Standard Pass",
+                initial_coins=1000
+            )
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Attendee identifier (qr_code_hash, attendee_id, or customer_id) is required."
+        )
+
     if not attendee:
-        raise HTTPException(status_code=404, detail="Attendee QR code not registered")
+        raise HTTPException(status_code=404, detail="Attendee not found.")
 
     if attendee.get("status") == "terminated":
         return JSONResponse(
             status_code=403,
             content={
-                "detail": f"SECURITY ALERT: Payment Denied! QR Pass is REVOKED/TERMINATED ({attendee.get('termination_reason') or 'Pass Revoked'})",
+                "detail": f"SECURITY ALERT: Payment Denied! QR Pass is REVOKED ({attendee.get('termination_reason') or 'Pass Revoked'})",
                 "terminated": True,
-                "attendee": {
-                    "id": attendee["_id"],
-                    "name": attendee["name"],
-                    "role": attendee["role"],
-                    "status": attendee["status"],
-                    "terminated_at": attendee.get("terminated_at"),
-                    "termination_reason": attendee.get("termination_reason"),
-                }
+                "attendee": attendee
             }
         )
 
     current_balance = attendee.get("fest_coins", 0)
     if current_balance < payload.amount:
-        return JSONResponse(
-            status_code=400,
-            content={
-                "detail": f"Insufficient Fest Coins. Current balance: {current_balance} coins, Required: {payload.amount} coins",
-                "current_balance": current_balance
-            }
-        )
+        if is_simulator:
+            # Confine automatic wallet reload behavior to the simulator
+            await db_manager.create_recharge(
+                attendee=attendee,
+                inr_amount=payload.amount + 500,
+                payment_method="UPI - Auto Reload",
+                operator_mode="self_service",
+                notes="Auto cashless liquidity top-up"
+            )
+            updated = await db_manager.get_attendee_by_id(attendee["_id"])
+            if updated:
+                attendee = updated
+                current_balance = attendee.get("fest_coins", 0)
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "detail": f"Insufficient Fest Coins. Current balance: {current_balance} coins, Required: {payload.amount} coins",
+                    "current_balance": current_balance,
+                    "required_amount": payload.amount
+                }
+            )
 
+    stall = payload.stall_name or "Vendor Stall"
+    zone = payload.zone_name or "Food Court"
     tx = await db_manager.create_transaction(
         attendee=attendee,
         amount=payload.amount,
-        stall_name=payload.stall_name or "Vendor Stall",
-        zone_name=payload.zone_name or "Food Court"
+        stall_name=stall,
+        zone_name=zone
     )
     updated_attendee = await db_manager.get_attendee_by_id(attendee["_id"])
 
     return {
-        "message": f"Successfully deducted {payload.amount} Fest Coins for {payload.stall_name or 'Vendor Stall'}",
+        "message": f"Successfully deducted {payload.amount} Fest Coins for {stall}",
         "transaction": tx,
         "attendee": {
             "name": updated_attendee["name"] if updated_attendee else attendee["name"],
             "fest_coins": updated_attendee["fest_coins"] if updated_attendee else current_balance - payload.amount
         }
     }
+
+@app.post("/api/transaction", status_code=status.HTTP_201_CREATED, tags=["Fest Coins"])
+async def api_process_transaction(payload: TransactionRequest):
+    return await _execute_transaction_deduction(payload)
+
+@app.post("/transaction", status_code=status.HTTP_201_CREATED, tags=["Fest Coins"])
+async def public_process_transaction(payload: TransactionRequest):
+    return await _execute_transaction_deduction(payload)
 
 # ─────────────────────── Rupee-to-Coin Cashless Top-up ───────────────────────
 @app.post("/api/recharge", status_code=status.HTTP_201_CREATED, tags=["Recharges"])
@@ -280,16 +841,9 @@ async def recharge_wallet(payload: RechargeRequest):
         return JSONResponse(
             status_code=403,
             content={
-                "detail": f"SECURITY ALERT: Recharge Rejected! QR Pass is REVOKED/TERMINATED ({attendee.get('termination_reason') or 'Administrative Hold'}). Please reinstate pass first.",
+                "detail": f"SECURITY ALERT: Recharge Rejected! QR Pass is REVOKED ({attendee.get('termination_reason') or 'Administrative Hold'}).",
                 "terminated": True,
-                "attendee": {
-                    "id": attendee["_id"],
-                    "name": attendee["name"],
-                    "role": attendee["role"],
-                    "status": attendee["status"],
-                    "terminated_at": attendee.get("terminated_at"),
-                    "termination_reason": attendee.get("termination_reason"),
-                }
+                "attendee": attendee
             }
         )
 
@@ -307,15 +861,7 @@ async def recharge_wallet(payload: RechargeRequest):
     return {
         "message": f"Payment of ₹{payload.inr_amount:,} successful! Added {payload.inr_amount:,} Fest Coins (1:1 conversion).",
         "recharge": recharge_entry,
-        "attendee": {
-            "_id": updated_attendee["_id"] if updated_attendee else attendee["_id"],
-            "name": updated_attendee["name"] if updated_attendee else attendee["name"],
-            "role": updated_attendee["role"] if updated_attendee else attendee["role"],
-            "ticket_type": updated_attendee["ticket_type"] if updated_attendee else attendee["ticket_type"],
-            "fest_coins": updated_attendee["fest_coins"] if updated_attendee else attendee.get("fest_coins", 0) + payload.inr_amount,
-            "status": updated_attendee["status"] if updated_attendee else attendee["status"],
-            "qr_code_hash": updated_attendee["qr_code_hash"] if updated_attendee else attendee["qr_code_hash"],
-        }
+        "attendee": updated_attendee or attendee
     }
 
 @app.get("/api/recharges", tags=["Recharges"])
@@ -326,15 +872,58 @@ async def list_recharges():
         "summary": summary
     }
 
+# ─────────────────────── Live Social Sentiment & Triage ───────────────────────
+@app.get("/api/social/feed", tags=["Social Listening"])
+async def get_social_feed():
+    feed_items = [
+        {
+            "id": p["id"],
+            "text": p["text"],
+            "sentiment": p["sentiment"],
+            "author": p.get("author", "@attendee"),
+            "timestamp": p["timestamp"]
+        }
+        for p in social_manager.recent_stream[:25]
+    ]
+    # Calculate breakdown
+    pos = sum(1 for p in social_manager.recent_stream if p.get("sentiment") == "positive")
+    neu = sum(1 for p in social_manager.recent_stream if p.get("sentiment") == "neutral")
+    neg = sum(1 for p in social_manager.recent_stream if p.get("sentiment") == "negative")
+
+    return {
+        "feed": feed_items,
+        "friction_alert": social_manager.friction_alert,
+        "sentiment_summary": {
+            "positive_count": pos,
+            "neutral_count": neu,
+            "negative_count": neg,
+            "total_sampled": len(social_manager.recent_stream)
+        }
+    }
+
+@app.post("/api/social/simulate_spike", tags=["Social Listening"])
+async def simulate_negative_sentiment_spike(is_admin: bool = Depends(verify_admin)):
+    """Admin utility to test Friction Alert immediately by injecting a cluster of 8 negative attendee reports."""
+    social_manager.inject_negative_spike(count=8)
+    return {
+        "message": "Simulated negative sentiment spike injected successfully!",
+        "friction_alert": social_manager.friction_alert
+    }
+
+@app.post("/api/social/clear_alert", tags=["Social Listening"])
+async def clear_friction_alert(is_admin: bool = Depends(verify_admin)):
+    alert_state = social_manager.resolve_alert(cooldown_seconds=120)
+    return {
+        "message": "Friction Alert cleared successfully. 120s operational resistance cooldown activated.",
+        "friction_alert": alert_state
+    }
+
 # ─────────────────────── Emergency Incidents (God's Eye) ───────────────────────
 @app.post("/api/incident", status_code=status.HTTP_201_CREATED, tags=["Incidents"])
 async def report_incident(payload: IncidentCreate):
     valid_types = ["Medical", "Security", "Logistics"]
     if payload.type not in valid_types:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid incident type. Must be Medical, Security, or Logistics."
-        )
+        raise HTTPException(status_code=400, detail="Invalid incident type. Must be Medical, Security, or Logistics.")
 
     incident = await db_manager.create_incident(
         incident_type=payload.type,
@@ -357,7 +946,7 @@ async def resolve_incident_endpoint(incident_id: str, is_admin: bool = Depends(v
         "incident": resolved
     }
 
-# ─────────────────────── Crowd Crush Prevention & Active Diversions ───────────────────────
+# ─────────────────────── Crowd Crush Prevention & Diversions ───────────────────────
 @app.post("/api/admin/trigger_diversion", status_code=status.HTTP_201_CREATED, tags=["Crowd Control"])
 async def trigger_diversion_endpoint(payload: DiversionCreate, is_admin: bool = Depends(verify_admin)):
     if payload.zone_name not in ZONES:
@@ -404,10 +993,28 @@ async def revert_simulation_endpoint(is_admin: bool = Depends(verify_admin)):
     reverted = await db_manager.revert_simulation()
     return {"message": f"Simulation stopped. Reverted {reverted} simulated scans."}
 
-# ─────────────────────── Admin Pass Management & Directory ───────────────────────
+# ─────────────────────── Admin Stats & Live Telemetry ───────────────────────
 @app.get("/api/admin/stats", tags=["Admin Operations"])
 async def get_admin_stats_endpoint(is_admin: bool = Depends(verify_admin)):
-    return await db_manager.get_admin_stats()
+    stats = await db_manager.get_admin_stats()
+    # Attach Live Social Listening Feed and Friction Alert for single 3-second polling roundtrip
+    stats["social_feed"] = [
+        {
+            "id": p["id"],
+            "text": p["text"],
+            "sentiment": p["sentiment"],
+            "author": p.get("author", "@attendee"),
+            "timestamp": p["timestamp"]
+        }
+        for p in social_manager.recent_stream[:15]
+    ]
+    stats["friction_alert"] = social_manager.friction_alert
+
+    # Ensure live_transactions is populated in financials
+    if "financials" in stats:
+        stats["financials"]["live_transactions"] = stats["financials"].get("transaction_volume", 0)
+
+    return stats
 
 @app.get("/api/admin/attendees", tags=["Admin Operations"])
 async def list_admin_attendees(is_admin: bool = Depends(verify_admin)):
@@ -487,7 +1094,6 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
     stats = await db_manager.get_admin_stats()
     all_att = await db_manager.list_attendees(limit=500)
 
-    # Zone counts
     zone_counts = {z["zone_name"]: z["total_scans"] for z in stats["zones"]}
     bottlenecks = [z["zone_name"] for z in stats["zones"] if z["recent_scans"] >= BOTTLENECK_THRESHOLD]
 
@@ -506,9 +1112,9 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
     active_incidents = stats.get("active_incidents", [])
 
     is_crowd = bool(re.search(r"crowd|bottleneck|congest|traffic|capacity|dens|packed|fullest|busy|divert", query))
-    is_coin = bool(re.search(r"coin|recharge|inr|rupee|wallet|cash|money|top-up|balance|revenue|minted", query))
+    is_coin = bool(re.search(r"coin|recharge|inr|rupee|wallet|cash|money|top-up|balance|revenue|minted|fest coin", query))
     is_pass = bool(re.search(r"pass|attendee|guest|ticket|revok|terminat|status|register|vip", query)) and not is_crowd
-    is_incident = bool(re.search(r"incident|sos|alert|emergency|medical|security|logistics|hazard", query))
+    is_incident = bool(re.search(r"incident|sos|alert|emergency|medical|security|logistics|hazard|friction", query))
 
     category = "general"
     answer = ""
@@ -552,13 +1158,16 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
 
     elif is_incident:
         category = "security"
-        if active_incidents:
+        f_alert = social_manager.friction_alert
+        if f_alert.get("active"):
+            answer = f"🚨 High Alert: Active Friction Alert in progress with {f_alert.get('negative_count_60s')} negative attendee complaints in the last 60 seconds. SOS triage required."
+        elif active_incidents:
             answer = f"Active Security Alerts: {len(active_incidents)} pending incident(s) require dispatcher triage. Latest incident in {active_incidents[0].get('zone_name', 'Festival Grounds')}."
         else:
-            answer = "All clear. Zero unresolved SOS incidents. Emergency responders and security dispatchers are standing by across all 5 zones."
+            answer = "All clear. Zero unresolved SOS incidents. Social sentiment is nominal across all 5 zones."
         metrics = [
             {"label": "Active Incidents", "value": str(len(active_incidents)), "alert": len(active_incidents) > 0},
-            {"label": "Total Logged", "value": str(len(active_incidents))},
+            {"label": "Friction Alert", "value": "ACTIVE" if f_alert.get("active") else "NOMINAL", "alert": f_alert.get("active")},
             {"label": "Diversions Active", "value": str(len(stats.get("active_diversions", [])))}
         ]
         quick_actions = [
@@ -584,8 +1193,7 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
         result_count = total_attendees
 
     else:
-        # Default query telemetry
-        answer = f"Festival Telemetry Status: {total_attendees} registered attendees with {active_count} active passes. Current system balance: 🪙 {total_coins:,} Fest Coins."
+        answer = f"Festival Telemetry Status: {total_attendees} registered attendees with {active_count} active passes. Current cashless balance: 🪙 {total_coins:,} Fest Coins."
         metrics = [
             {"label": "Registered Guests", "value": str(total_attendees)},
             {"label": "Active Zones", "value": str(len(ZONES))},
@@ -597,7 +1205,6 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
         ]
         result_count = total_attendees
 
-    # Optional Google GenAI enhancement if GEMINI_API_KEY is available
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key and len(gemini_key) > 10:
         try:
@@ -612,6 +1219,7 @@ Telemetry Snapshot:
 - Total Fest Coins in Circulation: {total_coins}
 - Total INR Cashless Collected: ₹{total_inr_collected}
 - Active SOS Incidents: {len(active_incidents)}
+- Friction Alert: {json.dumps(social_manager.friction_alert)}
 Base calculated response: "{answer}"
 
 Provide a concise, direct, professional response in 1-2 clear sentences. Include specific numbers where relevant."""
@@ -643,12 +1251,12 @@ async def config_test_endpoint(is_admin: bool = Depends(verify_admin)):
 
 # ─────────────────────── Static Frontend Serving ───────────────────────
 base_dir = os.path.dirname(os.path.abspath(__file__))
-# Check sibling ../frontend directory or local static directory
 static_dir = os.path.join(os.path.dirname(base_dir), "frontend")
 if not os.path.exists(static_dir):
     static_dir = os.path.join(base_dir, "static")
+if not os.path.exists(static_dir):
+    static_dir = os.path.join(os.path.dirname(base_dir), "static")
 
-# Mount /static static directory
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
@@ -684,13 +1292,11 @@ async def serve_payment():
 async def serve_settings():
     return FileResponse(os.path.join(static_dir, "settings.html"))
 
-# Catch-all for other static files (css, js, assets) or fallback to index.html
 @app.api_route("/{file_path:path}", methods=["GET", "HEAD"], include_in_schema=False)
 async def serve_static_fallback(file_path: str):
     full_path = os.path.join(static_dir, file_path)
     if os.path.isfile(full_path):
         return FileResponse(full_path)
-    # Default fallback to index.html for SPA routing
     return FileResponse(os.path.join(static_dir, "index.html"))
 
 if __name__ == "__main__":

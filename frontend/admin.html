@@ -1101,7 +1101,7 @@
 
     function renderTelemetry(logs) {
       const stream = document.getElementById('stream-log');
-      const rows = logs.map(log => {
+      const rows = (logs || []).slice(0, 10).map(log => {
         const isVip = log.role === 'VIP';
         const row = document.createElement('div');
         row.className = `flex items-center justify-between p-2.5 rounded-xl border ${isVip ? 'bg-rose-50 border-rose-100' : 'bg-stone-50 border-stone-100'}`;

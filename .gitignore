@@ -16,3 +16,13 @@ bun.lockb
 .DS_Store
 Thumbs.db
 .aistudio/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large raw datasets (>100MB)
+dataset/
+*.db
+

@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cultura Festival | Dashboard</title>
+  <meta name="description" content="Live festival crowd-management dashboard and intelligent event command center with real-time zone telemetry, crowd bottleneck alerts, cashless Fest Coin economy, and live sentiment triage.">
+  <meta property="og:title" content="Cultura Festival | Dashboard">
+  <meta property="og:description" content="Live festival crowd-management dashboard and intelligent event command center with real-time zone telemetry, crowd bottleneck alerts, cashless Fest Coin economy, and live sentiment triage.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            fest: {
+              rose: '#e11d48',
+              amber: '#d97706',
+              emerald: '#059669',
+              sky: '#0284c7',
+              stone: '#fafaf9',
+              dark: '#292524'
+            }
+          },
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #f5f5f4; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.6);
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #e11d48, #d97706);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Infinite Marquee Scrolling Animation for Social Ticker */
+    @keyframes marquee {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-50%); }
+    }
+    .animate-marquee {
+      display: inline-flex;
+      white-space: nowrap;
+      animation: marquee 32s linear infinite;
+    }
+    .animate-marquee:hover {
+      animation-play-state: paused;
+    }
+
+    /* Friction Alert Flashing Glow */
+    @keyframes redPulse {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(225, 29, 72, 0.6), inset 0 0 10px rgba(225, 29, 72, 0.4);
+        border-color: #e11d48;
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(225, 29, 72, 0.9), inset 0 0 20px rgba(225, 29, 72, 0.6);
+        border-color: #f43f5e;
+      }
+    }
+    .friction-alert-active {
+      animation: redPulse 1.4s ease-in-out infinite !important;
+      background: rgba(88, 12, 26, 0.92) !important;
+      color: #fff1f2 !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-fest-dark flex overflow-hidden selection:bg-fest-rose selection:text-white font-sans relative">
+
+  <!-- AUTH OVERLAY -->
+  <div id="auth-overlay" class="fixed inset-0 bg-stone-900/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center hidden">
+    <div class="bg-white p-8 rounded-3xl max-w-sm w-full shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="shield-check" class="w-6 h-6"></i>
+      </div>
+      <h2 class="text-xl font-serif font-bold text-fest-dark mb-2">Command Center</h2>
+      <p class="text-xs text-stone-500 mb-6">Enter your administrator key to access the live dashboard.</p>
+      
+      <input type="password" id="admin-key-input" class="w-full p-3 rounded-xl border border-stone-200 mb-4 text-center text-stone-700 font-mono shadow-inner focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100" placeholder="Enter Admin Key" autocomplete="off">
+      
+      <button id="admin-key-submit" class="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition-colors shadow-sm text-sm">
+        AUTHENTICATE
+      </button>
+      <p id="auth-error" class="text-rose-600 text-xs font-bold mt-3 hidden">INVALID KEY</p>
+    </div>
+  </div>
+
+  <!-- Soft animated background gradient -->
+  <div class="fixed inset-0 z-0 opacity-40 pointer-events-none" style="background: radial-gradient(circle at 10% 20%, rgba(225,29,72,0.1) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(217,119,6,0.1) 0%, transparent 40%);"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 glass-card border-r border-stone-200 flex flex-col z-20 shrink-0 relative">
+    <div class="p-6 border-b border-stone-100 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md">
+        <i data-lucide="tent" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-serif font-semibold tracking-wide text-fest-dark leading-tight">Cultura</h1>
+        <p class="text-[10px] text-stone-500 uppercase tracking-widest font-semibold">Festival Hub</p>
+      </div>
+    </div>
+    
+    <nav class="flex-1 p-4 space-y-2 mt-4 text-sm font-medium">
+      <a href="/" class="flex items-center gap-3 p-3 rounded-xl bg-rose-50 text-fest-rose font-bold">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        Dashboard
+      </a>
+      <a href="/analytics.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+        Insights
+      </a>
+      <a href="/attendees.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        Guests
+      </a>
+      <a href="/recharge.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="wallet" class="w-5 h-5"></i>
+        Recharge & Coins
+      </a>
+      <a href="/scanner.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="qr-code" class="w-5 h-5"></i>
+        Field Scanner
+      </a>
+      <a href="/settings.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+        Operations
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 flex flex-col relative z-10 h-screen overflow-hidden">
+    
+    <!-- TOP HEADER -->
+    <header class="h-20 glass-card border-b border-stone-200 flex items-center justify-between px-8 shrink-0">
+      
+      <!-- NLP Search Form -->
+      <form id="nlp-form" class="relative w-full max-w-xl">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-rose-600">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </div>
+        <input type="text" id="nlp-input" class="w-full bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 text-sm font-medium rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 block pl-10 pr-24 p-2.5 shadow-sm transition-all placeholder-stone-500 dark:placeholder-stone-400" placeholder="Ask Assistant (e.g. 'Friction alert?', 'Total revenue?', 'Crowded zones?')...">
+        <div class="absolute inset-y-1.5 right-1.5 flex items-center gap-1.5">
+          <kbd class="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400 border border-stone-200 dark:border-stone-700">⌘K</kbd>
+          <button type="submit" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold tracking-wide transition-colors shadow-sm cursor-pointer">
+            ASK
+          </button>
+        </div>
+      </form>
+      
+      <div class="flex items-center gap-3">
+        <a href="/scanner.html" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white text-xs font-bold shadow-sm transition-all hover:scale-105">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
+          <span>Field Scanner & Pass Hub</span>
+        </a>
+        <div class="flex items-center gap-2 text-xs px-4 py-2 rounded-xl bg-white border border-stone-200 shadow-sm font-medium">
+           <span id="poll-indicator" class="w-2.5 h-2.5 rounded-full bg-stone-300 transition-all duration-300"></span>
+           <span class="text-stone-500">Live Sync:</span>
+           <span id="last-sync" class="text-emerald-600 font-semibold">00:00</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD SCROLLABLE AREA -->
+    <div class="flex-1 overflow-y-auto p-8 no-scrollbar">
+      
+      <!-- NLP Query Response -->
+      <div id="nlp-response" class="hidden mb-6 relative group transform transition-all duration-300 origin-top">
+        <div class="bg-white dark:bg-stone-900 p-5 rounded-2xl border-l-4 border-l-rose-500 border border-stone-200 dark:border-stone-800 shadow-lg relative overflow-hidden flex items-start justify-between gap-4">
+          <div class="flex items-start gap-4">
+            <div class="p-3 rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 shrink-0 shadow-sm">
+              <i data-lucide="sparkles" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="text-xs uppercase tracking-wider text-rose-600 dark:text-rose-400 font-bold">Live Telemetry Intelligence</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Verified</span>
+              </div>
+              <p id="nlp-output-text" class="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-relaxed">...</p>
+              <div class="mt-2.5 flex items-center gap-2">
+                <button type="button" onclick="if(window.openNLPAssistant) window.openNLPAssistant(document.getElementById('nlp-output-text').textContent);" class="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                  <span>Open Full Assistant Drawer</span>
+                  <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <button type="button" id="nlp-close" class="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors p-1.5 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800" title="Dismiss">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Chips -->
+      <div class="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar text-xs font-medium">
+        <button type="button" class="quick-chip whitespace-nowrap px-4 py-2 rounded-full bg-white border border-stone-200 text-stone-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 transition-colors shadow-sm" data-query="How many VIPs in the Artisan Market?">
+          VIPs in Artisan Market?
+        </button>
+        <button type="button" class="quick-chip whitespace-nowrap px-4 py-2 rounded-full bg-white border border-stone-200 text-stone-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 transition-colors shadow-sm" data-query="Are there any crowded zones?">
+          Crowded Zones?
+        </button>
+        <button type="button" class="quick-chip whitespace-nowrap px-4 py-2 rounded-full bg-white border border-stone-200 text-stone-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 transition-colors shadow-sm" data-query="Total revenue and transactions?">
+          Fest Coin Revenue?
+        </button>
+        <button type="button" class="quick-chip whitespace-nowrap px-4 py-2 rounded-full bg-white border border-stone-200 text-stone-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 transition-colors shadow-sm" data-query="Any active friction alerts or negative sentiment?">
+          Sentiment Triage Status?
+        </button>
+      </div>
+
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <!-- 3. LIVE SENTIMENT TRIAGE SCROLLING TEXT TICKER & FRICTION ALERT -->
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <div id="social-ticker-container" class="relative mb-8 rounded-2xl glass-card border border-stone-200 shadow-md overflow-hidden transition-all duration-500">
+        <div class="flex items-center">
+          <!-- Ticker Left Badge -->
+          <div id="ticker-badge" class="px-4 py-3 shrink-0 flex items-center gap-2 bg-stone-900 text-white font-mono text-xs font-bold tracking-wider uppercase border-r border-stone-700 z-10">
+            <span id="ticker-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="ticker-label">SOCIAL LISTENING</span>
+          </div>
+
+          <!-- Marquee Track Wrapper -->
+          <div class="overflow-hidden whitespace-nowrap flex-1 py-2.5 relative group cursor-default">
+            <div id="ticker-track" class="animate-marquee group-hover:[animation-play-state:paused] text-xs font-medium text-stone-700">
+              <!-- Dynamically populated social items -->
+              <span class="inline-flex items-center gap-2 mx-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">POSITIVE</span> <span class="font-bold text-stone-900">@aarav_fest:</span> Main stage visual lasers and sound acoustics are mind-blowing tonight! ✨</span>
+              <span class="inline-flex items-center gap-2 mx-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800">NEUTRAL</span> <span class="font-bold text-stone-900">@priya_sound:</span> Food court queue is moving steadily. Fest coins accepted everywhere. 🪙</span>
+              <span class="inline-flex items-center gap-2 mx-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">POSITIVE</span> <span class="font-bold text-stone-900">@neha_beats:</span> Quickest checkpoint entry ever! QR scan took 2 seconds.</span>
+              <!-- Repeated clone for infinite seamless loop -->
+              <span class="inline-flex items-center gap-2 mx-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">POSITIVE</span> <span class="font-bold text-stone-900">@aarav_fest:</span> Main stage visual lasers and sound acoustics are mind-blowing tonight! ✨</span>
+              <span class="inline-flex items-center gap-2 mx-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800">NEUTRAL</span> <span class="font-bold text-stone-900">@priya_sound:</span> Food court queue is moving steadily. Fest coins accepted everywhere. 🪙</span>
+              <span class="inline-flex items-center gap-2 mx-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">POSITIVE</span> <span class="font-bold text-stone-900">@neha_beats:</span> Quickest checkpoint entry ever! QR scan took 2 seconds.</span>
+            </div>
+          </div>
+
+          <!-- Utility Trigger: Negative Spike Demo Test -->
+          <div class="shrink-0 px-3 py-2 z-10 flex items-center gap-1.5 border-l border-stone-200">
+            <button id="spike-test-btn" onclick="triggerSimulatedSpike()" title="Test Friction Alert by injecting a negative feedback cluster" class="text-[10px] px-2.5 py-1.5 rounded-lg bg-stone-100 hover:bg-rose-50 hover:text-rose-600 text-stone-600 font-bold transition-all border border-stone-200 flex items-center gap-1">
+              <i data-lucide="zap" class="w-3 h-3 text-amber-500"></i>
+              <span>SPIKE TEST</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Friction Alert Emergency Banner (Appears during alert) -->
+        <div id="friction-alert-banner" class="hidden px-4 py-2.5 bg-rose-600 text-white text-xs font-bold flex items-center justify-between border-t border-rose-500">
+          <div class="flex items-center gap-2">
+            <i data-lucide="alert-octagon" class="w-4 h-4 text-white animate-pulse"></i>
+            <span id="friction-alert-msg">🚨 FRICTION ALERT ACTIVE: High negative attendee sentiment cluster detected in rolling 60s window! Immediate triage required.</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-rose-800 text-rose-100 font-bold">Rolling 60s Cluster</span>
+            <button onclick="dismissFrictionAlert()" class="text-[10px] uppercase font-bold underline hover:text-rose-200 ml-2">Resolve / Dismiss</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <!-- 2. TOP-LEVEL FINANCIAL METRIC CARDS & REAL-TIME REVENUE -->
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+        <div class="glass-card p-5 rounded-2xl">
+          <h3 class="text-xs font-semibold text-stone-500 mb-1 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-sky-500"></i> Total Attendees</h3>
+          <p id="total-scans-metric" class="text-3xl font-bold text-fest-dark tabular-nums">250</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+          <h3 class="text-xs font-semibold text-stone-500 mb-1 flex items-center gap-2"><i data-lucide="trending-up" class="w-4 h-4 text-emerald-500"></i> Arrival Rate (3m)</h3>
+          <p id="recent-rate-metric" class="text-3xl font-bold text-emerald-600 tabular-nums">+184</p>
+        </div>
+        <div class="glass-card p-5 rounded-2xl bg-orange-50/70 border-orange-200">
+          <h3 class="text-xs font-semibold text-amber-700 mb-1 flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4 text-amber-600"></i> Crowd Alerts</h3>
+          <p id="active-alert-count" class="text-3xl font-bold text-amber-600">1 AREA</p>
+        </div>
+        <!-- Card 4: Total Revenue (Dynamic Fest Coin Economy) -->
+        <div class="glass-card p-5 rounded-2xl border-amber-200 bg-amber-50/40 relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-xs font-semibold text-amber-800 flex items-center gap-2"><i data-lucide="coins" class="w-4 h-4 text-amber-600"></i> Total Revenue</h3>
+            <span class="text-[9px] font-bold text-amber-700 uppercase bg-amber-100/80 px-2 py-0.5 rounded-full">Cashless</span>
+          </div>
+          <p id="total-revenue-metric" class="text-3xl font-bold font-mono text-amber-600 tabular-nums">🪙 15,400</p>
+          <span class="text-[10px] text-stone-400 mt-0.5 block">1 INR = 1 Fest Coin Economy</span>
+        </div>
+        <!-- Card 5: Live Transactions (Kaggle Retail Streamer) -->
+        <div class="glass-card p-5 rounded-2xl border-emerald-200 bg-emerald-50/40 relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="text-xs font-semibold text-emerald-800 flex items-center gap-2"><i data-lucide="receipt" class="w-4 h-4 text-emerald-600"></i> Live Transactions</h3>
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          </div>
+          <p id="live-transactions-metric" class="text-3xl font-bold font-mono text-emerald-600 tabular-nums">65</p>
+          <span class="text-[10px] text-stone-400 mt-0.5 block">Kaggle Transaction Simulator Active</span>
+          <!-- Alias element for backward compatibility -->
+          <span id="transaction-vol-metric" class="hidden">65</span>
+        </div>
+      </div>
+
+      <!-- MAIN SPLIT -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- ZONES GRID (8 Cols) -->
+        <div class="lg:col-span-8">
+          <div class="flex items-center justify-between mb-4">
+             <h2 class="text-lg font-serif font-semibold text-fest-dark">Festival Zones Overview</h2>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <!-- Zone 1 -->
+            <div id="zone-card-1" class="glass-card p-5 rounded-2xl transition-all duration-300">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="text-base font-bold text-fest-dark">Main Stage</h3>
+                  <p class="text-xs text-stone-500 mt-1">Live Performances</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-lg text-rose-600 font-bold" id="zone-1-capacity">78%</span>
+                  <span class="text-[10px] text-stone-400 block uppercase font-bold mt-0.5">10m Limit</span>
+                </div>
+              </div>
+              <div class="w-full bg-stone-100 h-2.5 rounded-full my-4 overflow-hidden">
+                <div id="zone-1-bar" class="h-full bg-rose-500 transition-all duration-700 rounded-full" style="width: 78%"></div>
+              </div>
+              <div class="flex justify-between text-sm pt-2 border-t border-stone-100">
+                <div>
+                  <span class="text-stone-400 text-[11px] block">Total Guests:</span>
+                  <span id="zone-1-total" class="font-bold text-stone-700">1,240</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-stone-400 text-[11px] block">Recent:</span>
+                  <span id="zone-1-recent" class="font-bold text-emerald-600">+42 / 3m</span>
+                </div>
+              </div>
+              <div id="zone-1-alert" class="hidden mt-3 p-2.5 rounded-xl bg-orange-100 border border-orange-200 text-amber-700 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                  <span class="text-xs font-bold">CROWDED</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="triggerDiversionDialog('Main Stage')" class="text-[10px] px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-sm flex items-center gap-1">
+                    <i data-lucide="megaphone" class="w-3 h-3"></i> DIVERT
+                  </button>
+                  <button onclick="throttleZone('Main Stage')" class="text-[10px] px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold">FLOW</button>
+                </div>
+              </div>
+              <div id="zone-1-diversion" class="hidden mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold flex items-center justify-between">
+                <span id="zone-1-diversion-msg">📢 Active Diversion</span>
+              </div>
+            </div>
+
+            <!-- Zone 2 -->
+            <div id="zone-card-2" class="glass-card p-5 rounded-2xl transition-all duration-300">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="text-base font-bold text-fest-dark">Food Court</h3>
+                  <p class="text-xs text-stone-500 mt-1">Dining Area</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-lg text-amber-500 font-bold" id="zone-2-capacity">64%</span>
+                  <span class="text-[10px] text-stone-400 block uppercase font-bold mt-0.5">10m Limit</span>
+                </div>
+              </div>
+              <div class="w-full bg-stone-100 h-2.5 rounded-full my-4 overflow-hidden">
+                <div id="zone-2-bar" class="h-full bg-amber-500 transition-all duration-700 rounded-full" style="width: 64%"></div>
+              </div>
+              <div class="flex justify-between text-sm pt-2 border-t border-stone-100">
+                <div>
+                  <span class="text-stone-400 text-[11px] block">Total Guests:</span>
+                  <span id="zone-2-total" class="font-bold text-stone-700">980</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-stone-400 text-[11px] block">Recent:</span>
+                  <span id="zone-2-recent" class="font-bold text-emerald-600">+29 / 3m</span>
+                </div>
+              </div>
+              <div id="zone-2-alert" class="hidden mt-3 p-2.5 rounded-xl bg-orange-100 border border-orange-200 text-amber-700 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                  <span class="text-xs font-bold">CROWDED</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="triggerDiversionDialog('Food Court')" class="text-[10px] px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-sm flex items-center gap-1">
+                    <i data-lucide="megaphone" class="w-3 h-3"></i> DIVERT
+                  </button>
+                  <button onclick="throttleZone('Food Court')" class="text-[10px] px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold">FLOW</button>
+                </div>
+              </div>
+              <div id="zone-2-diversion" class="hidden mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold flex items-center justify-between">
+                <span id="zone-2-diversion-msg">📢 Active Diversion</span>
+              </div>
+            </div>
+
+            <!-- Zone 3 -->
+            <div id="zone-card-3" class="glass-card p-5 rounded-2xl transition-all duration-300">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="text-base font-bold text-fest-dark">Artisan Market</h3>
+                  <p class="text-xs text-stone-500 mt-1">Crafts & Goods</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-lg text-sky-500 font-bold" id="zone-3-capacity">82%</span>
+                  <span class="text-[10px] text-stone-400 block uppercase font-bold mt-0.5">10m Limit</span>
+                </div>
+              </div>
+              <div class="w-full bg-stone-100 h-2.5 rounded-full my-4 overflow-hidden">
+                <div id="zone-3-bar" class="h-full bg-sky-500 transition-all duration-700 rounded-full" style="width: 82%"></div>
+              </div>
+              <div class="flex justify-between text-sm pt-2 border-t border-stone-100">
+                <div>
+                  <span class="text-stone-400 text-[11px] block">Total Guests:</span>
+                  <span id="zone-3-total" class="font-bold text-stone-700">765</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-stone-400 text-[11px] block">Recent:</span>
+                  <span id="zone-3-recent" class="font-bold text-emerald-600">+34 / 3m</span>
+                </div>
+              </div>
+              <div id="zone-3-alert" class="hidden mt-3 p-2.5 rounded-xl bg-orange-100 border border-orange-200 text-amber-700 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                  <span class="text-xs font-bold">CROWDED</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="triggerDiversionDialog('Artisan Market')" class="text-[10px] px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-sm flex items-center gap-1">
+                    <i data-lucide="megaphone" class="w-3 h-3"></i> DIVERT
+                  </button>
+                  <button onclick="throttleZone('Artisan Market')" class="text-[10px] px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold">FLOW</button>
+                </div>
+              </div>
+              <div id="zone-3-diversion" class="hidden mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold flex items-center justify-between">
+                <span id="zone-3-diversion-msg">📢 Active Diversion</span>
+              </div>
+            </div>
+
+            <!-- Zone 4 -->
+            <div id="zone-card-4" class="glass-card p-5 rounded-2xl transition-all duration-300 border-orange-300 bg-orange-50/50">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="text-base font-bold text-fest-dark">Cultural Pavilion</h3>
+                  <p class="text-xs text-stone-500 mt-1">Exhibitions</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-lg text-rose-600 font-bold" id="zone-4-capacity">96%</span>
+                  <span class="text-[10px] text-rose-500 block uppercase font-bold mt-0.5">OVER LIMIT</span>
+                </div>
+              </div>
+              <div class="w-full bg-stone-200 h-2.5 rounded-full my-4 overflow-hidden">
+                <div id="zone-4-bar" class="h-full bg-rose-600 transition-all duration-700 rounded-full" style="width: 96%"></div>
+              </div>
+              <div class="flex justify-between text-sm pt-2 border-t border-stone-200">
+                <div>
+                  <span class="text-stone-400 text-[11px] block">Total Guests:</span>
+                  <span id="zone-4-total" class="font-bold text-stone-700">1,390</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-stone-400 text-[11px] block">Recent:</span>
+                  <span id="zone-4-recent" class="font-bold text-rose-500">+68 / 3m</span>
+                </div>
+              </div>
+              <div id="zone-4-alert" class="mt-3 p-2.5 rounded-xl bg-rose-100 border border-rose-200 text-rose-700 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                  <div>
+                    <span class="text-xs font-bold block leading-none">BOTTLENECK DETECTED</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="triggerDiversionDialog('Cultural Pavilion')" class="text-[10px] px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-sm flex items-center gap-1">
+                    <i data-lucide="megaphone" class="w-3 h-3"></i> TRIGGER DIVERSION
+                  </button>
+                  <button onclick="throttleZone('Cultural Pavilion')" class="text-[10px] px-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold shadow-sm">
+                    FLOW
+                  </button>
+                </div>
+              </div>
+              <div id="zone-4-diversion" class="hidden mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold flex items-center justify-between">
+                <span id="zone-4-diversion-msg">📢 Active Diversion</span>
+              </div>
+            </div>
+
+            <!-- Zone 5 -->
+            <div id="zone-card-5" class="glass-card p-5 rounded-2xl transition-all duration-300">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="text-base font-bold text-fest-dark">VIP Lounge</h3>
+                  <p class="text-xs text-stone-500 mt-1">Exclusive Access</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-lg text-emerald-500 font-bold" id="zone-5-capacity">43%</span>
+                  <span class="text-[10px] text-stone-400 block uppercase font-bold mt-0.5">10m Limit</span>
+                </div>
+              </div>
+              <div class="w-full bg-stone-100 h-2.5 rounded-full my-4 overflow-hidden">
+                <div id="zone-5-bar" class="h-full bg-emerald-500 transition-all duration-700 rounded-full" style="width: 43%"></div>
+              </div>
+              <div class="flex justify-between text-sm pt-2 border-t border-stone-100">
+                <div>
+                  <span class="text-stone-400 text-[11px] block">Total Guests:</span>
+                  <span id="zone-5-total" class="font-bold text-stone-700">437</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-stone-400 text-[11px] block">Recent:</span>
+                  <span id="zone-5-recent" class="font-bold text-emerald-500">+11 / 3m</span>
+                </div>
+              </div>
+              <div id="zone-5-alert" class="hidden mt-3 p-2.5 rounded-xl bg-orange-100 border border-orange-200 text-amber-700 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                  <span class="text-xs font-bold">CROWDED</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="triggerDiversionDialog('VIP Lounge')" class="text-[10px] px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-sm flex items-center gap-1">
+                    <i data-lucide="megaphone" class="w-3 h-3"></i> DIVERT
+                  </button>
+                  <button onclick="throttleZone('VIP Lounge')" class="text-[10px] px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold">FLOW</button>
+                </div>
+              </div>
+              <div id="zone-5-diversion" class="hidden mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold flex items-center justify-between">
+                <span id="zone-5-diversion-msg">📢 Active Diversion</span>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+
+        <!-- RIGHT SIDEBAR (Incident Triage, Stream Log & Controls) (4 Cols) -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+          
+          <!-- GOD'S EYE INCIDENT TRIAGE -->
+          <div class="glass-card p-5 rounded-2xl border border-rose-200/80 shadow-md">
+            <div class="flex items-center justify-between mb-3 border-b border-stone-100 pb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-rose-600 animate-pulse"></i>
+                <span class="text-sm font-bold text-fest-dark">Incident Triage (SOS)</span>
+              </div>
+              <span id="active-incident-badge" class="text-[10px] text-rose-700 font-bold bg-rose-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                0 ACTIVE
+              </span>
+            </div>
+            <div id="incidents-container" class="space-y-2.5 max-h-56 overflow-y-auto no-scrollbar">
+              <div class="p-4 text-center text-xs text-stone-400 font-medium">
+                No active emergency pings. All sectors nominal.
+              </div>
+            </div>
+          </div>
+
+          <!-- LIVE GUEST SCAN FEED -->
+          <div class="glass-card p-5 rounded-2xl flex-1 flex flex-col min-h-[260px]">
+            <div class="flex items-center justify-between mb-4 border-b border-stone-100 pb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="radio" class="w-4 h-4 text-emerald-500"></i>
+                <span class="text-sm font-bold text-stone-700">Live Guest Feed</span>
+              </div>
+              <span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg">ONLINE</span>
+            </div>
+            <div id="stream-log" class="space-y-2 overflow-y-auto text-[12px] text-stone-500 pr-2 flex-1 font-medium">
+              <div class="flex items-center justify-between p-2.5 rounded-xl bg-stone-50 border border-stone-100">
+                <span class="text-stone-800 font-bold">GUEST-9481</span>
+                <span class="text-stone-500 truncate px-2 text-center">Cultural Pavilion</span>
+                <span class="text-stone-400 text-[10px]">Just now</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SYSTEM CONTROLS -->
+          <div class="glass-card p-5 rounded-2xl">
+            <h3 class="text-sm font-bold text-stone-700 mb-3">Festival Operations</h3>
+            <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
+                <div class="p-3 bg-stone-50 rounded-xl border border-stone-100">
+                    <span class="block text-stone-500 mb-1">Weather</span>
+                    <span id="weather-display" class="font-bold text-stone-700 text-sm">Loading...</span>
+                </div>
+                <div class="p-3 bg-stone-50 rounded-xl border border-stone-100">
+                    <span class="block text-stone-500 mb-1">Staffing</span>
+                    <span class="font-bold text-emerald-600 text-sm">Optimal</span>
+                </div>
+            </div>
+            <button id="sim-bottleneck-btn" class="w-full mb-2 py-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-white transition-colors font-bold text-xs flex items-center justify-center gap-2 shadow-sm">
+              <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i> SIMULATE CROWD RUSH
+            </button>
+            <button id="revert-sim-btn" class="w-full py-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 transition-colors font-bold text-xs flex items-center justify-center gap-2 shadow-sm">
+              <i data-lucide="rotate-ccw" class="w-4 h-4 text-rose-600"></i> REVERT SIMULATION
+            </button>
+          </div>
+          
+        </div>
+      </div>
+      
+    </div>
+  </main>
+
+  <!-- CROWD CRUSH DIVERSION MODAL -->
+  <div id="diversion-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm transition-opacity duration-300">
+    <div class="glass-card w-full max-w-lg p-6 rounded-3xl border border-rose-200 bg-white shadow-2xl relative">
+      <button type="button" onclick="closeDiversionModal()" class="absolute top-5 right-5 p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-start gap-3.5 mb-4">
+        <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
+          <i data-lucide="megaphone" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-serif font-bold text-xl text-fest-dark">Trigger Crowd Diversion</h3>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200">Load Relief</span>
+          </div>
+          <p class="text-xs text-stone-500 mt-1">Re-route crowd traffic away from overcrowded festival zones to prevent bottlenecks and crushing.</p>
+        </div>
+      </div>
+
+      <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 mb-4 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-rose-500 tracking-wider block">Bottleneck Source Zone</span>
+          <span id="diversion-source-zone" class="font-bold text-rose-950 text-base">Cultural Pavilion</span>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] uppercase font-bold text-rose-500 tracking-wider block">Status</span>
+          <span id="diversion-source-status" class="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-xs font-black">HIGH CONGESTION</span>
+        </div>
+      </div>
+
+      <form id="diversion-form" onsubmit="executeDiversionBroadcast(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-stone-600 mb-1.5 uppercase tracking-wider">
+            Target Relieving Zone <span class="text-stone-400 font-normal">(Attendees directed here)</span>
+          </label>
+          <select id="diversion-target-select" onchange="updateDiversionPreset()" class="w-full text-sm border border-stone-200 rounded-xl p-3 bg-white text-stone-800 font-medium focus:ring-2 focus:ring-rose-500 focus:outline-none">
+            <option value="Food Court">Food Court (Dining Area)</option>
+            <option value="Artisan Market">Artisan Market (Crafts & Festival Merch)</option>
+            <option value="Main Stage">Main Stage (Live Performances)</option>
+            <option value="Cultural Pavilion">Cultural Pavilion (Exhibitions)</option>
+            <option value="VIP Lounge">VIP Lounge (Exclusive Access)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-stone-600 mb-1.5 uppercase tracking-wider">
+            Quick Incentive Presets <span class="text-stone-400 font-normal">(Click to apply offer)</span>
+          </label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button type="button" onclick="applyDiversionPreset('discount')" class="p-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-rose-50 hover:border-rose-200 text-stone-700 text-left transition-colors font-medium flex items-center gap-2">
+              <span class="text-base">🍔</span> 50% Off Food & Drinks
+            </button>
+            <button type="button" onclick="applyDiversionPreset('merch')" class="p-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-rose-50 hover:border-rose-200 text-stone-700 text-left transition-colors font-medium flex items-center gap-2">
+              <span class="text-base">🎁</span> Free Fest Souvenir
+            </button>
+            <button type="button" onclick="applyDiversionPreset('music')" class="p-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-rose-50 hover:border-rose-200 text-stone-700 text-left transition-colors font-medium flex items-center gap-2">
+              <span class="text-base">🎶</span> Surprise Acoustic Set
+            </button>
+            <button type="button" onclick="applyDiversionPreset('coins')" class="p-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-rose-50 hover:border-rose-200 text-stone-700 text-left transition-colors font-medium flex items-center gap-2">
+              <span class="text-base">🪙</span> +100 Bonus Coins
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold text-stone-600 uppercase tracking-wider">
+              Public Broadcast Announcement
+            </label>
+            <span class="text-[10px] text-stone-400 font-mono">Pushed to Scanners & Terminals</span>
+          </div>
+          <textarea id="diversion-message-input" rows="3" required class="w-full text-xs font-medium border border-stone-200 rounded-xl p-3 bg-white text-stone-800 focus:ring-2 focus:ring-rose-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5">
+          <i data-lucide="zap" class="w-4 h-4 text-amber-600 shrink-0"></i>
+          <span><strong>Automatic Crowd Balancing:</strong> Relieves <strong>~65%</strong> of recent scans in the congested zone and broadcasts the offer immediately.</span>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" onclick="closeDiversionModal()" class="px-4 py-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition-colors">
+            Cancel
+          </button>
+          <button type="submit" id="diversion-submit-btn" class="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+            <i data-lucide="radio" class="w-4 h-4"></i>
+            <span>Broadcast Diversion Now</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FLOATING IN-APP TOAST NOTIFICATION -->
+  <div id="diversion-toast" class="hidden fixed top-6 right-6 z-[120] max-w-md p-4 rounded-2xl bg-stone-900 text-white shadow-2xl border border-stone-700 transform transition-all duration-300 flex items-start gap-3">
+    <div id="toast-icon-box" class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+      <i data-lucide="check-circle" class="w-5 h-5"></i>
+    </div>
+    <div class="min-w-0 flex-1">
+      <h4 id="toast-title" class="font-bold text-sm text-white">Broadcast Activated</h4>
+      <p id="toast-message" class="text-xs text-stone-300 mt-0.5 leading-relaxed">Diversion announcement sent successfully.</p>
+    </div>
+    <button type="button" onclick="hideDiversionToast()" class="text-stone-400 hover:text-white p-1">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // App Initialization & Session Authentication
+    // -------------------------------------------------------------
+    localStorage.removeItem('adminKey');
+    window.currentAdminKey = sessionStorage.getItem('adminKey') || '';
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      
+      const authOverlay = document.getElementById('auth-overlay');
+      const adminKeyInput = document.getElementById('admin-key-input');
+      const authError = document.getElementById('auth-error');
+      
+      const initialKey = window.currentAdminKey;
+      if (initialKey) {
+        adminKeyInput.value = initialKey;
+        fetch('/api/admin/stats', { headers: { 'X-Admin-Key': initialKey } })
+          .then(res => {
+            if (res.ok) {
+              window.currentAdminKey = initialKey;
+              authOverlay.classList.add('hidden');
+              startPolling();
+            } else {
+              sessionStorage.removeItem('adminKey');
+              window.currentAdminKey = '';
+              adminKeyInput.value = '';
+              authOverlay.classList.remove('hidden');
+            }
+          })
+          .catch(() => {
+            authOverlay.classList.remove('hidden');
+          });
+      } else {
+        authOverlay.classList.remove('hidden');
+      }
+      
+      adminKeyInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('admin-key-submit').click();
+        }
+      });
+      
+      document.getElementById('admin-key-submit').addEventListener('click', async () => {
+        const key = adminKeyInput.value.trim();
+        if (!key) return;
+        
+        const btn = document.getElementById('admin-key-submit');
+        const origText = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin inline"></i>`;
+        lucide.createIcons();
+        
+        try {
+          const res = await fetch('/api/admin/stats', { headers: { 'X-Admin-Key': key } });
+          if (res.ok) {
+            window.currentAdminKey = key;
+            sessionStorage.setItem('adminKey', key);
+            authOverlay.classList.add('hidden');
+            authError.classList.add('hidden');
+            startPolling();
+          } else {
+            authError.classList.remove('hidden');
+          }
+        } catch (err) {
+          authError.textContent = 'NETWORK ERROR';
+          authError.classList.remove('hidden');
+        }
+        btn.innerHTML = origText;
+      });
+      
+      let pollInterval;
+      function startPolling() {
+        if (pollInterval) return;
+        pollAdminStats();
+        pollInterval = setInterval(pollAdminStats, 3000);
+      }
+      
+      fetchLiveWeather();
+      
+      // Chips
+      document.querySelectorAll('.quick-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const q = btn.getAttribute('data-query');
+          document.getElementById('nlp-input').value = q;
+          processNLPQuery(q);
+        });
+      });
+      
+      document.getElementById('nlp-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const q = document.getElementById('nlp-input').value;
+        if(q.trim()) processNLPQuery(q);
+      });
+      
+      document.getElementById('nlp-close').addEventListener('click', () => {
+        const respEl = document.getElementById('nlp-response');
+        respEl.classList.add('opacity-0', '-translate-y-4');
+        setTimeout(() => respEl.classList.add('hidden'), 300);
+      });
+      
+      document.getElementById('sim-bottleneck-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('sim-bottleneck-btn');
+        const origText = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> SIMULATING...`;
+        try {
+          await fetch('/api/admin/simulate_surge', {
+            method: 'POST',
+            headers: { 'X-Admin-Key': window.currentAdminKey || '' }
+          });
+        } catch(e) {
+          console.error(e);
+        }
+        setTimeout(() => {
+          btn.innerHTML = origText;
+          lucide.createIcons();
+        }, 1500);
+      });
+
+      document.getElementById('revert-sim-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('revert-sim-btn');
+        const origText = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin text-rose-600"></i> REVERTING...`;
+        try {
+          await fetch('/api/admin/revert_simulation', {
+            method: 'POST',
+            headers: { 'X-Admin-Key': window.currentAdminKey || '' }
+          });
+        } catch(e) {
+          console.error(e);
+        }
+        setTimeout(() => {
+          btn.innerHTML = origText;
+          lucide.createIcons();
+        }, 1500);
+      });
+    });
+
+    const zonesData = [
+      { id: 1, name: "Main Stage", total: 0, recent: 0, cap: 0, warning: false },
+      { id: 2, name: "Food Court", total: 0, recent: 0, cap: 0, warning: false },
+      { id: 3, name: "Artisan Market", total: 0, recent: 0, cap: 0, warning: false },
+      { id: 4, name: "Cultural Pavilion", total: 0, recent: 0, cap: 0, warning: false },
+      { id: 5, name: "VIP Lounge", total: 0, recent: 0, cap: 0, warning: false }
+    ];
+
+    const BOTTLENECK_THRESHOLD = 150;
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderZoneUI(zone) {
+      const card = document.getElementById(`zone-card-${zone.id}`);
+      const capEl = document.getElementById(`zone-${zone.id}-capacity`);
+      const barEl = document.getElementById(`zone-${zone.id}-bar`);
+      const totalEl = document.getElementById(`zone-${zone.id}-total`);
+      const recentEl = document.getElementById(`zone-${zone.id}-recent`);
+      const alertEl = document.getElementById(`zone-${zone.id}-alert`);
+      const divEl = document.getElementById(`zone-${zone.id}-diversion`);
+      const divMsgEl = document.getElementById(`zone-${zone.id}-diversion-msg`);
+      
+      if (!card) return;
+
+      capEl.textContent = `${zone.cap}%`;
+      barEl.style.width = `${Math.min(zone.cap, 100)}%`;
+      totalEl.textContent = zone.total.toLocaleString();
+      recentEl.textContent = `+${zone.recent} / 10m`;
+
+      if (zone.warning) {
+        card.className = "glass-card p-5 rounded-2xl transition-all duration-300 border-orange-300 bg-orange-50/50";
+        alertEl.classList.remove('hidden');
+        barEl.className = "h-full bg-rose-600 transition-all duration-700 rounded-full";
+        capEl.className = "text-lg text-rose-600 font-bold";
+      } else {
+        card.className = "glass-card p-5 rounded-2xl transition-all duration-300";
+        alertEl.classList.add('hidden');
+        const color = zone.id === 2 ? 'amber' : (zone.id === 3 ? 'sky' : (zone.id === 5 ? 'emerald' : 'rose'));
+        barEl.className = `h-full bg-${color}-500 transition-all duration-700 rounded-full`;
+        capEl.className = `text-lg text-${color}-${zone.id===1?'600':'500'} font-bold`;
+      }
+
+      if (divEl && divMsgEl) {
+        if (zone.active_diversion) {
+          divEl.classList.remove('hidden');
+          divMsgEl.textContent = `📢 ${zone.active_diversion.message}`;
+        } else {
+          divEl.classList.add('hidden');
+        }
+      }
+    }
+
+    // ─────────────────────── Top-level Financial Metrics Update ───────────────────────
+    function updateSummaryMetrics(financials) {
+      let grandTotal = 0;
+      let grandRecent = 0;
+      let bottleneckCount = 0;
+      zonesData.forEach(z => {
+        grandTotal += z.total;
+        grandRecent += z.recent;
+        if (z.warning) bottleneckCount++;
+      });
+      document.getElementById('total-scans-metric').textContent = grandTotal.toLocaleString();
+      document.getElementById('recent-rate-metric').textContent = `+${grandRecent}`;
+      document.getElementById('active-alert-count').textContent = bottleneckCount === 0 
+        ? "0 AREAS" 
+        : `${bottleneckCount} AREA${bottleneckCount > 1 ? 'S' : ''}`;
+
+      if (financials) {
+        const revEl = document.getElementById('total-revenue-metric');
+        const liveTxEl = document.getElementById('live-transactions-metric');
+        const volEl = document.getElementById('transaction-vol-metric');
+        
+        const revVal = financials.total_revenue || 0;
+        const txVal = financials.live_transactions !== undefined ? financials.live_transactions : (financials.transaction_volume || 0);
+
+        if (revEl) revEl.textContent = `🪙 ${revVal.toLocaleString()}`;
+        if (liveTxEl) liveTxEl.textContent = txVal.toLocaleString();
+        if (volEl) volEl.textContent = txVal.toLocaleString();
+      }
+    }
+
+    // ─────────────────────── Social Listening & Friction Alert Ticker ───────────────────────
+    function renderSocialTicker(feed, frictionAlert) {
+      const container = document.getElementById('social-ticker-container');
+      const badge = document.getElementById('ticker-badge');
+      const dot = document.getElementById('ticker-dot');
+      const label = document.getElementById('ticker-label');
+      const track = document.getElementById('ticker-track');
+      const banner = document.getElementById('friction-alert-banner');
+      const bannerMsg = document.getElementById('friction-alert-msg');
+
+      if (!container || !track) return;
+
+      const isAlert = Boolean(frictionAlert && frictionAlert.active);
+
+      if (isAlert) {
+        // Friction Alert Active: Red Flashing Aesthetics
+        container.className = "relative mb-8 rounded-2xl glass-card friction-alert-active border border-rose-500 shadow-xl overflow-hidden transition-all duration-500";
+        badge.className = "px-4 py-3 shrink-0 flex items-center gap-2 bg-rose-700 text-white font-mono text-xs font-bold tracking-wider uppercase border-r border-rose-600 z-10";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-white animate-ping";
+        label.textContent = "🚨 FRICTION ALERT";
+        
+        if (banner) {
+          banner.classList.remove('hidden');
+          if (bannerMsg) bannerMsg.textContent = frictionAlert.message || "🚨 High negative attendee sentiment cluster detected in rolling 60s window!";
+        }
+      } else {
+        // Normal State: Sleek Dark-Mode Glassmorphic Aesthetics
+        container.className = "relative mb-8 rounded-2xl glass-card border border-stone-200 shadow-md overflow-hidden transition-all duration-500";
+        badge.className = "px-4 py-3 shrink-0 flex items-center gap-2 bg-stone-900 text-white font-mono text-xs font-bold tracking-wider uppercase border-r border-stone-700 z-10";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+        label.textContent = "SOCIAL LISTENING";
+        
+        if (banner) banner.classList.add('hidden');
+      }
+
+      if (feed && feed.length > 0) {
+        // Build items
+        const itemsHtml = feed.map(post => {
+          const sent = (post.sentiment || 'neutral').toLowerCase();
+          let badgeClass = 'bg-sky-100 text-sky-800';
+          let badgeText = 'NEUTRAL';
+          if (sent === 'positive') {
+            badgeClass = 'bg-emerald-100 text-emerald-800';
+            badgeText = 'POSITIVE';
+          } else if (sent === 'negative') {
+            badgeClass = isAlert ? 'bg-rose-500 text-white font-black' : 'bg-rose-100 text-rose-800';
+            badgeText = 'NEGATIVE';
+          }
+          const textColor = isAlert && sent === 'negative' ? 'text-white font-bold' : (isAlert ? 'text-rose-100' : 'text-stone-700');
+          const authorColor = isAlert ? 'text-rose-200 font-bold' : 'text-stone-900 font-bold';
+
+          return `
+            <span class="inline-flex items-center gap-2 mx-5">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">${badgeText}</span>
+              <span class="${authorColor}">${escapeHTML(post.author || '@attendee')}:</span>
+              <span class="${textColor}">${escapeHTML(post.text)}</span>
+            </span>
+          `;
+        }).join('');
+
+        // Duplicate items for continuous infinite horizontal scroll
+        track.innerHTML = itemsHtml + itemsHtml;
+      }
+    }
+
+    window.triggerSimulatedSpike = async function() {
+      const btn = document.getElementById('spike-test-btn');
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) btn.innerHTML = `<i data-lucide="loader" class="w-3 h-3 animate-spin text-rose-600"></i> Testing...`;
+      try {
+        const res = await fetch('/api/social/simulate_spike', {
+          method: 'POST',
+          headers: { 'X-Admin-Key': window.currentAdminKey || '' }
+        });
+        if (res.ok) {
+          pollAdminStats();
+        }
+      } catch (err) {
+        console.error('Error triggering spike test:', err);
+      } finally {
+        if (btn) {
+          btn.innerHTML = origHtml;
+          lucide.createIcons();
+        }
+      }
+    };
+
+    window.dismissFrictionAlert = async function() {
+      // Immediate tactile UI response
+      const container = document.getElementById('social-ticker-container');
+      const badge = document.getElementById('ticker-badge');
+      const dot = document.getElementById('ticker-dot');
+      const label = document.getElementById('ticker-label');
+      const banner = document.getElementById('friction-alert-banner');
+
+      if (container) container.className = "relative mb-8 rounded-2xl glass-card border border-stone-200 shadow-md overflow-hidden transition-all duration-500";
+      if (badge) badge.className = "px-4 py-3 shrink-0 flex items-center gap-2 bg-stone-900 text-white font-mono text-xs font-bold tracking-wider uppercase border-r border-stone-700 z-10";
+      if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+      if (label) label.textContent = "SOCIAL LISTENING";
+      if (banner) banner.classList.add('hidden');
+
+      try {
+        await fetch('/api/social/clear_alert', {
+          method: 'POST',
+          headers: { 'X-Admin-Key': window.currentAdminKey || '' }
+        });
+        pollAdminStats();
+      } catch (err) {
+        console.error('Error clearing friction alert:', err);
+      }
+    };
+
+    function renderIncidents(incidents) {
+      const container = document.getElementById('incidents-container');
+      const badge = document.getElementById('active-incident-badge');
+      if (!container || !badge) return;
+
+      badge.textContent = incidents.length === 0 ? '0 ACTIVE' : `${incidents.length} ACTIVE`;
+      if (incidents.length === 0) {
+        badge.className = 'text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2.5 py-1 rounded-full uppercase tracking-wider';
+        container.innerHTML = '<div class="p-4 text-center text-xs text-stone-400 font-medium">No active emergency pings. All sectors nominal.</div>';
+        return;
+      }
+
+      badge.className = 'text-[10px] text-rose-700 font-bold bg-rose-100 px-2.5 py-1 rounded-full uppercase tracking-wider animate-pulse';
+      const html = incidents.map(inc => {
+        const isMed = inc.type === 'Medical';
+        const isSec = inc.type === 'Security';
+        const icon = isMed ? '🚨' : (isSec ? '👮' : '🛠️');
+        const borderCol = isMed 
+          ? 'border-rose-300 bg-rose-50/80 text-rose-900' 
+          : (isSec ? 'border-amber-300 bg-amber-50/80 text-amber-900' : 'border-sky-300 bg-sky-50/80 text-sky-900');
+        return `
+          <div class="p-3 rounded-xl border ${borderCol} flex items-start justify-between gap-3 text-xs shadow-sm">
+            <div class="flex-1">
+              <div class="flex items-center gap-1.5 font-bold mb-0.5">
+                <span>${icon}</span>
+                <span>${escapeHTML(inc.type)} Emergency</span>
+                <span class="text-stone-500 font-normal">· ${escapeHTML(inc.zone_name)}</span>
+              </div>
+              <p class="text-stone-700 text-[11px] leading-tight font-medium">${escapeHTML(inc.notes)}</p>
+              <span class="text-[10px] text-stone-400 mt-1 block">${timeAgo(inc.reported_at)}</span>
+            </div>
+            <button onclick="resolveIncident('${inc.id}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg shadow-sm whitespace-nowrap transition-colors">
+              RESOLVE
+            </button>
+          </div>
+        `;
+      }).join('');
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    window.resolveIncident = async function(id) {
+      try {
+        const res = await fetch(`/api/incident/${id}/resolve`, {
+          method: 'POST',
+          headers: { 'X-Admin-Key': window.currentAdminKey || '' }
+        });
+        if (res.ok) {
+          pollAdminStats();
+        }
+      } catch (e) {
+        console.error('Error resolving incident', e);
+      }
+    };
+
+    let currentDiversionZone = 'Cultural Pavilion';
+
+    window.triggerDiversionDialog = function(zoneName) {
+      currentDiversionZone = zoneName || 'Cultural Pavilion';
+      const modal = document.getElementById('diversion-modal');
+      if (!modal) return;
+
+      const sourceZoneEl = document.getElementById('diversion-source-zone');
+      if (sourceZoneEl) sourceZoneEl.textContent = currentDiversionZone;
+
+      const targetSelect = document.getElementById('diversion-target-select');
+      if (targetSelect) {
+        const allZones = ["Food Court", "Artisan Market", "Main Stage", "Cultural Pavilion", "VIP Lounge"];
+        const targets = allZones.filter(z => z !== currentDiversionZone);
+        targetSelect.innerHTML = targets.map(z => `<option value="${z}">${z}</option>`).join('');
+      }
+
+      applyDiversionPreset('discount');
+      modal.classList.remove('hidden');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    window.closeDiversionModal = function() {
+      const modal = document.getElementById('diversion-modal');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    window.updateDiversionPreset = function() {
+      applyDiversionPreset('discount');
+    };
+
+    window.applyDiversionPreset = function(type) {
+      const targetSelect = document.getElementById('diversion-target-select');
+      const targetZone = targetSelect ? targetSelect.value : 'Food Court';
+      const msgInput = document.getElementById('diversion-message-input');
+      if (!msgInput) return;
+
+      if (type === 'discount') {
+        msgInput.value = `Active Crowd Diversion: Special 50% discount at ${targetZone} for the next 15 minutes! Head over to claim.`;
+      } else if (type === 'merch') {
+        msgInput.value = `Crowd Alert Perk: Free collectible festival souvenir at ${targetZone} for the next 50 visitors!`;
+      } else if (type === 'music') {
+        msgInput.value = `Surprise Event: Unannounced live acoustic set starting now at ${targetZone}! Head over to catch it.`;
+      } else if (type === 'coins') {
+        msgInput.value = `Cashless Perk: Get 100 bonus Fest Coins on any stall recharge or purchase at ${targetZone} right now!`;
+      }
+    };
+
+    window.showDiversionToast = function(title, msg, isError = false) {
+      const toast = document.getElementById('diversion-toast');
+      if (!toast) return;
+      const titleEl = document.getElementById('toast-title');
+      const msgEl = document.getElementById('toast-message');
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = msg;
+      const iconBox = document.getElementById('toast-icon-box');
+      if (iconBox) {
+        iconBox.className = `w-8 h-8 rounded-xl ${isError ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'} flex items-center justify-center shrink-0`;
+      }
+      toast.classList.remove('hidden');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      setTimeout(() => {
+        hideDiversionToast();
+      }, 5000);
+    };
+
+    window.hideDiversionToast = function() {
+      const toast = document.getElementById('diversion-toast');
+      if (toast) toast.classList.add('hidden');
+    };
+
+    window.executeDiversionBroadcast = async function(event) {
+      if (event) event.preventDefault();
+      const targetSelect = document.getElementById('diversion-target-select');
+      const targetZone = targetSelect ? targetSelect.value : 'Food Court';
+      const msgInput = document.getElementById('diversion-message-input');
+      const msg = msgInput ? msgInput.value.trim() : `Diversion to ${targetZone}`;
+
+      const btn = document.getElementById('diversion-submit-btn');
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Broadcasting...`;
+        btn.disabled = true;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+
+      const adminKey = window.currentAdminKey || sessionStorage.getItem('adminKey') || '';
+
+      try {
+        const res = await fetch('/api/admin/trigger_diversion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': adminKey
+          },
+          body: JSON.stringify({
+            zone_name: currentDiversionZone,
+            target_zone: targetZone,
+            message: msg
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          closeDiversionModal();
+          showDiversionToast('📢 Diversion Broadcasted!', data.message);
+          pollAdminStats();
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          showDiversionToast('Broadcast Failed', errData.detail || 'Could not trigger diversion.', true);
+        }
+      } catch (err) {
+        console.error('Error triggering diversion:', err);
+        showDiversionToast('Network Error', 'Failed to reach server.', true);
+      } finally {
+        if (btn) {
+          btn.innerHTML = origHtml;
+          btn.disabled = false;
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+      }
+    };
+
+    const pollIndicator = document.getElementById('poll-indicator');
+    const lastSyncEl = document.getElementById('last-sync');
+
+    // ─────────────────────── 3-Second Core Polling Loop ───────────────────────
+    async function pollAdminStats() {
+      if (!document.getElementById('auth-overlay').classList.contains('hidden')) return;
+      
+      pollIndicator.classList.add('bg-rose-500');
+      setTimeout(() => {
+        pollIndicator.classList.remove('bg-rose-500');
+        pollIndicator.classList.add('bg-stone-300');
+      }, 450);
+
+      try {
+        const res = await fetch('/api/admin/stats', {
+          headers: { 'X-Admin-Key': window.currentAdminKey || '' }
+        });
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            window.currentAdminKey = '';
+            document.getElementById('auth-overlay').classList.remove('hidden');
+          }
+          lastSyncEl.textContent = res.status === 401 || res.status === 403 ? 'Unauthorized' : `Error ${res.status}`;
+          setOfflineState();
+          return;
+        }
+        const data = await res.json();
+
+        // 1. Zones Telemetry
+        (data.zones || []).forEach(z => {
+          const zone = zonesData.find(d => d.name === z.zone_name);
+          if (!zone) return;
+          zone.total = Number(z.total_scans) || 0;
+          zone.recent = Number(z.recent_scans) || 0;
+          zone.warning = Boolean(z.capacity_warning);
+          zone.active_diversion = z.active_diversion || null;
+          zone.cap = Math.min(100, Math.round((zone.recent / BOTTLENECK_THRESHOLD) * 100));
+        });
+        zonesData.forEach(renderZoneUI);
+
+        // 2. Financial Metrics Update (Total Revenue & Live Transactions)
+        updateSummaryMetrics(data.financials);
+
+        // 3. Live Social Sentiment Triage & Friction Alert
+        renderSocialTicker(data.social_feed || [], data.friction_alert);
+
+        // 4. Live Guest Scan Stream & Incidents
+        renderTelemetry(data.recent_logs || []);
+        renderIncidents(data.active_incidents || []);
+
+        lastSyncEl.textContent = new Date().toTimeString().split(' ')[0];
+      } catch (err) {
+        lastSyncEl.textContent = 'Backend unreachable';
+        setOfflineState();
+      }
+    }
+
+    function setOfflineState() {
+      document.getElementById('total-scans-metric').textContent = '--';
+      document.getElementById('recent-rate-metric').textContent = '--';
+      document.getElementById('active-alert-count').textContent = '--';
+      
+      zonesData.forEach(z => {
+        document.getElementById(`zone-${z.id}-capacity`).textContent = '--';
+        document.getElementById(`zone-${z.id}-total`).textContent = '--';
+        document.getElementById(`zone-${z.id}-recent`).textContent = '--';
+        document.getElementById(`zone-${z.id}-bar`).style.width = '0%';
+        document.getElementById(`zone-${z.id}-alert`).classList.add('hidden');
+        document.getElementById(`zone-card-${z.id}`).className = "glass-card p-5 rounded-2xl transition-all duration-300";
+      });
+      
+      document.getElementById('stream-log').innerHTML = '<div class="text-center p-4 text-stone-400 text-xs font-bold">FEED UNAVAILABLE</div>';
+    }
+
+    function timeAgo(ts) {
+      if (!ts) return '';
+      const iso = /[zZ]|[+-]\d{2}:\d{2}$/.test(ts) ? ts : `${ts}Z`;
+      const secs = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+      if (Number.isNaN(secs)) return '';
+      if (secs < 5) return 'Just now';
+      if (secs < 60) return `${secs}s ago`;
+      if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+      return `${Math.floor(secs / 3600)}h ago`;
+    }
+
+    function renderTelemetry(logs) {
+      const stream = document.getElementById('stream-log');
+      const rows = (logs || []).slice(0, 10).map(log => {
+        const isVip = log.role === 'VIP';
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between p-2.5 rounded-xl border ${isVip ? 'bg-rose-50 border-rose-100' : 'bg-stone-50 border-stone-100'}`;
+
+        const nameEl = document.createElement('span');
+        nameEl.className = `${isVip ? 'text-rose-600' : 'text-stone-800'} font-bold truncate`;
+        nameEl.textContent = log.attendee_name || 'Unknown';
+
+        const zoneEl = document.createElement('span');
+        zoneEl.className = `${isVip ? 'text-stone-600' : 'text-stone-500'} truncate px-2 text-center`;
+        zoneEl.textContent = log.zone_name || '';
+
+        const timeEl = document.createElement('span');
+        timeEl.className = 'text-stone-400 text-[10px] whitespace-nowrap';
+        timeEl.textContent = timeAgo(log.timestamp);
+
+        row.append(nameEl, zoneEl, timeEl);
+        return row;
+      });
+      stream.replaceChildren(...rows);
+    }
+
+    async function processNLPQuery(query) {
+      const respEl = document.getElementById('nlp-response');
+      const outputEl = document.getElementById('nlp-output-text');
+      
+      respEl.classList.remove('hidden', 'opacity-0', '-translate-y-4');
+      outputEl.innerHTML = `<span class="animate-pulse">Thinking...</span>`;
+      
+      try {
+        const res = await fetch('/api/admin/nlp_query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': window.currentAdminKey || ''
+          },
+          body: JSON.stringify({ query: query })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          outputEl.textContent = data.response;
+        } else {
+          outputEl.textContent = "I'm having trouble analyzing the festival data right now.";
+        }
+      } catch (err) {
+         outputEl.textContent = "Offline Mode: Based on current estimates, crowds are steady.";
+      }
+    }
+
+    window.throttleZone = async function(zoneName) {
+      const overlay = document.createElement('div');
+      overlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50';
+      
+      const modal = document.createElement('div');
+      modal.className = 'bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl';
+      
+      const title = document.createElement('h3');
+      title.className = 'text-xl font-serif font-bold text-fest-dark mb-2';
+      title.textContent = 'Divert Crowd Flow';
+      
+      const desc = document.createElement('p');
+      desc.className = 'text-sm text-stone-500 mb-4';
+      desc.textContent = `Select a target zone to divert attendees from ${zoneName}.`;
+      
+      const countLabel = document.createElement('label');
+      countLabel.className = 'block text-xs font-bold text-stone-500 mb-1';
+      countLabel.textContent = 'Number of attendees to divert:';
+      
+      const countInput = document.createElement('input');
+      countInput.type = 'number';
+      countInput.className = 'w-full p-3 rounded-xl border border-stone-200 mb-4 text-stone-700';
+      countInput.value = 150;
+      countInput.min = 1;
+      
+      const countWrapper = document.createElement('div');
+      countWrapper.appendChild(countLabel);
+      countWrapper.appendChild(countInput);
+      
+      const zoneList = document.createElement('div');
+      zoneList.className = 'flex flex-col gap-2 max-h-60 overflow-y-auto no-scrollbar mb-6';
+      
+      const zones = ["Auto Distribute (Evenly)", "Main Stage", "Food Court", "Artisan Market", "Cultural Pavilion", "VIP Lounge"];
+      let selectedZone = null;
+      
+      zones.forEach(z => {
+          if (z === zoneName) return; 
+          const btn = document.createElement('button');
+          btn.className = 'text-left px-4 py-3 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 transition-colors font-medium text-stone-600';
+          btn.textContent = z;
+          btn.onclick = async () => {
+              selectedZone = z === "Auto Distribute (Evenly)" ? null : z;
+              overlay.remove();
+              executeDiversion();
+          };
+          zoneList.appendChild(btn);
+      });
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'w-full py-3 rounded-xl font-bold text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.onclick = () => overlay.remove();
+
+      modal.appendChild(title);
+      modal.appendChild(desc);
+      modal.appendChild(countWrapper);
+      modal.appendChild(zoneList);
+      modal.appendChild(cancelBtn);
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      async function executeDiversion() {
+          try {
+              const res = await fetch('/api/admin/throttle_zone', {
+                  method: 'POST',
+                  headers: { 
+                      'Content-Type': 'application/json',
+                      'X-Admin-Key': window.currentAdminKey || ''
+                  },
+                  body: JSON.stringify({ 
+                      zone_name: zoneName, 
+                      target_zone: selectedZone,
+                      count: parseInt(countInput.value, 10) || 150
+                  })
+              });
+              if (res.ok) {
+                  const data = await res.json();
+                  alert(data.message);
+                  pollAdminStats();
+              } else {
+                  alert('Error initiating diversion.');
+              }
+          } catch (err) {
+              alert('Diversion failed: Backend is unreachable.');
+          }
+      }
+    };
+
+    async function fetchLiveWeather() {
+      const wKey = localStorage.getItem('weatherKey') || '';
+      const wDisp = document.getElementById('weather-display');
+      if (!wKey) {
+          wDisp.textContent = 'Clear, 22°C (Mock)';
+          return;
+      }
+      try {
+          const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Panipat&units=metric&appid=${wKey}`);
+          if (res.ok) {
+              const data = await res.json();
+              const desc = data.weather[0].main;
+              const temp = Math.round(data.main.temp);
+              wDisp.textContent = `${desc}, ${temp}°C`;
+          } else {
+              wDisp.textContent = 'Clear, 22°C (Mock)';
+          }
+      } catch (e) {
+          wDisp.textContent = 'Clear, 22°C (Mock)';
+      }
+    }
+  </script>
+  <script src="/nlp-assistant.js"></script>
+</body>
+</html>
