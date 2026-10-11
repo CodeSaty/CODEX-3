@@ -1110,10 +1110,8 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
     total_inr_collected = fin.get("total_inr_recharged", 0)
     recharge_volume = fin.get("recharge_volume", 0)
     active_incidents = stats.get("active_incidents", [])
-
     # Live Social Sentiment Telemetry
-    if not social_manager.recent_stream:
-        social_manager.sample_post()
+    social_manager._evaluate_friction_alert(datetime.now(timezone.utc))
     total_sampled = len(social_manager.recent_stream)
     pos_count = sum(1 for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "positive")
     neu_count = sum(1 for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "neutral")
