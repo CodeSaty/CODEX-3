@@ -1111,10 +1111,36 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
     recharge_volume = fin.get("recharge_volume", 0)
     active_incidents = stats.get("active_incidents", [])
 
+    # Live Social Sentiment Telemetry
+    if not social_manager.recent_stream:
+        social_manager.sample_post()
+    total_sampled = len(social_manager.recent_stream)
+    pos_count = sum(1 for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "positive")
+    neu_count = sum(1 for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "neutral")
+    neg_count = sum(1 for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "negative")
+    denom = max(1, total_sampled)
+    pos_pct = round((pos_count / denom) * 100, 1)
+    neu_pct = round((neu_count / denom) * 100, 1)
+    neg_pct = round((neg_count / denom) * 100, 1)
+
+    f_alert_global = social_manager.friction_alert
+    is_friction_active_global = bool(f_alert_global.get("active", False))
+    if is_friction_active_global:
+        mood_rating = "CRITICAL FRICTION"
+    elif pos_pct >= 75:
+        mood_rating = "OVERWHELMINGLY POSITIVE"
+    elif pos_pct >= 50:
+        mood_rating = "MOSTLY POSITIVE"
+    elif neg_pct >= 30:
+        mood_rating = "HIGH FRICTION"
+    else:
+        mood_rating = "BALANCED"
+
+    is_sentiment = bool(re.search(r"sentiment|social|listening|mood|vibe|feedback|review|tweet|reaction|feeling|opinion|complaint|friction|triage|\bposts?\b", query))
     is_crowd = bool(re.search(r"crowd|bottleneck|congest|traffic|capacity|dens|packed|fullest|busy|divert", query))
     is_coin = bool(re.search(r"coin|recharge|inr|rupee|wallet|cash|money|top-up|balance|revenue|minted|fest coin", query))
     is_pass = bool(re.search(r"pass|attendee|guest|ticket|revok|terminat|status|register|vip", query)) and not is_crowd
-    is_incident = bool(re.search(r"incident|sos|alert|emergency|medical|security|logistics|hazard|friction", query))
+    is_incident = bool(re.search(r"incident|sos|alert|emergency|medical|security|logistics|hazard", query))
 
     category = "general"
     answer = ""
@@ -1122,7 +1148,42 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
     quick_actions: List[Dict[str, Any]] = []
     result_count = 0
 
-    if is_crowd:
+    if is_sentiment:
+        category = "sentiment"
+        f_alert = social_manager.friction_alert
+        is_friction_active = bool(f_alert.get("active", False))
+        neg_60s = f_alert.get("negative_count_60s", 0)
+        severity = f_alert.get("severity", "NORMAL")
+
+        latest_neg = next((p for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "negative"), None)
+        latest_pos = next((p for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "positive"), None)
+
+        if is_friction_active:
+            answer = f"🚨 Social Sentiment Alert ({severity}): Friction alert is ACTIVE with {neg_60s} negative attendee complaints in the last 60 seconds! Stream breakdown: {pos_pct}% Positive, {neu_pct}% Neutral, {neg_pct}% Negative across {total_sampled} live posts."
+            if latest_neg:
+                answer += f' Highlighted complaint: "{latest_neg.get("text")}" ({latest_neg.get("author")}). Immediate triage recommended.'
+        else:
+            answer = f"Live Sentiment Telemetry: Audience mood is {mood_rating} ({pos_pct}% positive, {neu_pct}% neutral, {neg_pct}% negative across {total_sampled} live posts). Friction alert is NOMINAL with {neg_60s} complaints in the 60s window."
+            if latest_pos:
+                answer += f' Recent guest buzz: "{latest_pos.get("text")}" ({latest_pos.get("author")}).'
+
+        metrics = [
+            {"label": "Audience Mood", "value": f"{pos_pct}% Positive", "alert": is_friction_active or neg_pct > 25},
+            {"label": "Friction Alert", "value": "ACTIVE" if is_friction_active else "NOMINAL", "alert": is_friction_active},
+            {"label": "Positive Posts", "value": f"{pos_count} ({pos_pct}%)"},
+            {"label": "Negative Reports", "value": f"{neg_count} ({neg_pct}%)", "alert": is_friction_active or neg_count >= 8}
+        ]
+        quick_actions = [
+            {"label": "Open Live Social Radar", "url": "/#social-ticker-container"}
+        ]
+        if is_friction_active:
+            quick_actions.append({"label": "Resolve Friction Alert", "action": "clear_alert"})
+        else:
+            quick_actions.append({"label": "Test Friction Spike", "action": "simulate_spike"})
+
+        result_count = total_sampled
+
+    elif is_crowd:
         category = "crowd"
         if bottlenecks:
             b_str = ", ".join([f"{b} ({zone_counts.get(b, 0)} scans)" for b in bottlenecks])
@@ -1164,7 +1225,7 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
         elif active_incidents:
             answer = f"Active Security Alerts: {len(active_incidents)} pending incident(s) require dispatcher triage. Latest incident in {active_incidents[0].get('zone_name', 'Festival Grounds')}."
         else:
-            answer = "All clear. Zero unresolved SOS incidents. Social sentiment is nominal across all 5 zones."
+            answer = f"All clear. Zero unresolved SOS incidents. Social sentiment is nominal across all 5 zones ({pos_pct}% positive)."
         metrics = [
             {"label": "Active Incidents", "value": str(len(active_incidents)), "alert": len(active_incidents) > 0},
             {"label": "Friction Alert", "value": "ACTIVE" if f_alert.get("active") else "NOMINAL", "alert": f_alert.get("active")},
@@ -1210,6 +1271,18 @@ async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depe
         try:
             from google import genai
             client = genai.Client()
+            sentiment_summary = {
+                "positive_pct": f"{pos_pct}%",
+                "neutral_pct": f"{neu_pct}%",
+                "negative_pct": f"{neg_pct}%",
+                "total_posts_sampled": total_sampled,
+                "audience_mood": mood_rating,
+                "friction_alert": social_manager.friction_alert,
+                "recent_sample": [
+                    {"author": p.get("author"), "sentiment": p.get("sentiment"), "text": p.get("text")}
+                    for p in social_manager.recent_stream[:3]
+                ]
+            }
             prompt = f"""You are the Cultura Festival AI Command Assistant.
 The festival administrator asked: "{original_query}".
 Telemetry Snapshot:
@@ -1219,6 +1292,7 @@ Telemetry Snapshot:
 - Total Fest Coins in Circulation: {total_coins}
 - Total INR Cashless Collected: ₹{total_inr_collected}
 - Active SOS Incidents: {len(active_incidents)}
+- Sentiment Analyzer & Social Telemetry: {json.dumps(sentiment_summary)}
 - Friction Alert: {json.dumps(social_manager.friction_alert)}
 Base calculated response: "{answer}"
 

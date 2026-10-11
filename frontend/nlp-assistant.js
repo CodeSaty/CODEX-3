@@ -109,6 +109,10 @@
               ⚠️ Crowded Zones?
             </button>
             <button type="button" class="nlp-quick-prompt shrink-0 px-3 py-1.5 rounded-lg bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-800 dark:text-stone-200 hover:border-rose-500 hover:text-rose-600 dark:hover:text-rose-400 font-medium transition-all shadow-sm"
+              data-prompt="What is the current attendee sentiment and social feedback?">
+              💬 Sentiment & Mood
+            </button>
+            <button type="button" class="nlp-quick-prompt shrink-0 px-3 py-1.5 rounded-lg bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-800 dark:text-stone-200 hover:border-rose-500 hover:text-rose-600 dark:hover:text-rose-400 font-medium transition-all shadow-sm"
               data-prompt="How many Fest Coins minted and total rupee revenue collected?">
               🪙 Coins & Rupee Revenue
             </button>
@@ -361,7 +365,15 @@
             if (a.action === 'diversion') {
               return `<button type="button" onclick="if(window.triggerDiversionDialog) window.triggerDiversionDialog('Cultural Pavilion');" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors">${escapeHTML(a.label)}</button>`;
             }
-            return `<a href="${a.url}" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700 hover:bg-stone-200 transition-colors">${escapeHTML(a.label)}</a>`;
+            if (a.action === 'simulate_spike') {
+              return `<button type="button" onclick="window.nlpTriggerSpike && window.nlpTriggerSpike(this)" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors">${escapeHTML(a.label)}</button>`;
+            }
+            if (a.action === 'clear_alert') {
+              return `<button type="button" onclick="window.nlpClearAlert && window.nlpClearAlert(this)" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition-colors">${escapeHTML(a.label)}</button>`;
+            }
+            const isRadar = a.url && a.url.includes('social-ticker-container');
+            const clickAttr = isRadar ? `onclick="const el=document.getElementById('social-ticker-container'); if(el) { el.scrollIntoView({behavior:'smooth'}); }"` : '';
+            return `<a href="${a.url}" ${clickAttr} class="px-2.5 py-1 text-xs font-bold rounded-lg bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700 hover:bg-stone-200 transition-colors">${escapeHTML(a.label)}</a>`;
           }).join('')}
         </div>
       `;
@@ -494,6 +506,49 @@
       }
     });
   }
+
+  // Social Sentiment action helpers
+  window.nlpTriggerSpike = async function(btn) {
+    if (typeof window.triggerSimulatedSpike === 'function') {
+      return window.triggerSimulatedSpike();
+    }
+    const orig = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = 'Injecting...'; btn.disabled = true; }
+    try {
+      const res = await fetch('/api/social/simulate_spike', {
+        method: 'POST',
+        headers: { 'X-Admin-Key': getAdminKey() }
+      });
+      if (res.ok) {
+        if (btn) btn.textContent = 'Spike Injected! 🚨';
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTimeout(() => { if (btn) { btn.textContent = orig; btn.disabled = false; } }, 2500);
+    }
+  };
+
+  window.nlpClearAlert = async function(btn) {
+    if (typeof window.dismissFrictionAlert === 'function') {
+      return window.dismissFrictionAlert();
+    }
+    const orig = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = 'Resolving...'; btn.disabled = true; }
+    try {
+      const res = await fetch('/api/social/clear_alert', {
+        method: 'POST',
+        headers: { 'X-Admin-Key': getAdminKey() }
+      });
+      if (res.ok) {
+        if (btn) btn.textContent = 'Alert Resolved! ✅';
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTimeout(() => { if (btn) { btn.textContent = orig; btn.disabled = false; } }, 2500);
+    }
+  };
 
   // Expose global methods
   window.openNLPAssistant = openAssistant;
