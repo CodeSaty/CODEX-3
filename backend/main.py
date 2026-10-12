@@ -1376,5 +1376,6 @@ async def serve_static_fallback(file_path: str):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 3000))
+    host = os.getenv("HOST", "127.0.0.1")
     reload_mode = os.getenv("RELOAD", "false").lower() in ("true", "1", "yes")
     uvicorn.run("main:app", host=host, port=port, reload=reload_mode)
