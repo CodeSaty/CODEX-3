@@ -7,6 +7,9 @@
   <meta name="description" content="Dedicated Google Gemini AI Operations Copilot War Room with real-time cross-functional reasoning, MongoDB query translation, and decision support.">
   <meta name="color-scheme" content="dark">
   
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -25,6 +28,7 @@
           },
           colors: {
             brand: {
+              50: '#f0fdf4',
               500: '#10b981',
               600: '#059669',
             }
@@ -35,7 +39,7 @@
   </script>
 
   <style>
-    body { background-color: #0a0c10; color: #f3f4f6; }
+    body { background-color: transparent !important; color: #f3f4f6; }
     .glass-panel {
       background: rgba(18, 22, 29, 0.75);
       backdrop-filter: blur(16px);
@@ -49,7 +53,7 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-[#0a0c10] text-gray-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white antialiased">
+<body class="min-h-screen bg-transparent text-gray-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white antialiased relative">
 
   <!-- NAVIGATION HEADER -->
   <header class="glass-panel border-x-0 border-t-0 px-6 py-3.5 sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4">

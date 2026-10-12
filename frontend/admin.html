@@ -7,6 +7,9 @@
   <meta name="description" content="Executive Overview and AI Command Centre with real-time risk triage, velocity monitoring, and cross-functional decision support.">
   <meta name="color-scheme" content="dark">
   
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -36,7 +39,7 @@
 
   <style>
     body {
-      background-color: #0a0c10;
+      background-color: transparent !important;
       color: #f3f4f6;
     }
     .glass-panel {
@@ -84,10 +87,10 @@
     }
   </style>
 </head>
-<body class="min-h-screen bg-[#0a0c10] text-gray-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white antialiased overflow-x-hidden">
+<body class="min-h-screen bg-transparent text-gray-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white antialiased overflow-x-hidden relative">
 
   <!-- TOP SOCIAL VIBE TICKER BAR -->
-  <div class="w-full bg-[#07090d] border-b border-stone-800/80 py-2 overflow-hidden flex items-center relative z-20">
+  <div class="w-full bg-[#07090d]/85 backdrop-blur-md border-b border-stone-800/80 py-2 overflow-hidden flex items-center relative z-20">
     <div class="px-3.5 py-1 flex items-center gap-2 border-r border-stone-800 bg-[#0d1117] text-xs font-semibold text-gray-300 shrink-0 z-10">
       <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
       <i data-lucide="radio" class="w-3.5 h-3.5 text-emerald-400"></i>

@@ -14,10 +14,10 @@
   const getChoice = () => {
     try {
       const v = localStorage.getItem(STORAGE_KEY);
-      return v === 'light' || v === 'dark' ? v : 'system';
-    } catch (_) { return 'system'; }
+      return v === 'light' || v === 'dark' ? v : 'dark';
+    } catch (_) { return 'dark'; }
   };
-  const resolve = (choice) => (choice === 'system' ? (systemDark.matches ? 'dark' : 'light') : choice);
+  const resolve = (choice) => (choice === 'system' ? 'dark' : (choice || 'dark'));
 
   // ---- Background (lazy) --------------------------------------------------
   let bgHost = null;
@@ -26,21 +26,24 @@
   let bgHideTimer = 0;
 
   function ensureHost() {
-    if (bgHost || !document.body) return bgHost;
-    bgHost = document.createElement('div');
-    bgHost.id = 'structure-flow-bg';
-    bgHost.setAttribute('aria-hidden', 'true');
-    document.body.prepend(bgHost);
+    if (bgHost) return bgHost;
+    if (!document.body) return null;
+    bgHost = document.getElementById('structure-flow-bg');
+    if (!bgHost) {
+      bgHost = document.createElement('div');
+      bgHost.id = 'structure-flow-bg';
+      bgHost.setAttribute('aria-hidden', 'true');
+      document.body.prepend(bgHost);
+    }
     return bgHost;
   }
 
   function showBackground() {
     if (!ensureHost()) return;
     clearTimeout(bgHideTimer);
-    const isDark = document.documentElement.classList.contains('dark');
-    requestAnimationFrame(() => bgHost.classList.add('is-visible'));
+    bgHost.classList.add('is-visible');
     if (bgInstance) { 
-      if (bgInstance.setTheme) bgInstance.setTheme(isDark);
+      if (bgInstance.setTheme) bgInstance.setTheme(true);
       bgInstance.start(); 
       return; 
     }
@@ -48,8 +51,7 @@
     bgLoading = import('/structure-flow.js')
       .then((m) => {
         bgInstance = m.createStructureFlow(bgHost, { speed: 1, density: 1 });
-        const isDarkNow = root.classList.contains('dark');
-        if (bgInstance.setTheme) bgInstance.setTheme(isDarkNow);
+        if (bgInstance.setTheme) bgInstance.setTheme(true);
         bgInstance.start();
       })
       .catch((err) => console.warn('[theme] Structure Flow background unavailable:', err))
@@ -158,11 +160,16 @@
   systemDark.addEventListener('change', () => { if (getChoice() === 'system') apply(true); });
   window.addEventListener('storage', (e) => { if (e.key === STORAGE_KEY) apply(true); });
 
-  document.addEventListener('DOMContentLoaded', () => {
+  const initTheme = () => {
     mountToggle();
     registerChartPlugin();
     apply(false);
-  });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTheme);
+  } else {
+    initTheme();
+  }
 
   window.addEventListener('pagehide', (e) => {
     if (!e.persisted && bgInstance) { bgInstance.dispose(); bgInstance = null; }
