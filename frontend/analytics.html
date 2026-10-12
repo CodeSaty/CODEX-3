@@ -8,6 +8,7 @@
   <meta name="color-scheme" content="dark">
   
   <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/effects/animated-top-dock/styles.css">
   <script src="/theme.js"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,16 +75,16 @@
         </div>
       </a>
 
-      <nav class="hidden md:flex items-center gap-1 bg-[#121620] p-1 rounded-xl border border-stone-800 text-xs">
-        <a href="/" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Overview</a>
-        <a href="/workflows.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Workflows</a>
-        <a href="/sentiment.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Sentiment Radar</a>
-        <a href="/analytics.html" class="px-3 py-1.5 rounded-lg bg-stone-800 text-brand-400 font-medium shadow-sm transition">Velocity & Analytics</a>
-        <a href="/copilot.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">AI Copilot</a>
-      </nav>
+      <!-- Sable Animated Top Dock Mount -->
+      <div id="top-dock-anchor" class="hidden md:flex items-center"></div>
     </div>
 
     <div class="flex items-center gap-3">
+      <a href="/ascii-page-transition-v1.html" class="px-3 py-2 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/80 text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer" title="Open Sable Animated Top Dock Lab">
+        <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">Dock Lab</span>
+      </a>
+
       <button onclick="executeBoost()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-bold shadow-md transition cursor-pointer flex items-center gap-1.5">
         <i data-lucide="zap" class="w-3.5 h-3.5"></i>
         <span>Trigger Referral Boost</span>
@@ -316,6 +317,21 @@
       fetchAnalytics();
       alert('⚡ Referral Boost activated! +80 attendees added to velocity pacing.');
     }
+
+    // Mount Sable Animated Top Dock
+    import('/effects/animated-top-dock/AnimatedTopDock.js')
+      .then((m) => {
+        const mount = document.getElementById('top-dock-anchor');
+        if (mount) {
+          m.createAnimatedTopDock(mount, {
+            fit: 'centred',
+            proximity: 122,
+            spring: 0.19,
+            damping: 0.70
+          });
+        }
+      })
+      .catch((err) => console.warn('[TopDock] failed to initialize:', err));
   </script>
 </body>
 </html>
