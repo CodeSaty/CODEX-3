@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Executive Overview | Hackingly Intelligent Event Command Centre</title>
-  <meta name="description" content="Executive Overview and AI Command Centre with real-time risk triage, velocity monitoring, and cross-functional decision support.">
+  <title>Intelligent Event Command Centre | God Mode Operating System</title>
+  <meta name="description" content="Dual-Phase Event Command Centre: Planning Mode (Tasks, Budget Burn Triage, Velocity) and Live Mode (Zone Crowd Telemetry, Fest Coin Economy, SOS Incidents).">
   <meta name="color-scheme" content="dark">
-  
+
   <link rel="stylesheet" href="/theme.css">
   <link rel="stylesheet" href="/effects/animated-top-dock/styles.css">
   <script src="/theme.js"></script>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -44,8 +44,9 @@
       color: #f3f4f6;
     }
     .glass-panel {
-      background: rgba(18, 22, 29, 0.75);
+      background: rgba(18, 22, 29, 0.78);
       backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
@@ -71,12 +72,12 @@
       animation-play-state: paused;
     }
     @keyframes alertGlow {
-      0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); border-color: #ef4444; }
-      50% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.85); border-color: #f87171; }
+      0%, 100% { box-shadow: 0 0 22px rgba(239, 68, 68, 0.55); border-color: #ef4444; }
+      50% { box-shadow: 0 0 38px rgba(239, 68, 68, 0.9); border-color: #f87171; }
     }
     .risk-alert-active {
       animation: alertGlow 1.6s ease-in-out infinite !important;
-      background: linear-gradient(135deg, rgba(69, 10, 10, 0.95), rgba(28, 12, 16, 0.9)) !important;
+      background: linear-gradient(135deg, rgba(75, 10, 10, 0.95), rgba(28, 12, 16, 0.92)) !important;
       border-color: #dc2626 !important;
     }
     @keyframes blockerPulse {
@@ -85,6 +86,15 @@
     }
     .blocker-pulse {
       animation: blockerPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes zoneSurgePulse {
+      0%, 100% { border-color: #ef4444; box-shadow: 0 0 18px rgba(239, 68, 68, 0.45); }
+      50% { border-color: #f87171; box-shadow: 0 0 32px rgba(239, 68, 68, 0.85); }
+    }
+    .zone-warning-active {
+      animation: zoneSurgePulse 1.6s ease-in-out infinite !important;
+      background: linear-gradient(135deg, rgba(60, 10, 14, 0.85), rgba(25, 12, 18, 0.8)) !important;
+      border-color: #ef4444 !important;
     }
   </style>
 </head>
@@ -98,7 +108,7 @@
       <span class="tracking-wide uppercase text-[11px] font-mono">Live Vibe</span>
       <span id="ticker-sentiment-ratio" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-mono">75% POS</span>
     </div>
-    
+
     <div class="overflow-hidden flex-1 relative whitespace-nowrap cursor-pointer" onclick="window.location.href='/sentiment.html'">
       <div id="ticker-content" class="animate-marquee flex items-center gap-6 px-4">
         <!-- Live posts dynamically injected -->
@@ -112,7 +122,7 @@
     </div>
   </div>
 
-  <!-- NAVIGATION HEADER -->
+  <!-- NAVIGATION HEADER WITH GLOBAL PHASE TOGGLE -->
   <header class="glass-panel border-x-0 border-t-0 px-6 py-3.5 sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4">
     <div class="flex items-center gap-6">
       <a href="/" class="flex items-center gap-3">
@@ -124,7 +134,7 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 id="header-event-title" class="font-bold text-base tracking-tight text-white">Event Command Centre</h1>
-            <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-brand-500/20 text-brand-400 border border-brand-500/30">PS1 ACTIVE</span>
+            <span id="badge-mode-pill" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-brand-500/20 text-brand-400 border border-brand-500/30 uppercase">PLANNING MODE</span>
           </div>
           <p id="header-event-meta" class="text-[11px] text-gray-400 flex items-center gap-2">
             <span>Format: <b id="meta-format" class="text-gray-200">Hybrid</b></span>
@@ -135,25 +145,23 @@
       </a>
 
       <!-- Sable Animated Top Dock Mount -->
-      <div id="top-dock-anchor" class="hidden md:flex items-center"></div>
+      <div id="top-dock-anchor" class="hidden xl:flex items-center"></div>
     </div>
 
-    <!-- Quick Actions & Status -->
+    <!-- PROMINENT GLOBAL PHASE TOGGLE SWITCH -->
     <div class="flex items-center gap-3">
-      <div class="hidden lg:flex items-center gap-2 bg-[#131720] px-3 py-1.5 rounded-xl border border-stone-800 text-xs font-mono">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        <span class="text-gray-400 text-[11px]">Atlas:</span>
-        <span id="atlas-status-text" class="text-emerald-400 text-[11px]">Connected</span>
-        <div class="h-3 w-px bg-stone-700"></div>
-        <span class="text-gray-400 text-[11px]">Gemini:</span>
-        <span class="text-sky-400 text-[11px]">Ready</span>
+      <div class="flex items-center p-1 bg-[#10141d] border border-stone-800 rounded-2xl shadow-inner">
+        <button id="toggle-planning" onclick="setGlobalMode('planning')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-900/30 cursor-pointer">
+          <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+          <span>Planning Mode</span>
+        </button>
+        <button id="toggle-live" onclick="setGlobalMode('live')" class="px-4 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-white transition flex items-center gap-2 cursor-pointer">
+          <i data-lucide="activity" class="w-4 h-4"></i>
+          <span>Live Mode</span>
+        </button>
       </div>
 
-      <a href="/ascii-page-transition-v1.html" class="px-3 py-2 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-700/80 text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer" title="Open Sable Animated Top Dock Lab">
-        <i data-lucide="layers" class="w-3.5 h-3.5"></i>
-        <span class="hidden sm:inline">Dock Lab</span>
-      </a>
-
+      <!-- Quick Actions -->
       <button onclick="openSetupModal()" class="px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 border border-stone-700 text-gray-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
         <i data-lucide="plus-circle" class="w-4 h-4 text-brand-400"></i>
         <span>Event Brief</span>
@@ -167,284 +175,338 @@
     </div>
   </header>
 
-  <!-- MAIN EXECUTIVE DASHBOARD -->
+
+  <!-- MAIN CONTAINER -->
   <main class="flex-1 p-6 max-w-[1720px] w-full mx-auto space-y-6">
 
-    <!-- 1. UNIFIED RISK & DECISION BANNER -->
-    <div id="risk-decision-banner" class="glass-panel rounded-2xl p-5 border border-stone-800 transition-all duration-300 relative overflow-hidden">
-      <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
-        
-        <div class="space-y-1.5 flex-1">
-          <div class="flex items-center gap-2.5">
-            <span id="risk-banner-badge" class="px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400"></span> All Systems Nominal
-            </span>
-            <span id="risk-banner-category" class="text-xs font-mono text-gray-400 hidden">
-              Friction Category: <b id="risk-category-name" class="text-rose-400">None</b>
-            </span>
-          </div>
-          <h2 id="risk-banner-headline" class="text-lg font-bold text-white tracking-tight">
-            High Velocity Pacing • Real-Time Operations Telemetry Healthy
-          </h2>
-          <p id="risk-banner-detail" class="text-xs text-gray-300 leading-relaxed max-w-4xl">
-            Registration velocity is pacing on target. 5-minute rolling community sentiment is positive across Twitter, Discord, and attendee channels.
-          </p>
-        </div>
+    <!-- ========================================================================= -->
+    <!-- PHASE 2: PLANNING VIEW (PRE-EVENT MANAGEMENT) -->
+    <!-- ========================================================================= -->
+    <div id="view-planning" class="space-y-6">
 
-        <!-- Metrics Snapshot -->
-        <div class="flex flex-wrap items-center gap-3 shrink-0">
-          <div class="bg-[#11151e] border border-stone-800 rounded-xl px-4 py-2.5 min-w-[150px]">
-            <div class="text-[11px] text-gray-400">Velocity Run Rate</div>
-            <div class="flex items-baseline gap-1.5 mt-1">
-              <span id="stat-daily-velocity" class="text-lg font-mono font-bold text-white">42.5</span>
-              <span class="text-xs text-gray-400">/day</span>
-              <span id="stat-velocity-pace" class="text-[11px] font-mono text-emerald-400 ml-auto">100%</span>
+      <!-- FINANCIAL & VELOCITY TRIAGE BANNER (Flashes red on budget_burn_risk) -->
+      <div id="planning-triage-banner" class="glass-panel rounded-2xl p-5 border border-stone-800 transition-all duration-300 relative overflow-hidden">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+          <div class="space-y-1.5 flex-1">
+            <div class="flex items-center gap-2.5">
+              <span id="planning-banner-badge" class="px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Financial Baseline Nominal
+              </span>
+              <span id="planning-banner-tag" class="text-xs font-mono text-gray-400">
+                Pacing: <b id="planning-pacing-status" class="text-emerald-400">On Target</b>
+              </span>
             </div>
-          </div>
-
-          <div class="bg-[#11151e] border border-stone-800 rounded-xl px-4 py-2.5 min-w-[150px]">
-            <div class="text-[11px] text-gray-400">Rolling Sentiment</div>
-            <div class="flex items-baseline gap-1.5 mt-1">
-              <span id="stat-positive-pct" class="text-lg font-mono font-bold text-emerald-400">75%</span>
-              <span class="text-xs text-gray-400">Pos</span>
-              <span id="stat-negative-pct" class="text-[11px] font-mono text-rose-400 ml-auto">15% Neg</span>
-            </div>
-          </div>
-
-          <div class="bg-[#11151e] border border-stone-800 rounded-xl px-4 py-2.5 min-w-[130px]">
-            <div class="text-[11px] text-gray-400">Critical Blockers</div>
-            <div class="flex items-baseline gap-1.5 mt-1">
-              <span id="stat-blocker-count" class="text-lg font-mono font-bold text-amber-400">3</span>
-              <span class="text-xs text-gray-400">Active</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- AI Recommended Recovery Action Callout -->
-      <div id="ai-recovery-callout" class="mt-4 pt-4 border-t border-stone-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-black/25 rounded-xl p-3.5">
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center shrink-0 mt-0.5">
-            <i data-lucide="sparkles" class="w-4 h-4"></i>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold uppercase tracking-wide text-brand-300 font-mono">Gemini AI Recommended Recovery Action</span>
-              <span id="recovery-action-title-pill" class="text-[10px] px-1.5 py-0.2 rounded bg-brand-500/20 text-brand-300 font-mono">Referral Acceleration</span>
-            </div>
-            <p id="recovery-action-text" class="text-xs text-gray-200 mt-0.5 leading-relaxed">
-              Launch 24-hr peer referral incentive offering 500 bonus Fest Coins to recover registration pacing.
+            <h2 id="planning-banner-headline" class="text-lg font-bold text-white tracking-tight">
+              Registration Run-Rate Healthy • Zero Budget Deficit Projected
+            </h2>
+            <p id="planning-banner-detail" class="text-xs text-gray-300 leading-relaxed max-w-4xl">
+              Current daily registration velocity is pacing safely toward attendee capacity. Ticket yield and sponsorships remain fully aligned with the operational budget.
             </p>
           </div>
+
+          <!-- Financial Pacing Snapshot Cards -->
+          <div class="flex flex-wrap items-center gap-3 shrink-0">
+            <div class="bg-[#11151e] border border-stone-800 rounded-xl px-4 py-2.5 min-w-[170px]">
+              <div class="text-[11px] text-gray-400">Projected Revenue Loss</div>
+              <div class="flex items-baseline gap-1 mt-1">
+                <span id="stat-revenue-loss" class="text-xl font-mono font-bold text-emerald-400">₹0</span>
+                <span id="stat-loss-status" class="text-[10px] font-mono text-gray-400 ml-auto">0% Budget</span>
+              </div>
+            </div>
+
+            <div class="bg-[#11151e] border border-stone-800 rounded-xl px-4 py-2.5 min-w-[150px]">
+              <div class="text-[11px] text-gray-400">Daily Run Rate</div>
+              <div class="flex items-baseline gap-1.5 mt-1">
+                <span id="stat-daily-velocity" class="text-lg font-mono font-bold text-white">42.5</span>
+                <span class="text-xs text-gray-400">/day</span>
+                <span id="stat-required-velocity" class="text-[11px] font-mono text-gray-400 ml-auto">Req: 62.8</span>
+              </div>
+            </div>
+
+            <div class="bg-[#11151e] border border-stone-800 rounded-xl px-4 py-2.5 min-w-[150px]">
+              <div class="text-[11px] text-gray-400">Projected Headcount</div>
+              <div class="flex items-baseline gap-1.5 mt-1">
+                <span id="stat-projected-headcount" class="text-lg font-mono font-bold text-sky-400">2,500</span>
+                <span class="text-xs text-gray-400">attendees</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <button id="execute-recovery-btn" onclick="executeRecoveryAction()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-900/40 flex items-center gap-1.5 shrink-0 transition cursor-pointer">
-          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-          <span>Execute Recovery Action</span>
-        </button>
-      </div>
-    </div>
+        <!-- AI Recommended Recovery Action Callout -->
+        <div id="planning-recovery-callout" class="mt-4 pt-4 border-t border-stone-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-black/30 rounded-xl p-3.5">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold uppercase tracking-wide text-brand-300 font-mono">Gemini Context-Aware Recovery Engine</span>
+                <span id="planning-recovery-title" class="text-[10px] px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 font-mono font-semibold">Triage Nominal</span>
+              </div>
+              <p id="planning-recovery-text" class="text-xs text-gray-200 mt-0.5 leading-relaxed">
+                All pacing models nominal. Maintain standard promotional schedule across developer Discord and student chapters.
+              </p>
+            </div>
+          </div>
 
-
-    <!-- 2. EXECUTIVE KPI CARDS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      
-      <!-- Total Registrations -->
-      <a href="/analytics.html" class="glass-card rounded-2xl p-5 flex flex-col justify-between group transition">
-        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
-          <span>Registration Scale</span>
-          <span class="text-brand-400 flex items-center gap-1 text-[11px] group-hover:translate-x-0.5 transition">Analytics →</span>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="simulateVelocityDrop()" title="Simulate 65% drop in registration velocity to test budget burn risk" class="px-3 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-rose-300 border border-stone-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
+              <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
+              <span>Simulate Deficit</span>
+            </button>
+            <button onclick="executeRecoveryAction()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+              <span>Execute Recovery</span>
+            </button>
+          </div>
         </div>
-        <div class="flex items-baseline justify-between mt-3">
-          <span id="metric-current-reg" class="text-2xl font-bold font-mono text-white">1,620</span>
-          <span id="metric-target-reg" class="text-xs text-gray-400 font-mono">/ 2,500 Target</span>
-        </div>
-        <div class="w-full bg-stone-800 h-1.5 rounded-full mt-3 overflow-hidden">
-          <div id="metric-reg-progress-bar" class="bg-brand-500 h-full rounded-full" style="width: 65%;"></div>
-        </div>
-      </a>
-
-      <!-- Daily Run Rate -->
-      <a href="/analytics.html" class="glass-card rounded-2xl p-5 flex flex-col justify-between group transition">
-        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
-          <span>Registration Velocity</span>
-          <span class="text-brand-400 flex items-center gap-1 text-[11px] group-hover:translate-x-0.5 transition">Curves →</span>
-        </div>
-        <div class="flex items-baseline justify-between mt-3">
-          <span id="overview-daily-velocity" class="text-2xl font-bold font-mono text-white">42.5</span>
-          <span id="overview-reach-gap-status" class="text-xs font-mono text-emerald-400 font-bold">ON TRACK</span>
-        </div>
-        <p class="text-[11px] text-gray-400 mt-3 truncate">Required: <span id="overview-req-velocity">62.8</span>/day pace</p>
-      </a>
-
-      <!-- Audience Mood -->
-      <a href="/sentiment.html" class="glass-card rounded-2xl p-5 flex flex-col justify-between group transition">
-        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
-          <span>Community Vibe Rating</span>
-          <span class="text-brand-400 flex items-center gap-1 text-[11px] group-hover:translate-x-0.5 transition">Radar →</span>
-        </div>
-        <div class="flex items-baseline justify-between mt-3">
-          <span id="overview-sentiment-pct" class="text-2xl font-bold font-mono text-emerald-400">75%</span>
-          <span class="text-xs text-gray-400">Positive Mood</span>
-        </div>
-        <p class="text-[11px] text-gray-400 mt-3 truncate">Sampled in rolling 5m window</p>
-      </a>
-
-      <!-- Task Completion -->
-      <a href="/workflows.html" class="glass-card rounded-2xl p-5 flex flex-col justify-between group transition">
-        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
-          <span>Workflow Execution</span>
-          <span class="text-brand-400 flex items-center gap-1 text-[11px] group-hover:translate-x-0.5 transition">Boards →</span>
-        </div>
-        <div class="flex items-baseline justify-between mt-3">
-          <span id="metric-completion-rate" class="text-2xl font-bold font-mono text-sky-400">13%</span>
-          <span id="metric-tasks-ratio" class="text-xs text-gray-400 font-mono">2 / 15 Done</span>
-        </div>
-        <div class="w-full bg-stone-800 h-1.5 rounded-full mt-3 overflow-hidden">
-          <div id="metric-tasks-progress-bar" class="bg-sky-500 h-full rounded-full" style="width: 13%;"></div>
-        </div>
-      </a>
-
-    </div>
-
-
-    <!-- 3. ROLE WORKFLOW PROGRESS STRIP -->
-    <div class="glass-panel rounded-2xl p-5 space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="font-bold text-base text-white">Cross-Functional Role Health</h3>
-          <p class="text-xs text-gray-400">Live operational status across 5 core teams</p>
-        </div>
-        <a href="/workflows.html" class="text-xs text-brand-400 hover:text-brand-300 font-medium flex items-center gap-1">
-          <span>Open Full Kanban Boards</span>
-          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-        </a>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        
-        <a href="/workflows.html" class="glass-card rounded-xl p-3.5 border-t-2 border-t-rose-500 space-y-2 group transition">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-white flex items-center gap-1.5">📢 Marketing</span>
-            <span id="role-pct-marketing" class="font-mono text-gray-400 text-[11px]">33%</span>
+      <!-- PLANNING KPIS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Scale -->
+        <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+            <span>Confirmed Registrations</span>
+            <i data-lucide="users" class="w-4 h-4 text-brand-400"></i>
           </div>
-          <div class="w-full bg-stone-800 h-1 rounded-full overflow-hidden">
-            <div id="role-bar-marketing" class="bg-rose-500 h-full" style="width: 33%;"></div>
+          <div class="flex items-baseline justify-between mt-3">
+            <span id="plan-current-reg" class="text-2xl font-bold font-mono text-white">1,620</span>
+            <span id="plan-target-reg" class="text-xs text-gray-400 font-mono">/ 2,500 Target</span>
           </div>
-          <div class="text-[10px] text-gray-400 flex items-center justify-between">
-            <span id="role-done-marketing">1/3 Done</span>
-            <span id="role-blocker-marketing" class="text-rose-400">1 Blocker</span>
+          <div class="w-full bg-stone-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div id="plan-reg-bar" class="bg-brand-500 h-full rounded-full" style="width: 65%;"></div>
           </div>
-        </a>
+        </div>
 
-        <a href="/workflows.html" class="glass-card rounded-xl p-3.5 border-t-2 border-t-amber-500 space-y-2 group transition">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-white flex items-center gap-1.5">🤝 Partnerships</span>
-            <span id="role-pct-partnerships" class="font-mono text-gray-400 text-[11px]">33%</span>
+        <!-- Budget & Ticket Price -->
+        <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+            <span>Total Operational Budget</span>
+            <i data-lucide="wallet" class="w-4 h-4 text-sky-400"></i>
           </div>
-          <div class="w-full bg-stone-800 h-1 rounded-full overflow-hidden">
-            <div id="role-bar-partnerships" class="bg-amber-500 h-full" style="width: 33%;"></div>
+          <div class="flex items-baseline justify-between mt-3">
+            <span id="plan-total-budget" class="text-2xl font-bold font-mono text-white">₹25,00,000</span>
+            <span id="plan-ticket-price" class="text-xs text-gray-400 font-mono">₹799 / Ticket</span>
           </div>
-          <div class="text-[10px] text-gray-400 flex items-center justify-between">
-            <span id="role-done-partnerships">1/3 Done</span>
-            <span id="role-blocker-partnerships" class="text-amber-400">1 Blocker</span>
-          </div>
-        </a>
+          <p class="text-[11px] text-gray-400 mt-3">20% Burn Risk Threshold: ₹5,00,000</p>
+        </div>
 
-        <a href="/workflows.html" class="glass-card rounded-xl p-3.5 border-t-2 border-t-sky-500 space-y-2 group transition">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-white flex items-center gap-1.5">⚙️ Operations</span>
-            <span id="role-pct-operations" class="font-mono text-gray-400 text-[11px]">0%</span>
+        <!-- Days Remaining -->
+        <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+            <span>Countdown to Event</span>
+            <i data-lucide="clock" class="w-4 h-4 text-purple-400"></i>
           </div>
-          <div class="w-full bg-stone-800 h-1 rounded-full overflow-hidden">
-            <div id="role-bar-operations" class="bg-sky-500 h-full" style="width: 0%;"></div>
+          <div class="flex items-baseline justify-between mt-3">
+            <span id="plan-days-remaining" class="text-2xl font-bold font-mono text-purple-400">14</span>
+            <span class="text-xs text-gray-400">Days Remaining</span>
           </div>
-          <div class="text-[10px] text-gray-400 flex items-center justify-between">
-            <span id="role-done-operations">0/3 Done</span>
-            <span id="role-blocker-operations" class="text-rose-400">1 Blocker</span>
-          </div>
-        </a>
+          <p class="text-[11px] text-gray-400 mt-3">Daily velocity target: <span id="plan-req-vel-sub">62.8</span> signups</p>
+        </div>
 
-        <a href="/workflows.html" class="glass-card rounded-xl p-3.5 border-t-2 border-t-purple-500 space-y-2 group transition">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-white flex items-center gap-1.5">🗓️ Programme</span>
-            <span id="role-pct-programme" class="font-mono text-gray-400 text-[11px]">33%</span>
+        <!-- Tasks Health -->
+        <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+            <span>Cross-Functional Tasks</span>
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-amber-400"></i>
           </div>
-          <div class="w-full bg-stone-800 h-1 rounded-full overflow-hidden">
-            <div id="role-bar-programme" class="bg-purple-500 h-full" style="width: 33%;"></div>
+          <div class="flex items-baseline justify-between mt-3">
+            <span id="plan-resolved-count" class="text-2xl font-bold font-mono text-white">2 / 15</span>
+            <span id="plan-blocker-badge" class="text-xs font-mono text-amber-400 font-bold">3 Blockers</span>
           </div>
-          <div class="text-[10px] text-gray-400 flex items-center justify-between">
-            <span id="role-done-programme">1/3 Done</span>
-            <span class="text-emerald-400">0 Blockers</span>
+          <div class="w-full bg-stone-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div id="plan-tasks-bar" class="bg-amber-400 h-full rounded-full" style="width: 13%;"></div>
           </div>
-        </a>
-
-        <a href="/workflows.html" class="glass-card rounded-xl p-3.5 border-t-2 border-t-emerald-500 space-y-2 group transition">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-white flex items-center gap-1.5">👑 Leadership</span>
-            <span id="role-pct-leadership" class="font-mono text-gray-400 text-[11px]">33%</span>
-          </div>
-          <div class="w-full bg-stone-800 h-1 rounded-full overflow-hidden">
-            <div id="role-bar-leadership" class="bg-emerald-500 h-full" style="width: 33%;"></div>
-          </div>
-          <div class="text-[10px] text-gray-400 flex items-center justify-between">
-            <span id="role-done-leadership">1/3 Done</span>
-            <span class="text-emerald-400">0 Blockers</span>
-          </div>
-        </a>
-
+        </div>
       </div>
-    </div>
 
-
-    <!-- 4. PRIORITY ACTION DESK (BLOCKERS & SOCIAL SNAPSHOT) -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      
-      <!-- Critical Blockers Priority Desk -->
-      <div class="glass-panel rounded-2xl p-5 space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-stone-800">
+      <!-- 5 ROLE-WISE WORKFLOW BOARDS -->
+      <section class="space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-stone-800">
           <div>
-            <h3 class="font-bold text-base text-white flex items-center gap-2">
-              <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
-              Priority Critical Path Blockers
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="kanban-square" class="w-5 h-5 text-brand-400"></i>
+              5 Role-Wise Cross-Functional Workflow Boards
             </h3>
-            <p class="text-xs text-gray-400 mt-0.5">Tasks directly halting downstream operations</p>
+            <p class="text-xs text-gray-400">Structured deliverables synthesized by Gemini with blocker resolution & live risk recalculation</p>
           </div>
-          <a href="/workflows.html" class="text-xs text-brand-400 hover:text-brand-300 font-mono">
-            View All Tasks →
-          </a>
+
+          <!-- Role Filters -->
+          <div class="flex items-center gap-1.5 overflow-x-auto text-xs font-medium no-scrollbar">
+            <button onclick="filterPlanningRole('all')" id="plan-tab-all" class="px-3 py-1.5 rounded-lg bg-brand-500 text-black font-semibold transition cursor-pointer">All (15)</button>
+            <button onclick="filterPlanningRole('Marketing')" id="plan-tab-marketing" class="px-3 py-1.5 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 transition cursor-pointer">📢 Marketing</button>
+            <button onclick="filterPlanningRole('Partnerships')" id="plan-tab-partnerships" class="px-3 py-1.5 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 transition cursor-pointer">🤝 Partnerships</button>
+            <button onclick="filterPlanningRole('Operations')" id="plan-tab-operations" class="px-3 py-1.5 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 transition cursor-pointer">⚙️ Ops</button>
+            <button onclick="filterPlanningRole('Programme')" id="plan-tab-programme" class="px-3 py-1.5 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 transition cursor-pointer">🗓️ Programme</button>
+            <button onclick="filterPlanningRole('Leadership')" id="plan-tab-leadership" class="px-3 py-1.5 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 transition cursor-pointer">👑 Leadership</button>
+            <button onclick="filterPlanningRole('blockers')" id="plan-tab-blockers" class="px-3 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800 transition cursor-pointer">🚨 Blockers</button>
+          </div>
         </div>
 
-        <div id="priority-blockers-list" class="space-y-3">
-          <!-- Dynamic Blocker Cards -->
+        <!-- 5 Columns Container -->
+        <div id="workflow-boards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <!-- Dynamically populated 5 role columns -->
+        </div>
+      </section>
+
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- PHASE 2: LIVE MODE VIEW (PHYSICAL CROWD TELEMETRY & CASHLESS ECONOMY) -->
+    <!-- ========================================================================= -->
+    <div id="view-live" class="space-y-6 hidden">
+
+      <!-- LIVE TELEMETRY CROWD BOTTLENECK BANNER -->
+      <div id="live-crowd-banner" class="glass-panel rounded-2xl p-5 border border-stone-800 transition-all duration-300 relative overflow-hidden">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+          <div class="space-y-1.5 flex-1">
+            <div class="flex items-center gap-2.5">
+              <span id="live-banner-badge" class="px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Venue Flow Balanced
+              </span>
+              <span class="text-xs font-mono text-gray-400">
+                Bottleneck Threshold: <b class="text-amber-400">>150 scans / 10 min</b>
+              </span>
+            </div>
+            <h2 id="live-banner-headline" class="text-lg font-bold text-white tracking-tight">
+              All 5 Physical Zones Operating Below Maximum Density
+            </h2>
+            <p id="live-banner-detail" class="text-xs text-gray-300 leading-relaxed max-w-4xl">
+              Real-time NFC/QR scanner volume is within safe crowd-control limits. Fast cashless throughput observed across stalls.
+            </p>
+          </div>
+
+          <!-- Live Metrics Snapshot Cards -->
+          <div class="flex flex-wrap items-center gap-3 shrink-0">
+            <div class="bg-[#11151e] border border-stone-800 rounded-xl px-4 py-2.5 min-w-[160px]">
+              <div class="text-[11px] text-gray-400">Fest Coin Economy</div>
+              <div class="flex items-baseline gap-1 mt-1">
+                <span id="stat-live-revenue" class="text-xl font-mono font-bold text-amber-400">0</span>
+                <span class="text-[10px] text-gray-400 ml-auto font-mono">Coins Spent</span>
+              </div>
+            </div>
+
+            <div class="bg-[#11151e] border border-stone-800 rounded-xl px-4 py-2.5 min-w-[150px]">
+              <div class="text-[11px] text-gray-400">Active SOS Alerts</div>
+              <div class="flex items-baseline gap-1 mt-1">
+                <span id="stat-live-incidents" class="text-xl font-mono font-bold text-rose-400">0</span>
+                <span class="text-[10px] text-gray-400 ml-auto font-mono">Incidents</span>
+              </div>
+            </div>
+
+            <div class="bg-[#11151e] border border-stone-800 rounded-xl px-4 py-2.5 min-w-[140px]">
+              <div class="text-[11px] text-gray-400">Checked-in Guests</div>
+              <div class="flex items-baseline gap-1 mt-1">
+                <span id="stat-live-attendees" class="text-xl font-mono font-bold text-emerald-400">0</span>
+                <span class="text-[10px] text-gray-400 ml-auto font-mono">Total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Controls Strip -->
+        <div class="mt-4 pt-4 border-t border-stone-800/80 flex flex-wrap items-center justify-between gap-3 bg-black/25 rounded-xl p-3">
+          <div class="flex items-center gap-2 text-xs text-gray-300">
+            <i data-lucide="sliders" class="w-4 h-4 text-brand-400"></i>
+            <span>Crowd Telemetry Testing Controls:</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="simulateSurge()" class="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-rose-950/70 text-rose-300 border border-stone-700 hover:border-rose-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
+              <i data-lucide="flame" class="w-3.5 h-3.5 text-rose-400"></i>
+              <span>Simulate Cultural Pavilion Surge (+180 Scans)</span>
+            </button>
+            <button onclick="revertSurge()" class="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-gray-300 border border-stone-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Revert Surge</span>
+            </button>
+            <button onclick="openIncidentModal()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer">
+              <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+              <span>Dispatch SOS Incident</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Live Community Sentiment Highlights -->
-      <div class="glass-panel rounded-2xl p-5 space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-stone-800">
+      <!-- 5 PHYSICAL ZONE CAPACITY CARDS (Flashes red if capacity_warning is true with DIVERT button) -->
+      <section class="space-y-3">
+        <div class="flex items-center justify-between pb-1">
           <div>
-            <h3 class="font-bold text-base text-white flex items-center gap-2">
-              <i data-lucide="radio" class="w-4 h-4 text-sky-400"></i>
-              Live Community Feedback Snippets
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-5 h-5 text-sky-400"></i>
+              5 Physical Festival Zones • 10-Minute Rolling Scan Volumes
             </h3>
-            <p class="text-xs text-gray-400 mt-0.5">Real-time pulses from Twitter and Discord</p>
+            <p class="text-xs text-gray-400">Threshold: >150 scans in 10 minutes activates bottleneck state & dynamic diversion</p>
           </div>
-          <a href="/sentiment.html" class="text-xs text-brand-400 hover:text-brand-300 font-mono">
-            Open Radar Feed →
-          </a>
+          <span class="text-xs font-mono text-gray-400">5 Active Sensors</span>
         </div>
 
-        <div id="overview-social-feed" class="space-y-2.5">
-          <!-- Dynamic Social Cards -->
+        <div id="live-zones-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <!-- Dynamically populated 5 zone cards -->
         </div>
+      </section>
+
+      <!-- LIVE ECONOMY & ACTIVE SOS INCIDENT QUEUE -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Active SOS Incidents Queue -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-stone-800">
+            <div>
+              <h3 class="font-bold text-base text-white flex items-center gap-2">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
+                Active SOS Incident Queue
+              </h3>
+              <p class="text-xs text-gray-400">Medical, Security, and Logistics tickets</p>
+            </div>
+            <button onclick="openIncidentModal()" class="px-2.5 py-1 text-xs rounded-lg bg-rose-950/70 hover:bg-rose-900 border border-rose-800 text-rose-200 font-medium cursor-pointer">
+              + New SOS
+            </button>
+          </div>
+
+          <div id="live-incidents-list" class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+            <!-- Dynamically populated incident cards -->
+          </div>
+        </div>
+
+        <!-- Fest Coin Cashless Transactions & Scans Feed -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-stone-800">
+            <div>
+              <h3 class="font-bold text-base text-white flex items-center gap-2">
+                <i data-lucide="coins" class="w-4 h-4 text-amber-400"></i>
+                Cashless Economy & Scanner Telemetry
+              </h3>
+              <p class="text-xs text-gray-400">Recent Fest Coin purchases & zone entries</p>
+            </div>
+            <span id="live-tx-summary" class="text-xs font-mono text-emerald-400">0 Total Coins</span>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Recent Cashless Transactions</h4>
+            <div id="live-tx-list" class="space-y-2 max-h-[170px] overflow-y-auto pr-1">
+              <!-- Dynamically populated transactions -->
+            </div>
+
+            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono pt-2 border-t border-stone-800">Recent Guest Scan Stream</h4>
+            <div id="live-scans-list" class="space-y-2 max-h-[150px] overflow-y-auto pr-1">
+              <!-- Dynamically populated scans -->
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
 
   </main>
 
+
+  <!-- ========================================================================= -->
+  <!-- MODALS & DRAWERS -->
+  <!-- ========================================================================= -->
 
   <!-- EVENT SETUP MODAL -->
   <div id="setup-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -456,7 +518,7 @@
           </div>
           <div>
             <h3 class="font-bold text-base text-white">Event Brief & Plan Synthesis</h3>
-            <p class="text-xs text-gray-400">Gemini generates 15 structured tasks across 5 roles</p>
+            <p class="text-xs text-gray-400">Gemini generates 15 structured tasks across 5 roles & initializes baselines</p>
           </div>
         </div>
         <button onclick="closeSetupModal()" class="text-gray-400 hover:text-white p-1 cursor-pointer">
@@ -486,6 +548,14 @@
             <label class="block text-xs font-medium text-gray-300 mb-1">Venue</label>
             <input type="text" id="modal-venue" required value="Cyber Arena & Spatial Hub" class="w-full bg-[#11151e] border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
           </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-300 mb-1">Ticket Price (₹)</label>
+            <input type="number" id="modal-ticket-price" required value="799" class="w-full bg-[#11151e] border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-300 mb-1">Total Budget (₹)</label>
+            <input type="number" id="modal-total-budget" required value="2500000" class="w-full bg-[#11151e] border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+          </div>
         </div>
 
         <div>
@@ -505,16 +575,113 @@
   </div>
 
 
-  <!-- FLOATING ASSISTANT DRAWER -->
-  <div id="assistant-drawer" class="fixed inset-y-0 right-0 w-full sm:w-[460px] bg-[#0f131a] border-l border-stone-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+  <!-- DIVERSION MODAL -->
+  <div id="divert-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-6 border border-stone-800 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-800">
+        <h3 class="font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="shuffle" class="w-5 h-5 text-rose-400"></i>
+          Trigger Crowd Diversion
+        </h3>
+        <button onclick="closeDivertModal()" class="text-gray-400 hover:text-white p-1 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-gray-300">
+        Relieve bottleneck in <b id="divert-source-name" class="text-rose-400">Cultural Pavilion</b> by broadcasting real-time incentives toward a lower-density zone.
+      </p>
+
+      <form onsubmit="handleExecuteDivert(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Target Diversion Zone</label>
+          <select id="divert-target-select" class="w-full bg-[#11151e] border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+            <option value="Food Court" selected>Food Court (Low Congestion)</option>
+            <option value="Artisan Market">Artisan Market</option>
+            <option value="Main Stage">Main Stage</option>
+            <option value="VIP Lounge">VIP Lounge</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Broadcast Incentive Message</label>
+          <input type="text" id="divert-message" value="⚡ Special Flash Offer: 50% discount on all food & beverages at Food Court for the next 30 minutes!" class="w-full bg-[#11151e] border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeDivertModal()" class="px-4 py-2 text-xs text-gray-400 hover:text-white">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-bold transition">
+            Dispatch Diversion
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- NEW SOS INCIDENT MODAL -->
+  <div id="incident-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-6 border border-stone-800 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-800">
+        <h3 class="font-bold text-base text-white flex items-center gap-2">
+          <i data-lucide="alert-octagon" class="w-5 h-5 text-rose-500"></i>
+          Report New SOS Incident
+        </h3>
+        <button onclick="closeIncidentModal()" class="text-gray-400 hover:text-white p-1 cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleCreateIncident(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Incident Type</label>
+          <select id="modal-incident-type" class="w-full bg-[#11151e] border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+            <option value="Medical">Medical Assistance</option>
+            <option value="Security">Security Disruption</option>
+            <option value="Logistics">Logistics / Power / WiFi</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Zone Location</label>
+          <select id="modal-incident-zone" class="w-full bg-[#11151e] border border-stone-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+            <option value="Main Stage">Main Stage</option>
+            <option value="Food Court">Food Court</option>
+            <option value="Artisan Market">Artisan Market</option>
+            <option value="Cultural Pavilion" selected>Cultural Pavilion</option>
+            <option value="VIP Lounge">VIP Lounge</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-1">Description / Notes</label>
+          <textarea id="modal-incident-desc" rows="3" required placeholder="Describe the situation..." class="w-full bg-[#11151e] border border-stone-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-500">High density congestion near northern stage exit requiring crowd marshals.</textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeIncidentModal()" class="px-4 py-2 text-xs text-gray-400 hover:text-white">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition">
+            Dispatch SOS
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- FLOATING CONTEXT-AWARE NLP ASSISTANT DRAWER -->
+  <div id="assistant-drawer" class="fixed inset-y-0 right-0 w-full sm:w-[480px] bg-[#0f131a] border-l border-stone-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
     <div class="p-4 border-b border-stone-800 flex items-center justify-between bg-[#0a0d13]">
       <div class="flex items-center gap-2.5">
         <div class="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center">
           <i data-lucide="bot" class="w-4 h-4"></i>
         </div>
         <div>
-          <h3 class="font-bold text-sm text-white">Gemini Operations Copilot</h3>
-          <p class="text-[11px] text-gray-400">Cross-Functional Query Console</p>
+          <div class="flex items-center gap-2">
+            <h3 class="font-bold text-sm text-white">Gemini Operations Copilot</h3>
+            <span id="copilot-mode-badge" class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30">PLANNING</span>
+          </div>
+          <p class="text-[11px] text-gray-400">Context-Aware Natural Language Triage Console</p>
         </div>
       </div>
       <button onclick="toggleAssistant()" class="p-1.5 rounded-lg text-gray-400 hover:text-white cursor-pointer">
@@ -522,17 +689,20 @@
       </button>
     </div>
 
-    <div class="p-3 bg-[#121620] border-b border-stone-800 flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
-      <button onclick="sendAssistantQuery('What are the critical blockers in Partnerships and Operations?')" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-gray-200 shrink-0 border border-stone-700 cursor-pointer">🚨 Blockers</button>
-      <button onclick="sendAssistantQuery('Show Marketing tasks pacing behind schedule and registration velocity')" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-gray-200 shrink-0 border border-stone-700 cursor-pointer">📈 Velocity</button>
-      <button onclick="sendAssistantQuery('Summarize overall community sentiment across Discord and Twitter')" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-gray-200 shrink-0 border border-stone-700 cursor-pointer">💬 Sentiment</button>
+    <!-- Mode-specific quick prompt pills -->
+    <div id="copilot-quick-pills" class="p-3 bg-[#121620] border-b border-stone-800 flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
+      <!-- Injected based on active mode -->
     </div>
 
-    <div id="chat-messages-container" class="flex-1 p-4 overflow-y-auto space-y-4"></div>
+    <div id="chat-messages-container" class="flex-1 p-4 overflow-y-auto space-y-4">
+      <div class="bg-[#151a24] rounded-2xl p-4 border border-stone-800 text-xs text-gray-300 leading-relaxed">
+        👋 Welcome to Gemini Operations Copilot. Ask plain-English questions about <b>Task Blockers</b> and <b>Budget Burn</b> in Planning Mode, or <b>Zone Bottlenecks</b> and <b>Fest Coin Revenue</b> in Live Mode.
+      </div>
+    </div>
 
     <div class="p-3.5 border-t border-stone-800 bg-[#0a0d13]">
       <form onsubmit="handleChatSubmit(event)" class="flex items-center gap-2">
-        <input type="text" id="chat-input" placeholder="Query Gemini: e.g. What is halting partnerships?" class="flex-1 bg-[#151a24] border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-brand-500">
+        <input type="text" id="chat-input" placeholder="Query Gemini: e.g. What are the Partnerships blockers?" class="flex-1 bg-[#151a24] border border-stone-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-brand-500">
         <button type="submit" class="p-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white cursor-pointer">
           <i data-lucide="send" class="w-4 h-4"></i>
         </button>
@@ -541,18 +711,20 @@
   </div>
 
 
-  <!-- APPLICATION SCRIPT -->
+  <!-- ========================================================================= -->
+  <!-- APPLICATION SCRIPT & MASTER 3-SECOND TELEMETRY LOOP -->
+  <!-- ========================================================================= -->
   <script>
-    let appData = null;
+    let currentGlobalMode = 'planning'; // 'planning' | 'live'
+    let currentPlanningFilter = 'all';
+    let appStats = null;
+    let pendingDivertSource = 'Cultural Pavilion';
 
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
-      fetchOverview();
-      fetchSocial();
-      setInterval(() => {
-        fetchOverview();
-        fetchSocial();
-      }, 3000);
+      updateModeUI();
+      pollMasterTelemetry();
+      setInterval(pollMasterTelemetry, 3000);
 
       document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -562,295 +734,641 @@
       });
     });
 
-    async function fetchOverview() {
+    // ─────────────────────── Global Phase Switch ───────────────────────
+    async function setGlobalMode(mode) {
+      if (mode !== 'planning' && mode !== 'live') return;
+      currentGlobalMode = mode;
+      updateModeUI();
       try {
-        const res = await fetch('/api/admin/stats');
-        if (!res.ok) return;
-        appData = await res.json();
-        renderOverview(appData);
+        await fetch('/api/admin/mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: currentGlobalMode })
+        });
       } catch (e) {
-        console.error(e);
+        console.warn('Mode sync error:', e);
+      }
+      pollMasterTelemetry();
+    }
+
+    function updateModeUI() {
+      const isPlanning = currentGlobalMode === 'planning';
+      const btnPlan = document.getElementById('toggle-planning');
+      const btnLive = document.getElementById('toggle-live');
+      const viewPlan = document.getElementById('view-planning');
+      const viewLive = document.getElementById('view-live');
+      const badgePill = document.getElementById('badge-mode-pill');
+      const copilotBadge = document.getElementById('copilot-mode-badge');
+
+      if (isPlanning) {
+        btnPlan.className = 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-900/30 cursor-pointer';
+        btnLive.className = 'px-4 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-white transition flex items-center gap-2 cursor-pointer';
+        viewPlan.classList.remove('hidden');
+        viewLive.classList.add('hidden');
+        badgePill.innerText = 'PLANNING MODE';
+        badgePill.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase';
+        copilotBadge.innerText = 'PLANNING';
+        renderCopilotPills('planning');
+      } else {
+        btnLive.className = 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-md shadow-rose-900/30 cursor-pointer';
+        btnPlan.className = 'px-4 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-white transition flex items-center gap-2 cursor-pointer';
+        viewLive.classList.remove('hidden');
+        viewPlan.classList.add('hidden');
+        badgePill.innerText = 'LIVE TELEMETRY ACTIVE';
+        badgePill.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 uppercase';
+        copilotBadge.innerText = 'LIVE OPS';
+        renderCopilotPills('live');
+      }
+      lucide.createIcons();
+    }
+
+    function renderCopilotPills(mode) {
+      const container = document.getElementById('copilot-quick-pills');
+      if (mode === 'planning') {
+        container.innerHTML = `
+          <button onclick="sendAssistantQuery('What are the critical blockers across all roles?')" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-gray-200 shrink-0 border border-stone-700 cursor-pointer">🚨 Open Blockers</button>
+          <button onclick="sendAssistantQuery('Check registration pacing and projected revenue loss')" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-gray-200 shrink-0 border border-stone-700 cursor-pointer">💰 Budget & Loss</button>
+          <button onclick="sendAssistantQuery('Which roles are pacing behind schedule?')" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-gray-200 shrink-0 border border-stone-700 cursor-pointer">📊 Role Progress</button>
+        `;
+      } else {
+        container.innerHTML = `
+          <button onclick="sendAssistantQuery('Are any zones experiencing crowd bottlenecks?')" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-gray-200 shrink-0 border border-stone-700 cursor-pointer">📍 Zone Bottlenecks</button>
+          <button onclick="sendAssistantQuery('What is the current Fest Coin cashless revenue?')" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-gray-200 shrink-0 border border-stone-700 cursor-pointer">🪙 Cashless Revenue</button>
+          <button onclick="sendAssistantQuery('List all active unresolved SOS incidents')" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-gray-200 shrink-0 border border-stone-700 cursor-pointer">🚑 Active SOS</button>
+        `;
       }
     }
 
-    async function fetchSocial() {
+    // ─────────────────────── Master 3-Second Telemetry Loop ───────────────────────
+    async function pollMasterTelemetry() {
       try {
-        const res = await fetch('/api/social/feed');
+        const res = await fetch(`/api/admin/stats?mode=${currentGlobalMode}`);
         if (!res.ok) return;
-        const data = await res.json();
-        renderSocial(data);
-      } catch (e) {
-        console.error(e);
+        appStats = await res.json();
+
+        // Update Header
+        if (appStats.event || (appStats.planning_stats && appStats.planning_stats.event)) {
+          const ev = appStats.planning_stats?.event || appStats.event;
+          document.getElementById('header-event-title').innerText = ev.title || 'Event Command Centre';
+          document.getElementById('meta-format').innerText = ev.format || 'Hybrid';
+          document.getElementById('meta-scale').innerText = (ev.target_scale || 2500).toLocaleString();
+        }
+
+        // Render Ticker
+        renderSocialTicker(appStats.social_feed || [], appStats.sentiment_metrics || {});
+
+        // Render views based on current state
+        renderPlanningView(appStats);
+        renderLiveView(appStats);
+
+      } catch (err) {
+        console.error('[Telemetry Error]', err);
       }
     }
 
-    function renderOverview(data) {
-      if (data.event) {
-        document.getElementById('header-event-title').innerText = data.event.title || 'Event Command Centre';
-        document.getElementById('meta-format').innerText = data.event.format || 'Hybrid';
-        document.getElementById('meta-scale').innerText = (data.event.target_scale || 2500).toLocaleString();
-      }
-
-      const reg = data.registration_metrics || {};
-      const targetReg = reg.target_registrations || 2500;
-      const currentReg = reg.current_registrations || 1620;
+    // ─────────────────────── Planning Mode Renderer ───────────────────────
+    function renderPlanningView(data) {
+      const plan = data.planning_stats || {};
+      const reg = plan.registration || data.registration_metrics || {};
+      const isBudgetBurn = Boolean(data.budget_burn_risk || reg.budget_burn_risk);
+      const lossAmount = reg.projected_revenue_loss || 0;
+      const targetScale = reg.target || reg.target_registrations || 2500;
+      const currentReg = reg.current || reg.current_registrations || 1620;
       const dailyVel = reg.daily_velocity || 42.5;
       const reqVel = reg.required_daily_velocity || 62.8;
-      const velRatio = reg.velocity_ratio || 0.68;
-      const regRisk = Boolean(data.registration_risk);
-      const fricRisk = Boolean(data.community_friction_risk);
+      const projectedHeadcount = reg.projected_final_headcount || Math.round(currentReg + dailyVel * (reg.days_remaining || 14));
+      const totalBudget = plan.event?.total_budget || 2500000;
+      const ticketPrice = plan.event?.ticket_price || 799;
 
-      document.getElementById('metric-current-reg').innerText = currentReg.toLocaleString();
-      document.getElementById('metric-target-reg').innerText = `/ ${targetReg.toLocaleString()} Target`;
-      const regPct = Math.min(100, Math.round((currentReg / targetReg) * 100));
-      document.getElementById('metric-reg-progress-bar').style.width = `${regPct}%`;
+      // Banner Elements
+      const banner = document.getElementById('planning-triage-banner');
+      const badge = document.getElementById('planning-banner-badge');
+      const tag = document.getElementById('planning-pacing-status');
+      const headline = document.getElementById('planning-banner-headline');
+      const detail = document.getElementById('planning-banner-detail');
+      const revLoss = document.getElementById('stat-revenue-loss');
+      const lossStatus = document.getElementById('stat-loss-status');
+      const recTitle = document.getElementById('planning-recovery-title');
+      const recText = document.getElementById('planning-recovery-text');
+
+      revLoss.innerText = `₹${lossAmount.toLocaleString()}`;
+      const lossPct = Math.round((lossAmount / totalBudget) * 100);
+      lossStatus.innerText = `${lossPct}% Budget`;
 
       document.getElementById('stat-daily-velocity').innerText = dailyVel.toFixed(1);
-      document.getElementById('overview-daily-velocity').innerText = dailyVel.toFixed(1);
-      document.getElementById('overview-req-velocity').innerText = reqVel.toFixed(1);
+      document.getElementById('stat-required-velocity').innerText = `Req: ${reqVel.toFixed(1)}`;
+      document.getElementById('stat-projected-headcount').innerText = projectedHeadcount.toLocaleString();
 
-      const pacePct = Math.round(velRatio * 100);
-      const paceBadge = document.getElementById('stat-velocity-pace');
-      paceBadge.innerText = `${pacePct}%`;
-
-      const gapStatus = document.getElementById('overview-reach-gap-status');
-      if (regRisk) {
-        gapStatus.innerText = `-${reg.reach_gap || 0} LAG`;
-        gapStatus.className = 'text-xs font-mono text-rose-400 font-bold';
-      } else {
-        gapStatus.innerText = 'ON TRACK';
-        gapStatus.className = 'text-xs font-mono text-emerald-400 font-bold';
-      }
-
-      document.getElementById('stat-blocker-count').innerText = data.blocker_count || 0;
-      document.getElementById('metric-tasks-ratio').innerText = `${data.resolved_tasks || 0} / ${data.total_tasks || 15} Done`;
-      const compPct = Math.round(((data.resolved_tasks || 0) / (data.total_tasks || 15)) * 100);
-      document.getElementById('metric-completion-rate').innerText = `${compPct}%`;
-      document.getElementById('metric-tasks-progress-bar').style.width = `${compPct}%`;
-
-      // RISK & DECISION BANNER
-      const banner = document.getElementById('risk-decision-banner');
-      const badge = document.getElementById('risk-banner-badge');
-      const headline = document.getElementById('risk-banner-headline');
-      const detail = document.getElementById('risk-banner-detail');
-      const catPill = document.getElementById('risk-banner-category');
-      const catName = document.getElementById('risk-category-name');
-      const recText = document.getElementById('recovery-action-text');
-      const recPill = document.getElementById('recovery-action-title-pill');
-
-      if (regRisk || fricRisk) {
-        banner.className = 'glass-panel rounded-2xl p-5 relative overflow-hidden risk-alert-active';
+      if (isBudgetBurn) {
+        banner.className = 'glass-panel rounded-2xl p-5 border relative overflow-hidden risk-alert-active';
         badge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1.5';
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span> ⚠️ OPERATIONAL RISK ACTIVE`;
-
-        if (regRisk && fricRisk) {
-          headline.innerText = 'Dual Triage: Velocity Lag & Community Friction Active';
-          detail.innerText = `Registration run rate is below 80% pace (-${reg.reach_gap} attendees). Simultaneously, community negative sentiment exceeded 60% (${data.friction_category}).`;
-        } else if (regRisk) {
-          headline.innerText = 'Registration Velocity Lag Detected';
-          detail.innerText = `Daily velocity is pacing at ${dailyVel}/day vs target ${reqVel}/day (${pacePct}% pace). Reach lag: ~${reg.reach_gap} attendees.`;
-        } else {
-          headline.innerText = 'Community Friction Surge Active (>60% Negative)';
-          detail.innerText = `Attendee feedback in rolling window shows high friction (${data.friction_category}).`;
-        }
-
-        if (fricRisk && data.friction_category) {
-          catPill.classList.remove('hidden');
-          catName.innerText = data.friction_category;
-        } else {
-          catPill.classList.add('hidden');
-        }
-
-        recText.innerText = data.recovery_action || 'Execute targeted referral bonus and release Discord FAQ.';
-        recPill.innerText = data.recovery_action_title || 'AI Recovery';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span> 🚨 BUDGET BURN RISK`;
+        tag.innerText = `Deficit > 20% Budget Exposure`;
+        tag.className = 'text-rose-400 font-bold';
+        headline.innerText = `PROJECTED REVENUE LOSS: ₹${lossAmount.toLocaleString()} (${lossPct}% of Total Budget)`;
+        detail.innerText = `At the current run-rate of ${dailyVel}/day, final attendance will reach ${projectedHeadcount} (${targetScale - projectedHeadcount} deficit). Immediate recovery action required to protect the ₹${totalBudget.toLocaleString()} operational budget.`;
+        revLoss.className = 'text-xl font-mono font-bold text-rose-400';
       } else {
-        banner.className = 'glass-panel rounded-2xl p-5 border border-stone-800 relative overflow-hidden';
+        banner.className = 'glass-panel rounded-2xl p-5 border border-stone-800 transition-all duration-300 relative overflow-hidden';
         badge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5';
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ALL SYSTEMS NOMINAL`;
-        catPill.classList.add('hidden');
-        headline.innerText = 'High Velocity Pacing • Real-Time Operations Telemetry Healthy';
-        detail.innerText = 'Registration velocity is pacing on target. 5-minute rolling community sentiment is positive across Twitter, Discord, and attendee channels.';
-        recText.innerText = data.recovery_action || 'All parameters nominal. Continue executing planned sponsor and marketing milestones.';
-        recPill.innerText = 'Nominal Operations';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> Financial Baseline Nominal`;
+        tag.innerText = `On Target`;
+        tag.className = 'text-emerald-400 font-bold';
+        headline.innerText = `Registration Run-Rate Healthy • Zero Budget Deficit Projected`;
+        detail.innerText = `Current daily registration velocity is pacing safely toward attendee capacity. Ticket yield and sponsorships remain fully aligned with the operational budget.`;
+        revLoss.className = 'text-xl font-mono font-bold text-emerald-400';
       }
 
-      // Role Health Cards
+      // Recovery Action
+      recTitle.innerText = data.recovery_action_title || (isBudgetBurn ? 'Referral Acceleration' : 'Operational Baseline');
+      recText.innerText = data.recovery_action || (isBudgetBurn
+        ? `Launch 48-hr peer referral incentive offering 500 bonus Fest Coins and 15% group discount to recover ₹${lossAmount.toLocaleString()} deficit.`
+        : 'Pacing models nominal. Maintain standard promotional schedule across developer Discord and student chapters.');
+
+      // KPIs
+      document.getElementById('plan-current-reg').innerText = currentReg.toLocaleString();
+      document.getElementById('plan-target-reg').innerText = `/ ${targetScale.toLocaleString()} Target`;
+      const regPct = Math.min(100, Math.round((currentReg / targetScale) * 100));
+      document.getElementById('plan-reg-bar').style.width = `${regPct}%`;
+
+      document.getElementById('plan-total-budget').innerText = `₹${totalBudget.toLocaleString()}`;
+      document.getElementById('plan-ticket-price').innerText = `₹${ticketPrice} / Ticket`;
+      document.getElementById('plan-days-remaining').innerText = reg.days_remaining || 14;
+      document.getElementById('plan-req-vel-sub').innerText = reqVel.toFixed(1);
+
+      const resolved = plan.resolved_tasks ?? data.resolved_tasks ?? 2;
+      const total = plan.total_tasks ?? data.total_tasks ?? 15;
+      const blockers = plan.blocker_count ?? data.blocker_count ?? 3;
+      document.getElementById('plan-resolved-count').innerText = `${resolved} / ${total}`;
+      document.getElementById('plan-blocker-badge').innerText = `${blockers} Blocker${blockers === 1 ? '' : 's'}`;
+      document.getElementById('plan-tasks-bar').style.width = `${Math.round((resolved / total) * 100)}%`;
+
+      // 5 Role Workflow Boards
+      renderWorkflowBoards(plan.tasks_by_role || data.tasks_by_role || {});
+    }
+
+    function renderWorkflowBoards(tasksByRole) {
+      const container = document.getElementById('workflow-boards-container');
       const roles = ['Marketing', 'Partnerships', 'Operations', 'Programme', 'Leadership'];
-      const tasksByRole = data.tasks_by_role || {};
-      roles.forEach(r => {
-        const tasks = tasksByRole[r] || [];
-        const done = tasks.filter(t => t.status === 'Resolved').length;
-        const blockers = tasks.filter(t => t.is_blocker).length;
-        const pct = Math.round((done / Math.max(1, tasks.length)) * 100);
+      const roleIcons = {
+        'Marketing': '📢',
+        'Partnerships': '🤝',
+        'Operations': '⚙️',
+        'Programme': '🗓️',
+        'Leadership': '👑'
+      };
 
-        const rKey = r.toLowerCase();
-        const pctEl = document.getElementById(`role-pct-${rKey}`);
-        const barEl = document.getElementById(`role-bar-${rKey}`);
-        const doneEl = document.getElementById(`role-done-${rKey}`);
-        const blockerEl = document.getElementById(`role-blocker-${rKey}`);
+      let html = '';
+      roles.forEach(role => {
+        const tasks = tasksByRole[role] || [];
+        const isRoleActive = (currentPlanningFilter === 'all' || currentPlanningFilter === role || (currentPlanningFilter === 'blockers' && tasks.some(t => t.is_blocker)));
 
-        if (pctEl) pctEl.innerText = `${pct}%`;
-        if (barEl) barEl.style.width = `${pct}%`;
-        if (doneEl) doneEl.innerText = `${done}/${tasks.length} Done`;
-        if (blockerEl) {
-          if (blockers > 0) {
-            blockerEl.innerText = `${blockers} Blocker${blockers > 1 ? 's' : ''}`;
-            blockerEl.className = 'text-rose-400 font-bold';
-          } else {
-            blockerEl.innerText = '0 Blockers';
-            blockerEl.className = 'text-emerald-400';
-          }
-        }
+        if (!isRoleActive) return;
+
+        const resolvedCount = tasks.filter(t => t.status === 'Resolved').length;
+
+        html += `
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between border-t-2 border-stone-700 min-h-[380px]">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-stone-800">
+                <span class="font-bold text-sm text-white flex items-center gap-1.5">${roleIcons[role]} ${role}</span>
+                <span class="text-[11px] font-mono text-gray-400">${resolvedCount}/${tasks.length} Done</span>
+              </div>
+
+              <div class="mt-3 space-y-2.5">
+                ${tasks.map(task => {
+                  const isResolved = task.status === 'Resolved';
+                  const isBlocker = Boolean(task.is_blocker);
+                  const taskId = task.id || task._id;
+
+                  return `
+                    <div class="p-3 rounded-xl bg-[#11151e] border ${isBlocker ? 'border-rose-800/80 blocker-pulse bg-rose-950/20' : 'border-stone-800/80'} ${isResolved ? 'opacity-60 line-through' : ''} space-y-2">
+                      ${isBlocker ? `
+                        <div class="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-rose-400 bg-rose-950/70 border border-rose-800 px-1.5 py-0.5 rounded">
+                          <i data-lucide="shield-alert" class="w-3 h-3"></i> CRITICAL BLOCKER
+                        </div>
+                      ` : ''}
+
+                      <div class="flex items-start justify-between gap-2">
+                        <h4 class="text-xs font-semibold text-white leading-snug">${escapeHTML(task.title)}</h4>
+                        ${!isResolved ? `
+                          <button onclick="resolveTask('${taskId}')" title="Mark Task Resolved" class="p-1 rounded-lg bg-stone-800 hover:bg-emerald-500 hover:text-black text-gray-400 transition cursor-pointer shrink-0">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                          </button>
+                        ` : `
+                          <span class="text-emerald-400 text-xs shrink-0 font-mono">✓</span>
+                        `}
+                      </div>
+
+                      <p class="text-[11px] text-gray-400 leading-relaxed">${escapeHTML(task.description || '')}</p>
+
+                      <div class="flex items-center justify-between text-[10px] font-mono text-gray-400 pt-1.5 border-t border-stone-800/60">
+                        <span class="px-1.5 py-0.2 rounded border ${isResolved ? 'bg-emerald-950 border-emerald-800 text-emerald-300' : 'bg-stone-800 border-stone-700 text-gray-300'}">${escapeHTML(task.status)}</span>
+                        <span>${formatDeadline(task.deadline)}</span>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
       });
 
-      // Priority Blockers List
-      const allTasks = Object.values(tasksByRole).flat();
-      const blockers = allTasks.filter(t => t.is_blocker);
-      const blockerContainer = document.getElementById('priority-blockers-list');
-      if (blockerContainer) {
-        if (blockers.length === 0) {
-          blockerContainer.innerHTML = `
-            <div class="bg-black/20 p-4 rounded-xl text-center text-xs text-gray-400">
-              ✅ Zero active critical path blockers. All functional boards executing smoothly.
-            </div>
-          `;
+      container.innerHTML = html || `<div class="col-span-5 text-center text-xs text-gray-400 py-10">No tasks found matching filter.</div>`;
+      lucide.createIcons();
+    }
+
+    function filterPlanningRole(filter) {
+      currentPlanningFilter = filter;
+      const tabs = ['all', 'marketing', 'partnerships', 'operations', 'programme', 'leadership', 'blockers'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`plan-tab-${t}`);
+        if (!btn) return;
+        if (t === filter.toLowerCase() || (t === 'all' && filter === 'all')) {
+          btn.className = 'px-3 py-1.5 rounded-lg bg-brand-500 text-black font-semibold transition cursor-pointer';
         } else {
-          blockerContainer.innerHTML = blockers.slice(0, 3).map(b => `
-            <div class="glass-card rounded-xl p-3.5 border transition space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold tracking-wider uppercase text-rose-400 bg-rose-950/70 border border-rose-800 px-2 py-0.5 rounded-md flex items-center gap-1">
-                  <i data-lucide="shield-alert" class="w-3 h-3"></i> ${escapeHTML(b.role)} BLOCKER
+          btn.className = 'px-3 py-1.5 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 transition cursor-pointer';
+        }
+      });
+      if (appStats) renderWorkflowBoards(appStats.planning_stats?.tasks_by_role || appStats.tasks_by_role || {});
+    }
+
+    // ─────────────────────── Live Mode Renderer ───────────────────────
+    function renderLiveView(data) {
+      const live = data.live_stats || {};
+      const zones = live.zones || data.zones || [];
+      const hasCapacityWarning = Boolean(live.capacity_warning || data.capacity_warning);
+      const revenue = live.fest_coin_revenue ?? data.financials?.total_revenue ?? 0;
+      const incidents = live.active_incidents || data.active_incidents || [];
+      const attendees = live.total_attendees ?? data.total_attendees ?? 0;
+      const transactions = live.recent_transactions || data.financials?.recent_transactions || [];
+      const scans = live.recent_scans || data.recent_logs || [];
+
+      // Live Telemetry Banner
+      const banner = document.getElementById('live-crowd-banner');
+      const badge = document.getElementById('live-banner-badge');
+      const headline = document.getElementById('live-banner-headline');
+      const detail = document.getElementById('live-banner-detail');
+
+      document.getElementById('stat-live-revenue').innerText = revenue.toLocaleString();
+      document.getElementById('stat-live-incidents').innerText = incidents.length;
+      document.getElementById('stat-live-attendees').innerText = attendees.toLocaleString();
+      document.getElementById('live-tx-summary').innerText = `${revenue.toLocaleString()} Fest Coins Collected`;
+
+      const bottleneckZone = zones.find(z => z.capacity_warning || z.recent_scans > 150);
+
+      if (hasCapacityWarning && bottleneckZone) {
+        banner.className = 'glass-panel rounded-2xl p-5 border relative overflow-hidden risk-alert-active';
+        badge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1.5';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span> 🚨 CROWD BOTTLENECK DETECTED`;
+        headline.innerText = `${bottleneckZone.zone_name.toUpperCase()} SURGED TO ${bottleneckZone.recent_scans} SCANS / 10 MIN (CAPACITY EXCEEDED)`;
+        detail.innerText = `Real-time physical density has breached safety thresholds. Trigger immediate crowd diversion to Food Court or Main Stage to relieve congestion.`;
+      } else {
+        banner.className = 'glass-panel rounded-2xl p-5 border border-stone-800 transition-all duration-300 relative overflow-hidden';
+        badge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> Venue Flow Balanced`;
+        headline.innerText = `All 5 Physical Zones Operating Below Maximum Density`;
+        detail.innerText = `Real-time NFC/QR scanner volume is within safe crowd-control limits. Fast cashless throughput observed across stalls.`;
+      }
+
+      // 5 Physical Zone Cards
+      renderZoneCards(zones);
+
+      // Active Incidents
+      renderIncidents(incidents);
+
+      // Cashless Transactions & Scans
+      renderLiveTransactions(transactions);
+      renderLiveScans(scans);
+    }
+
+    function renderZoneCards(zones) {
+      const grid = document.getElementById('live-zones-grid');
+      const allZones = ['Main Stage', 'Food Court', 'Artisan Market', 'Cultural Pavilion', 'VIP Lounge'];
+
+      grid.innerHTML = allZones.map(zoneName => {
+        const z = zones.find(item => item.zone_name === zoneName) || {
+          zone_name: zoneName,
+          recent_scans: 0,
+          total_scans: 0,
+          capacity_pct: 0,
+          capacity_warning: false
+        };
+
+        const isWarning = Boolean(z.capacity_warning || z.recent_scans > 150);
+        const capPct = Math.min(100, Math.round(z.capacity_pct || (z.recent_scans / 150 * 100)));
+
+        return `
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between border transition ${isWarning ? 'zone-warning-active' : ''}">
+            <div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full ${isWarning ? 'bg-rose-400 animate-ping' : 'bg-emerald-400'}"></span>
+                  ${escapeHTML(z.zone_name)}
                 </span>
-                <button onclick="resolveTask('${b.id || b._id}')" class="px-2.5 py-1 rounded-md bg-stone-800 hover:bg-emerald-500 hover:text-black text-gray-300 text-xs font-medium border border-stone-700 transition cursor-pointer flex items-center gap-1">
-                  <i data-lucide="check" class="w-3 h-3"></i> Resolve
-                </button>
+                <span class="font-mono text-[11px] ${isWarning ? 'text-rose-400 font-bold' : 'text-gray-400'}">${capPct}%</span>
               </div>
-              <h4 class="text-xs font-semibold text-white">${escapeHTML(b.title)}</h4>
-              <p class="text-[11px] text-gray-400 leading-normal">${escapeHTML(b.description || '')}</p>
+
+              <div class="flex items-baseline justify-between mt-3">
+                <span class="text-2xl font-bold font-mono text-white">${z.recent_scans}</span>
+                <span class="text-xs text-gray-400 font-mono">/ 150 limit (10m)</span>
+              </div>
+
+              <div class="w-full bg-stone-800 h-1.5 rounded-full mt-2.5 overflow-hidden">
+                <div class="${isWarning ? 'bg-rose-500' : 'bg-emerald-400'} h-full rounded-full" style="width: ${capPct}%;"></div>
+              </div>
+
+              <p class="text-[10px] text-gray-400 mt-2">Cumulative: ${z.total_scans || 0} total scans</p>
             </div>
-          `).join('');
-        }
-      }
 
-      lucide.createIcons();
-    }
-
-    function renderSocial(data) {
-      const feed = data.feed || [];
-      const metrics = data.metrics || {};
-      const ratioBadge = document.getElementById('ticker-sentiment-ratio');
-      const tickerContent = document.getElementById('ticker-content');
-      const overviewFeed = document.getElementById('overview-social-feed');
-
-      const posPct = metrics.positive_pct || 75;
-      const negPct = metrics.negative_pct || 15;
-
-      document.getElementById('stat-positive-pct').innerText = `${posPct}%`;
-      document.getElementById('stat-negative-pct').innerText = `${negPct}% Neg`;
-      document.getElementById('overview-sentiment-pct').innerText = `${posPct}%`;
-
-      if (ratioBadge) {
-        ratioBadge.innerText = `${posPct}% POS`;
-        if (metrics.community_friction_risk) {
-          ratioBadge.className = 'px-1.5 py-0.2 rounded text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono font-bold animate-pulse';
-        } else {
-          ratioBadge.className = 'px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-mono';
-        }
-      }
-
-      if (tickerContent && feed.length > 0) {
-        const marqueeHtml = feed.slice(0, 10).map(item => `
-          <span class="text-xs text-gray-300 inline-flex items-center gap-2 mr-6">
-            <span class="px-1.5 py-0.2 rounded text-[10px] font-mono border ${item.sentiment === 'positive' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : (item.sentiment === 'negative' ? 'bg-rose-950 text-rose-300 border-rose-800' : 'bg-stone-800 text-gray-300 border-stone-700')}">${escapeHTML(item.source || 'Twitter')}</span>
-            <span class="font-medium text-gray-400">${escapeHTML(item.author || '@attendee')}:</span>
-            <span class="text-gray-200">${escapeHTML(item.text)}</span>
-          </span>
-        `).join('');
-        tickerContent.innerHTML = marqueeHtml + marqueeHtml;
-      }
-
-      if (overviewFeed && feed.length > 0) {
-        overviewFeed.innerHTML = feed.slice(0, 3).map(item => `
-          <div class="glass-card rounded-xl p-3 border text-xs flex flex-col gap-1.5">
-            <div class="flex items-center justify-between text-[11px]">
-              <span class="font-medium text-gray-300">${escapeHTML(item.author || '@attendee')}</span>
-              <span class="px-1.5 py-0.2 rounded text-[10px] font-mono border ${item.sentiment === 'positive' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : (item.sentiment === 'negative' ? 'bg-rose-950 text-rose-300 border-rose-800' : 'bg-stone-800 text-gray-300 border-stone-700')}">
-                ${escapeHTML(item.source)} • ${item.sentiment.toUpperCase()}
-              </span>
+            <div class="mt-4 pt-3 border-t border-stone-800/80 flex items-center justify-between">
+              ${isWarning ? `
+                <button onclick="openDivertModal('${escapeHTML(z.zone_name)}')" class="w-full py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer">
+                  <i data-lucide="shuffle" class="w-3.5 h-3.5"></i>
+                  <span>DIVERT CROWD</span>
+                </button>
+              ` : `
+                <span class="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i> Nominal Flow
+                </span>
+                <button onclick="openDivertModal('${escapeHTML(z.zone_name)}')" class="text-[10px] text-gray-400 hover:text-white transition">Reroute →</button>
+              `}
             </div>
-            <p class="text-gray-300 text-[11px] leading-relaxed">"${escapeHTML(item.text)}"</p>
           </div>
-        `).join('');
-      }
+        `;
+      }).join('');
       lucide.createIcons();
     }
 
+    function renderIncidents(incidents) {
+      const container = document.getElementById('live-incidents-list');
+      if (!incidents || incidents.length === 0) {
+        container.innerHTML = `<div class="text-center text-xs text-gray-400 py-8 bg-[#11151e] rounded-xl border border-stone-800">No active SOS incidents. All zones safe and secure.</div>`;
+        return;
+      }
+
+      container.innerHTML = incidents.map(inc => {
+        const id = inc.id || inc._id;
+        const typeClass = inc.type === 'Medical' ? 'text-rose-400 bg-rose-950/60 border-rose-800' : (inc.type === 'Security' ? 'text-amber-400 bg-amber-950/60 border-amber-800' : 'text-sky-400 bg-sky-950/60 border-sky-800');
+
+        return `
+          <div class="p-3.5 rounded-xl bg-[#11151e] border border-stone-800 flex items-start justify-between gap-3">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${typeClass}">${escapeHTML(inc.type)}</span>
+                <span class="text-xs font-bold text-white">${escapeHTML(inc.zone_name)}</span>
+              </div>
+              <p class="text-xs text-gray-300 leading-relaxed">${escapeHTML(inc.description || inc.notes || 'Emergency ticket dispatched.')}</p>
+              <div class="text-[10px] font-mono text-gray-400">Reported: ${formatTime(inc.reported_at)}</div>
+            </div>
+            <button onclick="resolveIncident('${id}')" class="px-2.5 py-1.5 rounded-lg bg-stone-800 hover:bg-emerald-500 hover:text-black text-gray-300 text-xs font-semibold border border-stone-700 transition cursor-pointer shrink-0">
+              Resolve
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderLiveTransactions(txs) {
+      const container = document.getElementById('live-tx-list');
+      if (!txs || txs.length === 0) {
+        container.innerHTML = `<div class="text-[11px] text-gray-500 text-center py-2">No transactions recorded yet.</div>`;
+        return;
+      }
+      container.innerHTML = txs.slice(0, 5).map(tx => `
+        <div class="p-2 rounded-lg bg-[#11151e] border border-stone-800/80 flex items-center justify-between text-xs">
+          <div>
+            <span class="text-white font-medium">${escapeHTML(tx.attendee_name || 'Attendee')}</span>
+            <span class="text-[10px] text-gray-400 ml-1.5">@ ${escapeHTML(tx.stall_name || tx.zone_name || 'Food Court')}</span>
+          </div>
+          <span class="font-mono font-bold text-amber-400">-${tx.amount} coins</span>
+        </div>
+      `).join('');
+    }
+
+    function renderLiveScans(scans) {
+      const container = document.getElementById('live-scans-list');
+      if (!scans || scans.length === 0) {
+        container.innerHTML = `<div class="text-[11px] text-gray-500 text-center py-2">No scans recorded yet.</div>`;
+        return;
+      }
+      container.innerHTML = scans.slice(0, 5).map(scan => `
+        <div class="p-2 rounded-lg bg-[#11151e] border border-stone-800/80 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span class="text-gray-200">${escapeHTML(scan.attendee_name || 'Attendee')}</span>
+            <span class="text-[10px] font-mono text-gray-400">(${escapeHTML(scan.role || 'General')})</span>
+          </div>
+          <span class="text-[10px] font-mono text-gray-400">${escapeHTML(scan.zone_name)}</span>
+        </div>
+      `).join('');
+    }
+
+    // ─────────────────────── Social Ticker ───────────────────────
+    function renderSocialTicker(feed, metrics) {
+      const ratioEl = document.getElementById('ticker-sentiment-ratio');
+      if (metrics.positive_pct !== undefined) {
+        ratioEl.innerText = `${metrics.positive_pct}% POS`;
+        ratioEl.className = metrics.community_friction_risk
+          ? 'px-1.5 py-0.2 rounded text-[10px] bg-rose-500/20 text-rose-300 font-mono font-bold'
+          : 'px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-300 font-mono';
+      }
+
+      const ticker = document.getElementById('ticker-content');
+      if (!feed || feed.length === 0) return;
+
+      const items = feed.map(p => {
+        const s = (p.sentiment || 'neutral').toLowerCase();
+        const badge = s === 'positive' ? 'bg-emerald-500/20 text-emerald-300' : (s === 'negative' ? 'bg-rose-500/20 text-rose-300' : 'bg-stone-700 text-gray-300');
+        return `
+          <div class="inline-flex items-center gap-2 text-xs">
+            <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold ${badge}">${s.toUpperCase()}</span>
+            <span class="text-gray-400 font-semibold">${escapeHTML(p.author || '@attendee')}:</span>
+            <span class="text-gray-200">${escapeHTML(p.text || '')}</span>
+          </div>
+        `;
+      }).join('');
+
+      ticker.innerHTML = items + items;
+    }
+
+    // ─────────────────────── Actions & Handlers ───────────────────────
     async function resolveTask(taskId) {
       try {
-        await fetch(`/api/tasks/${taskId}/resolve`, { method: 'PATCH' });
-        fetchOverview();
-      } catch (e) {
-        console.error(e);
+        const res = await fetch(`/api/tasks/${taskId}/resolve`, { method: 'PATCH' });
+        if (res.ok) pollMasterTelemetry();
+      } catch (err) {
+        console.error(err);
       }
     }
 
     async function executeRecoveryAction() {
-      const btn = document.getElementById('execute-recovery-btn');
-      btn.innerText = 'Executing...';
       try {
         const res = await fetch('/api/admin/execute_recovery_action', { method: 'POST' });
-        const d = await res.json();
-        alert(d.message || '⚡ AI Recovery Action executed!');
-        fetchOverview();
-        fetchSocial();
-      } catch (e) {
-        alert('Failed to execute recovery action.');
-      } finally {
-        btn.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i><span>Execute Recovery Action</span>`;
-        lucide.createIcons();
+        if (res.ok) {
+          const data = await res.json();
+          alert('⚡ ' + (data.message || 'Recovery Action Executed!'));
+          pollMasterTelemetry();
+        }
+      } catch (err) {
+        console.error(err);
       }
     }
 
-    // Modal
-    function openSetupModal() { document.getElementById('setup-modal').classList.remove('hidden'); }
-    function closeSetupModal() { document.getElementById('setup-modal').classList.add('hidden'); }
+    async function simulateVelocityDrop() {
+      try {
+        const res = await fetch('/api/admin/simulate_velocity_drop', { method: 'POST' });
+        if (res.ok) pollMasterTelemetry();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function simulateSurge() {
+      try {
+        const res = await fetch('/api/admin/simulate_surge', { method: 'POST' });
+        if (res.ok) pollMasterTelemetry();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function revertSurge() {
+      try {
+        const res = await fetch('/api/admin/revert_surge', { method: 'POST' });
+        if (res.ok) pollMasterTelemetry();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Setup Modal
+    function openSetupModal() {
+      document.getElementById('setup-modal').classList.remove('hidden');
+    }
+    function closeSetupModal() {
+      document.getElementById('setup-modal').classList.add('hidden');
+    }
 
     async function handleGeneratePlan(e) {
       e.preventDefault();
       const btn = document.getElementById('btn-modal-submit');
-      btn.innerText = 'Synthesizing with Gemini...';
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Synthesizing 15 Tasks...`;
+      lucide.createIcons();
+
       const payload = {
         title: document.getElementById('modal-title').value.trim(),
         format: document.getElementById('modal-format').value,
         target_scale: parseInt(document.getElementById('modal-scale').value, 10),
         venue: document.getElementById('modal-venue').value.trim(),
-        objectives: document.getElementById('modal-brief').value.trim()
+        ticket_price: parseFloat(document.getElementById('modal-ticket-price').value),
+        total_budget: parseFloat(document.getElementById('modal-total-budget').value),
+        objectives: document.getElementById('modal-brief').value.trim(),
+        days_remaining: 14,
+        current_registrations: 1620,
+        daily_velocity: 42.5
       };
+
       try {
         const res = await fetch('/api/generate_plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error();
-        closeSetupModal();
-        alert('Successfully generated operating plan with 15 tasks!');
-        fetchOverview();
+        if (res.ok) {
+          closeSetupModal();
+          pollMasterTelemetry();
+        } else {
+          alert('Failed to generate operating plan.');
+        }
       } catch (err) {
-        alert('Plan generation failed.');
+        console.error(err);
       } finally {
-        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Generate Operating Plan</span>`;
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> <span>Generate Operating Plan</span>`;
         lucide.createIcons();
       }
     }
 
-    // Assistant Drawer
+    // Divert Modal
+    function openDivertModal(sourceZone) {
+      pendingDivertSource = sourceZone || 'Cultural Pavilion';
+      document.getElementById('divert-source-name').innerText = pendingDivertSource;
+      document.getElementById('divert-modal').classList.remove('hidden');
+    }
+    function closeDivertModal() {
+      document.getElementById('divert-modal').classList.add('hidden');
+    }
+
+    async function handleExecuteDivert(e) {
+      e.preventDefault();
+      const targetZone = document.getElementById('divert-target-select').value;
+      const message = document.getElementById('divert-message').value.trim();
+
+      try {
+        const res = await fetch('/api/admin/divert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            zone_name: pendingDivertSource,
+            target_zone: targetZone,
+            message: message
+          })
+        });
+        if (res.ok) {
+          closeDivertModal();
+          pollMasterTelemetry();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // SOS Modal
+    function openIncidentModal() {
+      document.getElementById('incident-modal').classList.remove('hidden');
+    }
+    function closeIncidentModal() {
+      document.getElementById('incident-modal').classList.add('hidden');
+    }
+
+    async function handleCreateIncident(e) {
+      e.preventDefault();
+      const payload = {
+        type: document.getElementById('modal-incident-type').value,
+        zone_name: document.getElementById('modal-incident-zone').value,
+        description: document.getElementById('modal-incident-desc').value.trim()
+      };
+      try {
+        const res = await fetch('/api/incident', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          closeIncidentModal();
+          pollMasterTelemetry();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function resolveIncident(id) {
+      try {
+        const res = await fetch(`/api/incident/${id}/resolve`, { method: 'POST' });
+        if (res.ok) pollMasterTelemetry();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Floating Assistant Drawer (Context-Aware Copilot)
     function toggleAssistant() {
       const drawer = document.getElementById('assistant-drawer');
       drawer.classList.toggle('translate-x-full');
-      if (!drawer.classList.contains('translate-x-full')) {
-        document.getElementById('chat-input').focus();
-      }
     }
 
     function sendAssistantQuery(q) {
@@ -873,13 +1391,35 @@
         const res = await fetch('/api/admin/nlp_query', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: q })
+          body: JSON.stringify({
+            query: q,
+            current_mode: currentGlobalMode
+          })
         });
         const data = await res.json();
-        container.innerHTML += `<div class="bg-[#151a24] text-gray-200 rounded-xl p-3.5 text-xs leading-relaxed border border-stone-800">${escapeHTML(data.answer)}</div>`;
+        container.innerHTML += `<div class="bg-[#151a24] text-gray-200 rounded-xl p-3.5 text-xs leading-relaxed border border-stone-800">${escapeHTML(data.answer || data.response)}</div>`;
         container.scrollTop = container.scrollHeight;
       } catch (err) {
-        container.innerHTML += `<div class="text-rose-400 text-xs">Error querying copilot.</div>`;
+        container.innerHTML += `<div class="text-rose-400 text-xs">Error querying copilot console.</div>`;
+      }
+    }
+
+    // ─────────────────────── Utilities ───────────────────────
+    function formatDeadline(isoString) {
+      if (!isoString) return 'In 3 days';
+      try {
+        return new Date(isoString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } catch (e) {
+        return 'TBD';
+      }
+    }
+
+    function formatTime(isoString) {
+      if (!isoString) return 'Just now';
+      try {
+        return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        return 'Just now';
       }
     }
 
