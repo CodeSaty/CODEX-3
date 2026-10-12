@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Copilot War Room | Hackingly Intelligent Event Command Centre</title>
+  <meta name="description" content="Dedicated Google Gemini AI Operations Copilot War Room with real-time cross-functional reasoning, MongoDB query translation, and decision support.">
+  <meta name="color-scheme" content="dark">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            mono: ['"Space Grotesk"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              500: '#10b981',
+              600: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #0a0c10; color: #f3f4f6; }
+    .glass-panel {
+      background: rgba(18, 22, 29, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    .glass-card {
+      background: rgba(24, 30, 42, 0.65);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#0a0c10] text-gray-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white antialiased">
+
+  <!-- NAVIGATION HEADER -->
+  <header class="glass-panel border-x-0 border-t-0 px-6 py-3.5 sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-teal-500 to-sky-500 p-0.5 shadow-lg shadow-brand-500/20 flex items-center justify-center">
+          <div class="w-full h-full bg-[#0a0c10] rounded-[10px] flex items-center justify-center">
+            <i data-lucide="command" class="w-5 h-5 text-brand-500"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-base tracking-tight text-white">Event Command Centre</span>
+            <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-brand-500/20 text-brand-400 border border-brand-500/30">PS1</span>
+          </div>
+          <p class="text-[11px] text-gray-400">Gemini AI Operations Copilot War Room</p>
+        </div>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-1 bg-[#121620] p-1 rounded-xl border border-stone-800 text-xs">
+        <a href="/" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Overview</a>
+        <a href="/workflows.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Workflows</a>
+        <a href="/sentiment.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Sentiment Radar</a>
+        <a href="/analytics.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Velocity & Analytics</a>
+        <a href="/copilot.html" class="px-3 py-1.5 rounded-lg bg-stone-800 text-brand-400 font-medium shadow-sm transition">AI Copilot</a>
+      </nav>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 bg-[#131720] px-3 py-1.5 rounded-xl border border-stone-800 text-xs font-mono">
+        <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+        <span class="text-gray-400 text-[11px]">Gemini 2.5 Flash:</span>
+        <span class="text-sky-400 text-[11px]">Online</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- COPILOT WAR ROOM GRID -->
+  <main class="flex-1 p-6 max-w-[1720px] w-full mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+    <!-- LEFT: EXECUTIVE PROMPT LIBRARY (1 Col) -->
+    <div class="glass-panel rounded-2xl p-4 flex flex-col space-y-4">
+      <div>
+        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4 text-brand-400"></i>
+          Executive Prompts
+        </h3>
+        <p class="text-[11px] text-gray-400 mt-0.5">Click any prompt to ask Gemini instantly</p>
+      </div>
+
+      <div class="space-y-2 flex-1 overflow-y-auto">
+        <button onclick="sendQuery('What are the critical blockers in Partnerships and Operations?')" class="w-full text-left p-3 rounded-xl bg-stone-900/60 hover:bg-stone-800 border border-stone-800 text-xs text-gray-200 transition cursor-pointer flex flex-col gap-1">
+          <span class="font-bold text-rose-400 flex items-center gap-1.5">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Critical Blockers Audit
+          </span>
+          <span class="text-[11px] text-gray-400">Inspect cross-functional dependencies halting execution</span>
+        </button>
+
+        <button onclick="sendQuery('Show Marketing tasks pacing behind schedule and registration velocity')" class="w-full text-left p-3 rounded-xl bg-stone-900/60 hover:bg-stone-800 border border-stone-800 text-xs text-gray-200 transition cursor-pointer flex flex-col gap-1">
+          <span class="font-bold text-sky-400 flex items-center gap-1.5">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Registration Run Rate
+          </span>
+          <span class="text-[11px] text-gray-400">Calculate pacing deficit against the 2,500 target</span>
+        </button>
+
+        <button onclick="sendQuery('Summarize overall community sentiment across Discord and Twitter')" class="w-full text-left p-3 rounded-xl bg-stone-900/60 hover:bg-stone-800 border border-stone-800 text-xs text-gray-200 transition cursor-pointer flex flex-col gap-1">
+          <span class="font-bold text-emerald-400 flex items-center gap-1.5">
+            <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Community Friction Triage
+          </span>
+          <span class="text-[11px] text-gray-400">Evaluate negative sentiment and identify complaints</span>
+        </button>
+
+        <button onclick="sendQuery('Give me a full executive risk briefing on the event command center')" class="w-full text-left p-3 rounded-xl bg-stone-900/60 hover:bg-stone-800 border border-stone-800 text-xs text-gray-200 transition cursor-pointer flex flex-col gap-1">
+          <span class="font-bold text-amber-400 flex items-center gap-1.5">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Executive Risk Briefing
+          </span>
+          <span class="text-[11px] text-gray-400">High-level synopsis for Event Director</span>
+        </button>
+
+        <button onclick="sendQuery('What are the key milestones for Programme and Keynote speakers?')" class="w-full text-left p-3 rounded-xl bg-stone-900/60 hover:bg-stone-800 border border-stone-800 text-xs text-gray-200 transition cursor-pointer flex flex-col gap-1">
+          <span class="font-bold text-purple-400 flex items-center gap-1.5">
+            <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Programme & Run-of-Show
+          </span>
+          <span class="text-[11px] text-gray-400">Review keynote abstracts, demo day slots, and problem tracks</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CENTER: INTERACTIVE CHAT STREAM (2 Cols) -->
+    <div class="glass-panel rounded-2xl p-5 lg:col-span-2 flex flex-col h-[750px]">
+      <div class="pb-3 border-b border-stone-800 flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-base text-white">Operations Copilot Chat</h2>
+          <p class="text-xs text-gray-400">Powered by Google Gemini 2.5 Flash SDK</p>
+        </div>
+        <button onclick="clearChat()" class="text-xs text-gray-400 hover:text-white cursor-pointer">
+          Clear Thread
+        </button>
+      </div>
+
+      <!-- Messages Stream -->
+      <div id="copilot-stream" class="flex-1 p-3 overflow-y-auto space-y-4 my-2">
+        <div class="bg-[#151a24] rounded-2xl p-4 border border-stone-800 text-xs text-gray-300 leading-relaxed">
+          <span class="font-bold text-brand-400 flex items-center gap-1.5 mb-1">
+            <i data-lucide="bot" class="w-4 h-4"></i> Gemini Copilot Online
+          </span>
+          I am connected to your live MongoDB Atlas command state. Ask me any cross-functional question to query task blockers, evaluate registration velocity pacing, or triage audience sentiment.
+        </div>
+      </div>
+
+      <!-- Input Bar -->
+      <form onsubmit="handleChat(event)" class="pt-3 border-t border-stone-800 flex items-center gap-2">
+        <input type="text" id="copilot-input" placeholder="Type a command: e.g. What is our biggest bottleneck today?" class="flex-1 bg-[#151a24] border border-stone-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-500">
+        <button type="submit" class="px-5 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          <span>Ask Copilot</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- RIGHT: LIVE TELEMETRY SNAPSHOT AUDIT (1 Col) -->
+    <div class="glass-panel rounded-2xl p-4 flex flex-col space-y-4">
+      <div>
+        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+          <i data-lucide="database" class="w-4 h-4 text-brand-400"></i>
+          Live Command Telemetry
+        </h3>
+        <p class="text-[11px] text-gray-400 mt-0.5">Real-time MongoDB Atlas audit</p>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="bg-black/30 p-3 rounded-xl border border-stone-800">
+          <div class="text-[10px] text-gray-400 uppercase font-mono">Confirmed Registrations</div>
+          <div id="side-reg" class="text-xl font-bold font-mono text-white mt-1">1,620 / 2,500</div>
+          <div id="side-pace" class="text-[10px] text-emerald-400 font-mono mt-0.5">100% Pacing</div>
+        </div>
+
+        <div class="bg-black/30 p-3 rounded-xl border border-stone-800">
+          <div class="text-[10px] text-gray-400 uppercase font-mono">Critical Path Blockers</div>
+          <div id="side-blockers" class="text-xl font-bold font-mono text-amber-400 mt-1">3 Active</div>
+          <div class="text-[10px] text-gray-400 mt-0.5">Requiring Director Signoff</div>
+        </div>
+
+        <div class="bg-black/30 p-3 rounded-xl border border-stone-800">
+          <div class="text-[10px] text-gray-400 uppercase font-mono">Rolling 5m Sentiment</div>
+          <div id="side-sentiment" class="text-xl font-bold font-mono text-emerald-400 mt-1">75% Positive</div>
+          <div id="side-friction" class="text-[10px] text-gray-400 mt-0.5">Friction Risk: None</div>
+        </div>
+
+        <div class="bg-black/30 p-3 rounded-xl border border-stone-800">
+          <div class="text-[10px] text-gray-400 uppercase font-mono">Task Completion</div>
+          <div id="side-tasks" class="text-xl font-bold font-mono text-sky-400 mt-1">2 / 15 Resolved</div>
+          <div class="text-[10px] text-gray-400 mt-0.5">5 Core Functional Roles</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      fetchTelemetrySide();
+      setInterval(fetchTelemetrySide, 3000);
+    });
+
+    async function fetchTelemetrySide() {
+      try {
+        const res = await fetch('/api/admin/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        const reg = data.registration_metrics || {};
+        const sent = data.sentiment_metrics || {};
+
+        document.getElementById('side-reg').innerText = `${(reg.current_registrations || 1620).toLocaleString()} / ${(reg.target_registrations || 2500).toLocaleString()}`;
+        document.getElementById('side-pace').innerText = `${Math.round((reg.velocity_ratio || 0.68) * 100)}% Pacing`;
+        document.getElementById('side-blockers').innerText = `${data.blocker_count || 0} Active`;
+        document.getElementById('side-sentiment').innerText = `${sent.positive_pct || 75}% Positive`;
+        document.getElementById('side-friction').innerText = `Friction: ${data.friction_category || 'None'}`;
+        document.getElementById('side-tasks').innerText = `${data.resolved_tasks || 0} / ${data.total_tasks || 15} Resolved`;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function sendQuery(q) {
+      document.getElementById('copilot-input').value = q;
+      handleChat(new Event('submit'));
+    }
+
+    async function handleChat(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('copilot-input');
+      const q = input.value.trim();
+      if (!q) return;
+      input.value = '';
+
+      const stream = document.getElementById('copilot-stream');
+
+      // User Bubble
+      stream.innerHTML += `
+        <div class="flex justify-end">
+          <div class="bg-brand-600/30 text-brand-100 border border-brand-500/40 rounded-2xl px-4 py-2.5 text-xs max-w-[85%] leading-relaxed">
+            ${escapeHTML(q)}
+          </div>
+        </div>
+      `;
+      stream.scrollTop = stream.scrollHeight;
+
+      // Loading Bubble
+      const loadingId = 'loading-' + Date.now();
+      stream.innerHTML += `
+        <div id="${loadingId}" class="flex justify-start">
+          <div class="bg-[#151a24] border border-stone-800 rounded-2xl p-3.5 text-xs text-gray-300 max-w-[90%] flex items-center gap-2">
+            <i data-lucide="loader" class="w-4 h-4 animate-spin text-brand-400"></i>
+            <span>Gemini is evaluating real-time MongoDB state...</span>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+      stream.scrollTop = stream.scrollHeight;
+
+      try {
+        const res = await fetch('/api/admin/nlp_query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q })
+        });
+        const data = await res.json();
+        const loadEl = document.getElementById(loadingId);
+        if (loadEl) loadEl.remove();
+
+        let metricsHtml = '';
+        if (data.metrics && data.metrics.length > 0) {
+          metricsHtml = `
+            <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-stone-800">
+              ${data.metrics.map(m => `
+                <div class="bg-black/30 p-2.5 rounded-xl border border-stone-800">
+                  <div class="text-[10px] text-gray-400">${escapeHTML(m.label)}</div>
+                  <div class="font-mono font-bold text-xs ${m.alert ? 'text-rose-400' : 'text-gray-200'}">${escapeHTML(m.value)}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        stream.innerHTML += `
+          <div class="flex justify-start">
+            <div class="bg-[#151a24] border border-stone-800 rounded-2xl p-4 text-xs text-gray-200 max-w-[92%] space-y-2 leading-relaxed">
+              <div class="flex items-center gap-1.5 text-brand-400 font-semibold text-[11px]">
+                <i data-lucide="bot" class="w-4 h-4"></i> Gemini Briefing
+              </div>
+              <div class="text-gray-200">${formatMarkdown(data.answer || data.response || '')}</div>
+              ${metricsHtml}
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+        stream.scrollTop = stream.scrollHeight;
+      } catch (err) {
+        const loadEl = document.getElementById(loadingId);
+        if (loadEl) loadEl.remove();
+        stream.innerHTML += `<div class="text-rose-400 text-xs">Error querying Gemini.</div>`;
+      }
+    }
+
+    function clearChat() {
+      document.getElementById('copilot-stream').innerHTML = '';
+    }
+
+    function formatMarkdown(text) {
+      if (!text) return '';
+      let escaped = escapeHTML(text);
+      escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+      escaped = escaped.replace(/^\s*-\s+(.*)$/gm, '• $1<br>');
+      escaped = escaped.replace(/\n/g, '<br>');
+      return escaped;
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

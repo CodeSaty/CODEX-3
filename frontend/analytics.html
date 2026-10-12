@@ -1,260 +1,317 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cultura Festival | Dashboard</title>
-  <meta name="color-scheme" content="light dark">
-  <link rel="stylesheet" href="/theme.css">
-  <script src="/theme.js"></script>
+  <title>Velocity & Analytics | Hackingly Intelligent Event Command Centre</title>
+  <meta name="description" content="Registration Velocity and Risk Pacing Engine with real-time trajectory curves, reach gap analysis, and conversion forecasting.">
+  <meta name="color-scheme" content="dark">
   
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
-          colors: {
-            fest: {
-              rose: '#e11d48',
-              amber: '#d97706',
-              emerald: '#059669',
-              sky: '#0284c7',
-              stone: '#fafaf9',
-              dark: '#292524'
-            }
-          },
           fontFamily: {
             sans: ['Outfit', 'sans-serif'],
-            serif: ['"Playfair Display"', 'serif'],
+            mono: ['"Space Grotesk"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              500: '#10b981',
+              600: '#059669',
+            }
           }
         }
       }
     }
   </script>
+
   <style>
-    body { background-color: #f5f5f4; }
+    body { background-color: #0a0c10; color: #f3f4f6; }
+    .glass-panel {
+      background: rgba(18, 22, 29, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
     .glass-card {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(24, 30, 42, 0.65);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.6);
-      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .gradient-text {
-      background: linear-gradient(135deg, #e11d48, #d97706);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="min-h-screen text-fest-dark flex overflow-hidden selection:bg-fest-rose selection:text-white font-sans relative">
+<body class="min-h-screen bg-[#0a0c10] text-gray-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white antialiased">
 
-  <!-- Soft animated background gradient -->
-  <div class="fixed inset-0 z-0 opacity-40 pointer-events-none" style="background: radial-gradient(circle at 10% 20%, rgba(225,29,72,0.1) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(217,119,6,0.1) 0%, transparent 40%);"></div>
-
-  <!-- SIDEBAR -->
-  <aside class="w-64 glass-card border-r border-stone-200 flex flex-col z-20 shrink-0 relative">
-    <div class="p-6 border-b border-stone-100 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-md">
-        <i data-lucide="tent" class="w-5 h-5"></i>
-      </div>
-      <div>
-        <h1 class="text-xl font-serif font-semibold tracking-wide text-fest-dark leading-tight">Cultura</h1>
-        <p class="text-[10px] text-stone-500 uppercase tracking-widest font-semibold">Festival Hub</p>
-      </div>
-    </div>
-    
-    <nav class="flex-1 p-4 space-y-2 mt-4 text-sm font-medium">
-      <a href="/" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
-        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-        Dashboard
-      </a>
-      <a href="/analytics.html" class="flex items-center gap-3 p-3 rounded-xl bg-rose-50 text-fest-rose">
-        <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
-        Insights
-      </a>
-      <a href="/attendees.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
-        <i data-lucide="users" class="w-5 h-5"></i>
-        Guests
-      </a>
-      <a href="/recharge.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
-        <i data-lucide="wallet" class="w-5 h-5"></i>
-        Recharge & Coins
-      </a>
-      <a href="/scanner.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
-        <i data-lucide="qr-code" class="w-5 h-5"></i>
-        Field Scanner
-      </a>
-      <a href="/settings.html" class="flex items-center gap-3 p-3 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-fest-dark transition-colors">
-        <i data-lucide="settings" class="w-5 h-5"></i>
-        Operations
-      </a>
-    </nav>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <main class="flex-1 flex flex-col relative z-10 h-screen overflow-hidden">
-    
-    <!-- TOP HEADER -->
-    <header class="h-20 glass-card border-b border-stone-200 flex items-center justify-between px-8 shrink-0">
-      
-      <!-- NLP Search Form -->
-      <form id="nlp-form" class="relative w-full max-w-xl">
-        <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-rose-600">
-          <i data-lucide="sparkles" class="w-4 h-4"></i>
+  <!-- NAVIGATION HEADER -->
+  <header class="glass-panel border-x-0 border-t-0 px-6 py-3.5 sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-teal-500 to-sky-500 p-0.5 shadow-lg shadow-brand-500/20 flex items-center justify-center">
+          <div class="w-full h-full bg-[#0a0c10] rounded-[10px] flex items-center justify-center">
+            <i data-lucide="command" class="w-5 h-5 text-brand-500"></i>
+          </div>
         </div>
-        <input type="text" id="nlp-input" class="w-full bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 text-sm font-medium rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 block pl-10 pr-24 p-2.5 shadow-sm transition-all placeholder-stone-500 dark:placeholder-stone-400" placeholder="Ask Assistant (e.g. 'Crowded zones?', 'Scan metrics?')...">
-        <div class="absolute inset-y-1.5 right-1.5 flex items-center gap-1.5">
-          <kbd class="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-mono font-bold rounded bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400 border border-stone-200 dark:border-stone-700">⌘K</kbd>
-          <button type="submit" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold tracking-wide transition-colors shadow-sm cursor-pointer">
-            ASK
-          </button>
-        </div>
-      </form>
-      
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2 text-xs px-4 py-2 rounded-xl bg-white border border-stone-200 shadow-sm font-medium">
-           <span id="poll-indicator" class="w-2.5 h-2.5 rounded-full bg-stone-300 transition-all duration-300"></span>
-           <span class="text-stone-500">Live Sync:</span>
-           <span id="last-sync" class="text-emerald-600 font-semibold">00:00</span>
-        </div>
-      </div>
-    </header>
-
-    
-    <!-- ANALYTICS SCROLLABLE AREA -->
-    <div class="flex-1 overflow-y-auto p-8 no-scrollbar relative">
-      <div class="flex items-center justify-between mb-8">
         <div>
-          <h2 class="text-2xl font-serif font-bold text-fest-dark">Festival Insights</h2>
-          <p class="text-stone-500 text-sm mt-1">Real-time attendance metrics and crowd distribution.</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <button class="px-4 py-2 bg-white border border-stone-200 text-stone-600 hover:bg-stone-50 rounded-xl font-bold text-sm shadow-sm transition-colors flex items-center gap-2">
-            <i data-lucide="download" class="w-4 h-4"></i> Export CSV
-          </button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        
-        <!-- BAR CHART -->
-        <div class="glass-card p-6 rounded-3xl border border-stone-200">
-          <h3 class="text-lg font-bold text-fest-dark mb-4">Live Area Capacity</h3>
-          <div class="relative h-72 w-full">
-            <canvas id="capacityChart"></canvas>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-base tracking-tight text-white">Event Command Centre</span>
+            <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-brand-500/20 text-brand-400 border border-brand-500/30">PS1</span>
           </div>
+          <p class="text-[11px] text-gray-400">Registration Velocity & Risk Engine</p>
         </div>
+      </a>
 
-        <!-- RECENT ACTIVITY LOG -->
-        <div class="glass-card p-6 rounded-3xl border border-stone-200 flex flex-col h-full max-h-96">
-          <h3 class="text-lg font-bold text-fest-dark mb-4">Latest Guest Movements</h3>
-          <div id="activity-log" class="space-y-3 overflow-y-auto pr-2 flex-1">
-             <div class="text-stone-400 text-center py-10">Loading insights...</div>
-          </div>
-        </div>
-        
-      </div>
-      
+      <nav class="hidden md:flex items-center gap-1 bg-[#121620] p-1 rounded-xl border border-stone-800 text-xs">
+        <a href="/" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Overview</a>
+        <a href="/workflows.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Workflows</a>
+        <a href="/sentiment.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Sentiment Radar</a>
+        <a href="/analytics.html" class="px-3 py-1.5 rounded-lg bg-stone-800 text-brand-400 font-medium shadow-sm transition">Velocity & Analytics</a>
+        <a href="/copilot.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">AI Copilot</a>
+      </nav>
     </div>
+
+    <div class="flex items-center gap-3">
+      <button onclick="executeBoost()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-bold shadow-md transition cursor-pointer flex items-center gap-1.5">
+        <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+        <span>Trigger Referral Boost</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN ANALYTICS VIEW -->
+  <main class="flex-1 p-6 max-w-[1720px] w-full mx-auto space-y-6">
+
+    <!-- KPI STRIP -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Current Velocity -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+          <span>Current Daily Velocity</span>
+          <i data-lucide="activity" class="w-4 h-4 text-brand-400"></i>
+        </div>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="val-daily-vel" class="text-3xl font-bold font-mono text-white">42.5</span>
+          <span class="text-xs text-gray-400">/day</span>
+          <span id="badge-velocity-ratio" class="text-xs font-mono text-emerald-400 ml-auto font-bold">100% Pace</span>
+        </div>
+        <p class="text-[11px] text-gray-400 mt-2">Calculated from confirmed registrations</p>
+      </div>
+
+      <!-- Required Target Velocity -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+          <span>Required Velocity to Target</span>
+          <i data-lucide="target" class="w-4 h-4 text-sky-400"></i>
+        </div>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="val-req-vel" class="text-3xl font-bold font-mono text-sky-400">62.8</span>
+          <span class="text-xs text-gray-400">/day required</span>
+        </div>
+        <p class="text-[11px] text-gray-400 mt-2">Target pacing needed to reach capacity</p>
+      </div>
+
+      <!-- Total Registrations Target -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+          <span>Registration Reach</span>
+          <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
+        </div>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="val-curr-reg" class="text-3xl font-bold font-mono text-white">1,620</span>
+          <span id="val-target-reg" class="text-xs text-gray-400 font-mono">/ 2,500</span>
+        </div>
+        <div class="w-full bg-stone-800 h-1.5 rounded-full mt-2 overflow-hidden">
+          <div id="val-progress-bar" class="bg-brand-500 h-full rounded-full" style="width: 65%;"></div>
+        </div>
+      </div>
+
+      <!-- Reach Gap & Risk -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-gray-400 font-medium">
+          <span>Velocity Risk Status</span>
+          <i data-lucide="shield-check" class="w-4 h-4 text-brand-400"></i>
+        </div>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="val-risk-status" class="text-xl font-bold font-mono text-emerald-400">ON TRACK</span>
+        </div>
+        <p id="val-gap-text" class="text-[11px] text-gray-400 mt-2">Pacing deficit: 0 attendees</p>
+      </div>
+
+    </div>
+
+    <!-- VELOCITY TRAJECTORY CHART & PROJECTION -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Chart Container (2 Cols) -->
+      <div class="glass-panel rounded-2xl p-5 lg:col-span-2 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-stone-800">
+          <div>
+            <h3 class="font-bold text-base text-white">Registration Trajectory & Pacing Forecast</h3>
+            <p class="text-xs text-gray-400">Actual cumulative run rate vs Target linear benchmark curve</p>
+          </div>
+          <span class="text-xs font-mono text-brand-400 px-2 py-0.5 rounded bg-brand-500/10 border border-brand-500/20">
+            14 Days Window
+          </span>
+        </div>
+        <div class="h-72 w-full">
+          <canvas id="velocityChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Action Advisory & Milestones (1 Col) -->
+      <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+        <div>
+          <h3 class="font-bold text-base text-white">Decision Support Advisory</h3>
+          <p class="text-xs text-gray-400 mt-0.5">Automated guidance based on daily velocity threshold</p>
+          
+          <div id="velocity-advisory-box" class="bg-[#121620] border border-stone-800 rounded-xl p-4 mt-4 space-y-2 text-xs leading-relaxed">
+            <div class="font-semibold text-brand-400 flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              Gemini Velocity Guidance
+            </div>
+            <p id="advisory-text" class="text-gray-300">
+              Registration run rate is pacing well within capacity targets. Maintain standard multi-channel marketing campaigns.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-2 pt-4 border-t border-stone-800">
+          <div class="text-xs font-medium text-gray-400">Campaign Acceleration Milestones:</div>
+          <div class="space-y-1.5 text-xs text-gray-300 font-mono">
+            <div class="flex items-center justify-between bg-black/20 p-2 rounded-lg">
+              <span>Day 7 Checkpoint</span>
+              <span class="text-emerald-400">1,850 Target</span>
+            </div>
+            <div class="flex items-center justify-between bg-black/20 p-2 rounded-lg">
+              <span>Day 10 Final Push</span>
+              <span class="text-brand-400">2,200 Target</span>
+            </div>
+            <div class="flex items-center justify-between bg-black/20 p-2 rounded-lg">
+              <span>Day 14 Kickoff Capacity</span>
+              <span class="text-purple-400">2,500 Full</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
   </main>
 
   <script>
-    let capacityChartInstance = null;
+    let chartInstance = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
-      fetchAnalyticsData();
-      setInterval(fetchAnalyticsData, 5000); // refresh every 5s
+      initChart();
+      fetchAnalytics();
+      setInterval(fetchAnalytics, 3000);
     });
 
-    async function fetchAnalyticsData() {
-      try {
-        const res = await fetch('/api/admin/stats', {
-            headers: { 'X-Admin-Key': sessionStorage.getItem('adminKey') || localStorage.getItem('adminKey') || '' }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          updateChart(data.zones);
-          updateLog(data.recent_logs);
-        }
-      } catch (err) {
-        console.error("Error loading analytics", err);
-      }
-    }
-    
-    function updateChart(zones) {
-      const labels = zones.map(z => z.zone_name);
-      const dataPoints = zones.map(z => z.total_scans);
-      
-      const ctx = document.getElementById('capacityChart').getContext('2d');
-      if (capacityChartInstance) {
-          capacityChartInstance.data.labels = labels;
-          capacityChartInstance.data.datasets[0].data = dataPoints;
-          capacityChartInstance.update();
-      } else {
-          capacityChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-              labels: labels,
-              datasets: [{
-                label: 'Total Guests Checked In',
-                data: dataPoints,
-                backgroundColor: 'rgba(225, 29, 72, 0.8)',
-                borderRadius: 8,
-              }]
+    function initChart() {
+      const ctx = document.getElementById('velocityChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Day 1', 'Day 3', 'Day 5', 'Day 7', 'Day 9', 'Day 11', 'Day 14'],
+          datasets: [
+            {
+              label: 'Actual Cumulative Registrations',
+              data: [350, 700, 1100, 1450, 1620, null, null],
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              fill: true,
+              tension: 0.35,
+              borderWidth: 3
             },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                x: { grid: { display: false } }
-              }
+            {
+              label: 'Target Trajectory Benchmark',
+              data: [300, 650, 1050, 1500, 1900, 2250, 2500],
+              borderColor: '#60a5fa',
+              borderDash: [5, 5],
+              borderWidth: 2,
+              pointRadius: 0
             }
-          });
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#9ca3af', font: { family: 'Outfit', size: 11 } }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
+            },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
+            }
+          }
+        }
+      });
+    }
+
+    async function fetchAnalytics() {
+      try {
+        const res = await fetch('/api/admin/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        const reg = data.registration_metrics || {};
+
+        document.getElementById('val-daily-vel').innerText = (reg.daily_velocity || 42.5).toFixed(1);
+        document.getElementById('val-req-vel').innerText = (reg.required_daily_velocity || 62.8).toFixed(1);
+        document.getElementById('val-curr-reg').innerText = (reg.current_registrations || 1620).toLocaleString();
+        document.getElementById('val-target-reg').innerText = `/ ${(reg.target_registrations || 2500).toLocaleString()}`;
+
+        const pct = Math.min(100, Math.round(((reg.current_registrations || 1620) / (reg.target_registrations || 2500)) * 100));
+        document.getElementById('val-progress-bar').style.width = `${pct}%`;
+
+        const pace = Math.round((reg.velocity_ratio || 0.68) * 100);
+        const ratioBadge = document.getElementById('badge-velocity-ratio');
+        ratioBadge.innerText = `${pace}% Pace`;
+
+        const riskStatus = document.getElementById('val-risk-status');
+        const gapText = document.getElementById('val-gap-text');
+        const advisoryText = document.getElementById('advisory-text');
+
+        if (data.registration_risk) {
+          ratioBadge.className = 'text-xs font-mono text-rose-400 ml-auto font-bold';
+          riskStatus.innerText = 'VELOCITY RISK ACTIVE';
+          riskStatus.className = 'text-xl font-bold font-mono text-rose-400';
+          gapText.innerText = `Pacing deficit: -${reg.reach_gap || 0} attendees`;
+          advisoryText.innerText = data.recovery_action || 'Registration run rate lagging behind target. Launch 24-hr peer referral incentive offering 500 bonus coins.';
+        } else {
+          ratioBadge.className = 'text-xs font-mono text-emerald-400 ml-auto font-bold';
+          riskStatus.innerText = 'ON TARGET';
+          riskStatus.className = 'text-xl font-bold font-mono text-emerald-400';
+          gapText.innerText = 'Pacing deficit: 0 (On Schedule)';
+          advisoryText.innerText = 'All velocity indicators are nominal. Current daily pacing will hit the 2,500 target comfortably.';
+        }
+      } catch (e) {
+        console.error(e);
       }
     }
-    
-    function escapeHTML(str) {
-        if (!str) return '';
-        return String(str).replace(/&/g, '&amp;')
-                          .replace(/</g, '&lt;')
-                          .replace(/>/g, '&gt;')
-                          .replace(/"/g, '&quot;')
-                          .replace(/'/g, '&#039;');
-    }
-    
-    function updateLog(logs) {
-       const container = document.getElementById('activity-log');
-       if(!logs || logs.length === 0) return;
-       container.innerHTML = '';
-       logs.forEach(log => {
-          const isVip = log.role === 'VIP';
-          const div = document.createElement('div');
-          div.className = "flex items-center gap-4 p-3 rounded-xl bg-stone-50 border border-stone-100";
-          div.innerHTML = `
-            <div class="w-10 h-10 rounded-full flex items-center justify-center ${isVip ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}">
-              <i data-lucide="${isVip ? 'star' : 'user'}" class="w-5 h-5"></i>
-            </div>
-            <div class="flex-1">
-              <p class="text-sm font-bold text-fest-dark">${escapeHTML(log.attendee_name)} <span class="text-xs font-normal text-stone-500 ml-1">(${escapeHTML(log.role)})</span></p>
-              <p class="text-xs text-stone-500">Entered <span class="font-bold">${escapeHTML(log.zone_name)}</span></p>
-            </div>
-            <div class="text-xs text-stone-400">Just now</div>
-          `;
-          container.appendChild(div);
-       });
-       lucide.createIcons();
+
+    async function executeBoost() {
+      await fetch('/api/admin/execute_recovery_action', { method: 'POST' });
+      fetchAnalytics();
+      alert('⚡ Referral Boost activated! +80 attendees added to velocity pacing.');
     }
   </script>
-  <script src="/nlp-assistant.js"></script>
 </body>
 </html>

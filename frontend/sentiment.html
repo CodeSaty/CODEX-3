@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentiment Radar | Hackingly Intelligent Event Command Centre</title>
+  <meta name="description" content="Live rolling 5-minute community sentiment and social listening radar powered by Hugging Face models across Twitter, Discord, and attendee channels.">
+  <meta name="color-scheme" content="dark">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            mono: ['"Space Grotesk"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#10b981',
+              600: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #0a0c10; color: #f3f4f6; }
+    .glass-panel {
+      background: rgba(18, 22, 29, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    .glass-card {
+      background: rgba(24, 30, 42, 0.65);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    @keyframes alertPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); border-color: #ef4444; }
+      50% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.85); border-color: #f87171; }
+    }
+    .alert-glow {
+      animation: alertPulse 1.6s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#0a0c10] text-gray-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white antialiased">
+
+  <!-- NAVIGATION HEADER -->
+  <header class="glass-panel border-x-0 border-t-0 px-6 py-3.5 sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-6">
+      <a href="/" class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-teal-500 to-sky-500 p-0.5 shadow-lg shadow-brand-500/20 flex items-center justify-center">
+          <div class="w-full h-full bg-[#0a0c10] rounded-[10px] flex items-center justify-center">
+            <i data-lucide="command" class="w-5 h-5 text-brand-500"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-base tracking-tight text-white">Event Command Centre</span>
+            <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-brand-500/20 text-brand-400 border border-brand-500/30">PS1</span>
+          </div>
+          <p class="text-[11px] text-gray-400">Live Sentiment Radar & Vibe Engine</p>
+        </div>
+      </a>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden md:flex items-center gap-1 bg-[#121620] p-1 rounded-xl border border-stone-800 text-xs">
+        <a href="/" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Overview</a>
+        <a href="/workflows.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Workflows</a>
+        <a href="/sentiment.html" class="px-3 py-1.5 rounded-lg bg-stone-800 text-brand-400 font-medium shadow-sm transition">Sentiment Radar</a>
+        <a href="/analytics.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Velocity & Analytics</a>
+        <a href="/copilot.html" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">AI Copilot</a>
+      </nav>
+    </div>
+
+    <!-- Live Telemetry Pill -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 bg-[#131720] px-3 py-1.5 rounded-xl border border-stone-800 text-xs font-mono">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="text-gray-400 text-[11px]">Stream:</span>
+        <span class="text-emerald-400 text-[11px]">Rolling 5m Window</span>
+      </div>
+      <button onclick="toggleAssistant()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-teal-600 hover:from-brand-500 hover:to-teal-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-brand-600/25 transition cursor-pointer">
+        <i data-lucide="bot" class="w-4 h-4"></i>
+        <span>Copilot</span>
+        <kbd class="hidden sm:inline-block px-1 rounded bg-black/30 text-[10px] font-mono">⌘K</kbd>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN RADAR VIEW -->
+  <main class="flex-1 p-6 max-w-[1720px] w-full mx-auto space-y-6">
+
+    <!-- TOP TELEMETRY & CONTROLS BANNER -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      
+      <!-- 1. Vibe Breakdown Gauge -->
+      <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">Audience Sentiment Rating</span>
+            <span id="sentiment-status-pill" class="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              HEALTHY
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-3 text-center my-3">
+            <div class="bg-emerald-950/40 border border-emerald-800/80 rounded-xl p-3">
+              <span class="text-[10px] text-gray-400 font-mono">POSITIVE</span>
+              <div id="gauge-pos" class="text-2xl font-bold font-mono text-emerald-400 mt-1">75%</div>
+              <span id="gauge-pos-count" class="text-[10px] text-gray-400">18 posts</span>
+            </div>
+            <div class="bg-stone-900 border border-stone-800 rounded-xl p-3">
+              <span class="text-[10px] text-gray-400 font-mono">NEUTRAL</span>
+              <div id="gauge-neu" class="text-2xl font-bold font-mono text-gray-300 mt-1">15%</div>
+              <span id="gauge-neu-count" class="text-[10px] text-gray-400">4 posts</span>
+            </div>
+            <div class="bg-rose-950/40 border border-rose-800/80 rounded-xl p-3">
+              <span class="text-[10px] text-gray-400 font-mono">NEGATIVE</span>
+              <div id="gauge-neg" class="text-2xl font-bold font-mono text-rose-400 mt-1">10%</div>
+              <span id="gauge-neg-count" class="text-[10px] text-gray-400">3 posts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-stone-800 h-2 rounded-full overflow-hidden flex mt-2">
+          <div id="bar-pos" class="bg-emerald-500 h-full" style="width: 75%;"></div>
+          <div id="bar-neu" class="bg-gray-500 h-full" style="width: 15%;"></div>
+          <div id="bar-neg" class="bg-rose-500 h-full" style="width: 10%;"></div>
+        </div>
+      </div>
+
+      <!-- 2. Friction Alert Status & Triage -->
+      <div id="friction-panel" class="glass-panel rounded-2xl p-5 flex flex-col justify-between border border-stone-800">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">Friction Triage Engine</span>
+            <span class="text-[11px] text-gray-400 font-mono">Threshold: &gt;60% Neg</span>
+          </div>
+          <h3 id="friction-headline" class="text-base font-bold text-white mt-1">
+            Audience Mood is Nominal
+          </h3>
+          <p id="friction-desc" class="text-xs text-gray-300 mt-1.5 leading-relaxed">
+            Rolling negative sentiment is well below the 60% critical threshold. No active attendee friction risks detected across Twitter, Discord, or feedback desks.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 mt-4 pt-3 border-t border-stone-800/80">
+          <span class="text-[11px] text-gray-400">Category:</span>
+          <span id="friction-category-badge" class="px-2 py-0.5 rounded text-[11px] font-mono bg-stone-800 text-gray-300 border border-stone-700">
+            None (Nominal)
+          </span>
+        </div>
+      </div>
+
+      <!-- 3. Interactive Testing Sandbox -->
+      <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-mono font-bold text-gray-400 uppercase tracking-wider">Interactive Test Sandbox</span>
+          <h3 class="text-base font-bold text-white mt-1">Simulate Community Pushback</h3>
+          <p class="text-xs text-gray-400 mt-1.5 leading-relaxed">
+            Test automated risk triage by injecting a cluster of 8 negative feedback reports (schedule backlash, registration forms, badge queues).
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-stone-800">
+          <button onclick="simulateSpike()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-rose-900/30 transition cursor-pointer">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            <span>Inject Negative Spike</span>
+          </button>
+          <button onclick="clearAlert()" class="px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-gray-200 text-xs font-medium border border-stone-700 transition cursor-pointer flex items-center gap-1">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>Clear Alert</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SOCIAL STREAM & FILTERS -->
+    <div class="glass-panel rounded-2xl p-5 space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-3 border-b border-stone-800">
+        <div>
+          <h3 class="font-bold text-base text-white tracking-tight flex items-center gap-2">
+            <i data-lucide="message-square-text" class="w-4 h-4 text-brand-400"></i>
+            Live Incoming Social & Review Stream
+          </h3>
+          <p class="text-xs text-gray-400 mt-0.5">Continuous feed sampled from huggingface_sentiment.json in a 5-minute rolling window</p>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
+          <button onclick="filterFeed('all')" id="feed-tab-all" class="px-3 py-1 rounded-lg bg-brand-500 text-black font-semibold cursor-pointer">All</button>
+          <button onclick="filterFeed('Twitter')" id="feed-tab-twitter" class="px-3 py-1 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 cursor-pointer">Twitter</button>
+          <button onclick="filterFeed('Discord')" id="feed-tab-discord" class="px-3 py-1 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 cursor-pointer">Discord</button>
+          <button onclick="filterFeed('Feedback')" id="feed-tab-feedback" class="px-3 py-1 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 cursor-pointer">Feedback</button>
+          <button onclick="filterFeed('negative')" id="feed-tab-neg" class="px-3 py-1 rounded-lg bg-rose-950/60 text-rose-300 border border-rose-800 cursor-pointer">Negative Only</button>
+        </div>
+      </div>
+
+      <!-- Feed Grid -->
+      <div id="feed-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Stream cards dynamically loaded here -->
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let rawFeed = [];
+    let currentFeedFilter = 'all';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      fetchRadar();
+      setInterval(fetchRadar, 3000);
+    });
+
+    async function fetchRadar() {
+      try {
+        const res = await fetch('/api/social/feed');
+        if (!res.ok) return;
+        const data = await res.json();
+        rawFeed = data.feed || [];
+        renderRadar(data.metrics || {});
+        renderFeedList();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderRadar(metrics) {
+      const posPct = metrics.positive_pct || 75;
+      const neuPct = metrics.neutral_pct || 15;
+      const negPct = metrics.negative_pct || 10;
+
+      document.getElementById('gauge-pos').innerText = `${posPct}%`;
+      document.getElementById('gauge-neu').innerText = `${neuPct}%`;
+      document.getElementById('gauge-neg').innerText = `${negPct}%`;
+
+      document.getElementById('gauge-pos-count').innerText = `${metrics.positive_count || 0} posts`;
+      document.getElementById('gauge-neu-count').innerText = `${metrics.neutral_count || 0} posts`;
+      document.getElementById('gauge-neg-count').innerText = `${metrics.negative_count || 0} posts`;
+
+      document.getElementById('bar-pos').style.width = `${posPct}%`;
+      document.getElementById('bar-neu').style.width = `${neuPct}%`;
+      document.getElementById('bar-neg').style.width = `${negPct}%`;
+
+      const isFriction = Boolean(metrics.community_friction_risk);
+      const panel = document.getElementById('friction-panel');
+      const headline = document.getElementById('friction-headline');
+      const desc = document.getElementById('friction-desc');
+      const catBadge = document.getElementById('friction-category-badge');
+      const statusPill = document.getElementById('sentiment-status-pill');
+
+      if (isFriction) {
+        panel.className = 'glass-panel rounded-2xl p-5 flex flex-col justify-between border border-rose-500 bg-rose-950/20 alert-glow';
+        statusPill.className = 'px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse';
+        statusPill.innerText = 'FRICTION ALERT ACTIVE';
+        headline.innerText = `🚨 Negative Sentiment Surge (>60%)`;
+        headline.className = 'text-base font-bold text-rose-400 mt-1';
+        desc.innerText = `Attendee complaints surged above critical threshold. Primary friction category identified: ${metrics.friction_category || 'Operational Backlash'}. Deploying community intervention recommended.`;
+        catBadge.innerText = metrics.friction_category || 'Community Friction';
+        catBadge.className = 'px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold';
+      } else {
+        panel.className = 'glass-panel rounded-2xl p-5 flex flex-col justify-between border border-stone-800';
+        statusPill.className = 'px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        statusPill.innerText = 'HEALTHY';
+        headline.innerText = 'Audience Mood is Nominal';
+        headline.className = 'text-base font-bold text-white mt-1';
+        desc.innerText = 'Rolling negative sentiment is well below the 60% critical threshold. No active attendee friction risks detected across Twitter, Discord, or feedback desks.';
+        catBadge.innerText = 'None (Nominal)';
+        catBadge.className = 'px-2 py-0.5 rounded text-[11px] font-mono bg-stone-800 text-gray-300 border border-stone-700';
+      }
+    }
+
+    function renderFeedList() {
+      const container = document.getElementById('feed-grid');
+      let filtered = rawFeed;
+
+      if (currentFeedFilter === 'negative') {
+        filtered = rawFeed.filter(p => p.sentiment === 'negative');
+      } else if (currentFeedFilter !== 'all') {
+        filtered = rawFeed.filter(p => p.source === currentFeedFilter);
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const isPos = item.sentiment === 'positive';
+        const isNeg = item.sentiment === 'negative';
+
+        let badgeClass = 'bg-stone-800 text-gray-300 border-stone-700';
+        if (isPos) badgeClass = 'bg-emerald-950 text-emerald-300 border-emerald-800';
+        if (isNeg) badgeClass = 'bg-rose-950 text-rose-300 border-rose-800';
+
+        return `
+          <div class="glass-card rounded-xl p-4 border transition flex flex-col justify-between space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-stone-800 flex items-center justify-center font-bold text-[10px] text-gray-300">
+                  ${(item.author || '@A').substring(1, 2).toUpperCase()}
+                </span>
+                <span class="font-medium text-gray-300">${escapeHTML(item.author || '@attendee')}</span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono border ${badgeClass}">
+                ${escapeHTML(item.source || 'Twitter')} • ${item.sentiment.toUpperCase()}
+              </span>
+            </div>
+            <p class="text-xs text-gray-200 leading-relaxed flex-1">
+              "${escapeHTML(item.text)}"
+            </p>
+            <div class="text-[10px] text-gray-400 font-mono pt-2 border-t border-stone-800/80 flex items-center justify-between">
+              <span>Timestamp: ${formatTime(item.timestamp)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function filterFeed(f) {
+      currentFeedFilter = f;
+      const tabs = ['all', 'twitter', 'discord', 'feedback', 'neg'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`feed-tab-${t}`);
+        if (!btn) return;
+        if (t === f.toLowerCase() || (t === 'all' && f === 'all') || (t === 'neg' && f === 'negative')) {
+          btn.className = 'px-3 py-1 rounded-lg bg-brand-500 text-black font-semibold cursor-pointer';
+        } else {
+          btn.className = 'px-3 py-1 rounded-lg bg-stone-800 text-gray-300 border border-stone-700 cursor-pointer';
+        }
+      });
+      renderFeedList();
+    }
+
+    async function simulateSpike() {
+      await fetch('/api/social/simulate_spike', { method: 'POST' });
+      fetchRadar();
+    }
+
+    async function clearAlert() {
+      await fetch('/api/social/clear_alert', { method: 'POST' });
+      fetchRadar();
+    }
+
+    function formatTime(iso) {
+      try {
+        return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch (e) {
+        return 'Just now';
+      }
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
