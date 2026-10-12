@@ -42,6 +42,9 @@ class DatabaseManager:
         self.mem_incidents: List[Dict[str, Any]] = []
         self.mem_diversions: List[Dict[str, Any]] = []
         self.mem_recharges: List[Dict[str, Any]] = []
+        self.mem_events: List[Dict[str, Any]] = []
+        self.mem_tasks: List[Dict[str, Any]] = []
+        self.mem_registration_metrics: Optional[Dict[str, Any]] = None
 
     async def connect(self):
         """Attempts to connect to MongoDB Atlas if URI is provided, else activates in-memory fallback."""
@@ -69,6 +72,9 @@ class DatabaseManager:
                 await self.db.zone_logs.create_index("zone_name")
                 await self.db.recharges.create_index([("timestamp", -1)])
                 await self.db.transactions.create_index([("timestamp", -1)])
+                await self.db.tasks.create_index("role")
+                await self.db.tasks.create_index("status")
+                await self.db.tasks.create_index("is_blocker")
             except Exception as e:
                 logger.warning(f"MongoDB Atlas connection failed ({e}). Falling back to reactive in-memory datastore.")
                 self.is_connected_to_atlas = False
@@ -93,6 +99,7 @@ class DatabaseManager:
 
         if not has_data:
             await self._run_seeder()
+        await self.seed_ps1_defaults_if_needed()
 
     async def _run_seeder(self):
         logger.info("Seeding realistic festival data (attendees, scans, transactions, incidents, recharges)...")
@@ -801,6 +808,316 @@ class DatabaseManager:
                 'total_scans': len(scans),
             }
         }
+
+    # ─────────────────────── PS1 Event Command Centre Methods ───────────────────────
+    async def save_event(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+        event_dict = dict(event_data)
+        if '_id' not in event_dict and 'id' in event_dict:
+            event_dict['_id'] = event_dict['id']
+        elif '_id' not in event_dict:
+            event_dict['_id'] = generate_id()
+        if 'id' not in event_dict:
+            event_dict['id'] = event_dict['_id']
+        if 'created_at' not in event_dict:
+            event_dict['created_at'] = datetime.now(timezone.utc).isoformat()
+
+        if self.is_connected_to_atlas and self.db is not None:
+            await self.db.events.replace_one({'_id': event_dict['_id']}, event_dict, upsert=True)
+        self.mem_events = [e for e in self.mem_events if e.get('_id') != event_dict['_id']]
+        self.mem_events.insert(0, event_dict)
+        return event_dict
+
+    async def get_active_event(self) -> Optional[Dict[str, Any]]:
+        if self.is_connected_to_atlas and self.db is not None:
+            ev = await self.db.events.find_one({}, sort=[('created_at', -1)])
+            if ev:
+                ev['id'] = str(ev.get('_id', ''))
+                return ev
+        if self.mem_events:
+            return self.mem_events[0]
+        return None
+
+    async def save_tasks(self, tasks: List[Dict[str, Any]], clear_existing: bool = True) -> List[Dict[str, Any]]:
+        formatted_tasks = []
+        for t in tasks:
+            t_copy = dict(t)
+            if '_id' not in t_copy and 'id' in t_copy:
+                t_copy['_id'] = t_copy['id']
+            elif '_id' not in t_copy:
+                t_copy['_id'] = generate_id()
+            if 'id' not in t_copy:
+                t_copy['id'] = t_copy['_id']
+            formatted_tasks.append(t_copy)
+
+        if self.is_connected_to_atlas and self.db is not None:
+            if clear_existing:
+                await self.db.tasks.delete_many({})
+            if formatted_tasks:
+                await self.db.tasks.insert_many(formatted_tasks)
+
+        if clear_existing:
+            self.mem_tasks = list(formatted_tasks)
+        else:
+            self.mem_tasks.extend(formatted_tasks)
+        return formatted_tasks
+
+    async def get_tasks(self, role: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        if self.is_connected_to_atlas and self.db is not None:
+            q: Dict[str, Any] = {}
+            if role:
+                q['role'] = role
+            if status:
+                q['status'] = status
+            cursor = self.db.tasks.find(q)
+            res = await cursor.to_list(length=100)
+            for r in res:
+                r['id'] = str(r.get('_id', ''))
+            return res
+        
+        filtered = self.mem_tasks
+        if role:
+            filtered = [t for t in filtered if t.get('role') == role]
+        if status:
+            filtered = [t for t in filtered if t.get('status') == status]
+        return filtered
+
+    async def get_task_by_id(self, task_id: str) -> Optional[Dict[str, Any]]:
+        if self.is_connected_to_atlas and self.db is not None:
+            doc = await self.db.tasks.find_one({'$or': [{'_id': task_id}, {'id': task_id}]})
+            if doc:
+                doc['id'] = str(doc.get('_id', ''))
+                return doc
+        return next((t for t in self.mem_tasks if t.get('_id') == task_id or t.get('id') == task_id), None)
+
+    async def resolve_task(self, task_id: str) -> Optional[Dict[str, Any]]:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        if self.is_connected_to_atlas and self.db is not None:
+            await self.db.tasks.update_one(
+                {'$or': [{'_id': task_id}, {'id': task_id}]},
+                {'$set': {'status': 'Resolved', 'is_blocker': False, 'resolved_at': now_iso}}
+            )
+            doc = await self.db.tasks.find_one({'$or': [{'_id': task_id}, {'id': task_id}]})
+            if doc:
+                doc['id'] = str(doc.get('_id', ''))
+                for i, t in enumerate(self.mem_tasks):
+                    if t.get('_id') == task_id or t.get('id') == task_id:
+                        self.mem_tasks[i] = doc
+                        break
+                return doc
+
+        for t in self.mem_tasks:
+            if t.get('_id') == task_id or t.get('id') == task_id:
+                t['status'] = 'Resolved'
+                t['is_blocker'] = False
+                t['resolved_at'] = now_iso
+                return t
+        return None
+
+    async def save_registration_metrics(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+        metrics_dict = dict(metrics)
+        metrics_dict['_id'] = 'active_registration_metrics'
+        if self.is_connected_to_atlas and self.db is not None:
+            await self.db.registration_metrics.replace_one({'_id': 'active_registration_metrics'}, metrics_dict, upsert=True)
+        self.mem_registration_metrics = metrics_dict
+        return metrics_dict
+
+    async def get_registration_metrics(self) -> Dict[str, Any]:
+        if self.is_connected_to_atlas and self.db is not None:
+            doc = await self.db.registration_metrics.find_one({'_id': 'active_registration_metrics'})
+            if doc:
+                return doc
+        if self.mem_registration_metrics:
+            return self.mem_registration_metrics
+        default_metrics = {
+            'target_registrations': 2500,
+            'current_registrations': 1620,
+            'days_remaining': 14,
+            'daily_velocity': 42.5
+        }
+        return default_metrics
+
+    async def update_registration_progress(self, added_registrations: int = 0, delta_velocity: float = 0.0) -> Dict[str, Any]:
+        m = await self.get_registration_metrics()
+        m['current_registrations'] = min(m.get('target_registrations', 2500), m.get('current_registrations', 1620) + added_registrations)
+        if delta_velocity != 0.0:
+            m['daily_velocity'] = max(0.0, round(m.get('daily_velocity', 40.0) + delta_velocity, 1))
+        await self.save_registration_metrics(m)
+        return m
+
+    async def seed_ps1_defaults_if_needed(self):
+        has_tasks = False
+        if self.is_connected_to_atlas and self.db is not None:
+            count = await self.db.tasks.count_documents({})
+            if count > 0:
+                has_tasks = True
+        elif len(self.mem_tasks) > 0:
+            has_tasks = True
+
+        if not has_tasks:
+            default_event = {
+                '_id': generate_id(),
+                'title': 'Hackingly AI Tech Summit 2026',
+                'format': 'Hybrid',
+                'target_scale': 2500,
+                'start_date': (datetime.now(timezone.utc) + timedelta(days=14)).strftime('%Y-%m-%d'),
+                'venue': 'Cyber Arena & Metaverse Campus',
+                'objectives': 'Deliver Hackingly PS1 Intelligent Event Command Centre with Gemini AI copilot, real-time sentiment triage, and zero registration friction.',
+                'created_at': datetime.now(timezone.utc).isoformat()
+            }
+            await self.save_event(default_event)
+
+            initial_tasks = [
+                # Marketing (3)
+                {
+                    '_id': generate_id(),
+                    'title': 'Launch Multi-Channel Early Bird Campaign',
+                    'role': 'Marketing',
+                    'status': 'Resolved',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(),
+                    'description': 'Deploy targeted sponsor announcements, student developer outreach, and LinkedIn teasers.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Activate Discord Community Hackathon AMA',
+                    'role': 'Marketing',
+                    'status': 'In Progress',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=4)).isoformat(),
+                    'description': 'Host live audio AMA on Discord answering hacker team formation, API keys, and logistics.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Push 24-Hour Flash Referral Incentive',
+                    'role': 'Marketing',
+                    'status': 'Pending',
+                    'is_blocker': True,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=5)).isoformat(),
+                    'description': 'Release bonus 500 Fest Coins and premium merch tier for attendees inviting 3+ team builders.'
+                },
+                # Partnerships (3)
+                {
+                    '_id': generate_id(),
+                    'title': 'Finalize Cloud AI Title Sponsor Contract',
+                    'role': 'Partnerships',
+                    'status': 'In Progress',
+                    'is_blocker': True,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=3)).isoformat(),
+                    'description': 'Secure master sponsorship agreement for GPU compute credits and hackathon track awards.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Coordinate Partner Booth Hardware Logistics',
+                    'role': 'Partnerships',
+                    'status': 'Pending',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                    'description': 'Confirm monitors, power drops, and display banners with top 12 tech ecosystem partners.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Sponsor Mentors & Judge Onboarding Call',
+                    'role': 'Partnerships',
+                    'status': 'Resolved',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=8)).isoformat(),
+                    'description': 'Distribute evaluation rubric, scoring portals, and mentoring slot schedules.'
+                },
+                # Operations (3)
+                {
+                    '_id': generate_id(),
+                    'title': 'Deploy Gigabit High-Density Venue WiFi',
+                    'role': 'Operations',
+                    'status': 'In Progress',
+                    'is_blocker': True,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=6)).isoformat(),
+                    'description': 'Test failover multi-WAN connection and configure dedicated SSID for 2,500 simultaneous devices.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Setup Digital Badging & NFC Scanner Kiosks',
+                    'role': 'Operations',
+                    'status': 'In Progress',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=9)).isoformat(),
+                    'description': 'Stage 10 high-speed check-in terminals at Gate 1 and Gate 2 to prevent gate bottlenecks.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Catering & Midnight Energy Ration Allocation',
+                    'role': 'Operations',
+                    'status': 'Pending',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=10)).isoformat(),
+                    'description': 'Confirm meal passes, dietary options, and 24-hour hydration stations across the arena.'
+                },
+                # Programme (3)
+                {
+                    '_id': generate_id(),
+                    'title': 'Lock Opening Keynote & VIP Speaker Lineup',
+                    'role': 'Programme',
+                    'status': 'Resolved',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=3)).isoformat(),
+                    'description': 'Reconfirm technical talk abstracts and AV deck specs with AI keynote leaders.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Publish Hackathon Problem Statements & API Docs',
+                    'role': 'Programme',
+                    'status': 'In Progress',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=5)).isoformat(),
+                    'description': 'Review problem tracks: Generative AI, Intelligent Event Command, and Edge Agents.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Schedule Demo Day & Pitch Finalist Showcase',
+                    'role': 'Programme',
+                    'status': 'Pending',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=12)).isoformat(),
+                    'description': 'Configure 3-minute hard stop timers and investor evaluation scoring boards.'
+                },
+                # Leadership (3)
+                {
+                    '_id': generate_id(),
+                    'title': 'Approve Budget Allocations & Prize Pool Escrow',
+                    'role': 'Leadership',
+                    'status': 'Resolved',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(),
+                    'description': 'Verify $50,000 developer bounty disbursement pipeline and legal disclaimers.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Establish Cross-Functional Emergency Response Matrix',
+                    'role': 'Leadership',
+                    'status': 'In Progress',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=4)).isoformat(),
+                    'description': 'Designate leads for medical SOS, cyber security incident response, and crowd diversion.'
+                },
+                {
+                    '_id': generate_id(),
+                    'title': 'Sign Off Municipal Safety Clearance & Permits',
+                    'role': 'Leadership',
+                    'status': 'Pending',
+                    'is_blocker': False,
+                    'deadline': (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                    'description': 'Complete on-site fire department and local governance capacity audits.'
+                }
+            ]
+            await self.save_tasks(initial_tasks, clear_existing=True)
+
+            metrics = {
+                'target_registrations': 2500,
+                'current_registrations': 1620,
+                'days_remaining': 14,
+                'daily_velocity': 42.5
+            }
+            await self.save_registration_metrics(metrics)
+            logger.info("Successfully seeded default PS1 Event Command Centre tasks and metrics!")
 
     def get_status_summary(self) -> Dict[str, Any]:
         return {

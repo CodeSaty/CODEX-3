@@ -4,7 +4,6 @@ import re
 import json
 import random
 import asyncio
-import hashlib
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
@@ -16,614 +15,711 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 load_dotenv()
 
-import pandas as pd
 from fastapi import FastAPI, Request, Response, HTTPException, Header, Depends, Query, Path, status
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 from models import (
-    AttendeeCreate, AttendeeResponse, AttendeeRegisterResult,
-    TerminateQrRequest, ReinstateQrRequest,
-    ScanRequest, ScanResponse,
-    TransactionRequest, TransactionResponse,
-    SocialPost, FrictionAlert,
-    RechargeRequest, RechargeResponse, RechargesListResponse,
-    IncidentCreate, IncidentResponse,
-    DiversionCreate, DiversionResponse, ThrottleRequest,
+    Event, Task, RegistrationMetrics, SentimentPost,
+    GeneratePlanRequest, GeneratePlanResponse, TaskResolveResponse,
     NLPQueryRequest, NLPQueryResponse, MetricItem, QuickActionItem,
-    AdminStatsResponse, AttendeeHistoryResponse, HealthCheckResponse
+    AdminStatsResponse, HealthCheckResponse,
+    AttendeeCreate, AttendeeResponse, ScanRequest, RechargeRequest, IncidentCreate
 )
-from database import db_manager, ZONES, ROLES, BOTTLENECK_THRESHOLD, SCAN_ENGAGEMENT_POINTS
+from database import db_manager, generate_id, generate_qr_hash
+
+# Try importing google-genai
+try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    genai = None
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("cultura.server")
+logger = logging.getLogger("hackingly.ps1.command_centre")
 
 # Admin Security Key
 ADMIN_ACCESS_KEY = os.getenv("ADMIN_KEY", "").strip()
 
 def verify_admin(x_admin_key: Optional[str] = Header(None, alias="x-admin-key")):
-    if not ADMIN_ACCESS_KEY or not x_admin_key or x_admin_key.strip() != ADMIN_ACCESS_KEY:
+    if ADMIN_ACCESS_KEY and x_admin_key and x_admin_key.strip() != ADMIN_ACCESS_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized Access")
     return True
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 1. AUTHENTIC CROWD MOVEMENT (DinoFun World VAST Challenge Dataset Integration)
-# ─────────────────────────────────────────────────────────────────────────────
-# Attraction to festival zone mapping taxonomy
-ATTRACTION_ZONE_MAP: Dict[str, str] = {
-    # Thrill Rides & Stages -> Main Stage
-    "Flight of the Falcon": "Main Stage",
-    "Galactic Coaster": "Main Stage",
-    "Terror Trove": "Main Stage",
-    "Thunder Mountain": "Main Stage",
-    "Acrobat Amphitheater": "Main Stage",
-    "Main Stage": "Main Stage",
-    "Rock Amphitheater": "Main Stage",
-    "Sky Coaster": "Main Stage",
-    "Drop Tower": "Main Stage",
-    "Stunt Show": "Main Stage",
-    "Firework Plaza": "Main Stage",
-    "Atmosfear": "Main Stage",
-    "Wipeout": "Main Stage",
-    "Kite Flyer": "Main Stage",
-    "Thrill Rides": "Main Stage",
-
-    # Food Village & Stalls -> Food Court
-    "Food Village": "Food Court",
-    "Dino Diner": "Food Court",
-    "Paleo Pizza": "Food Court",
-    "Bronto Burger": "Food Court",
-    "Carnivore Grill": "Food Court",
-    "Pterodactyl Tacos": "Food Court",
-    "Ice Cream Oasis": "Food Court",
-    "Beer Garden": "Food Court",
-    "Sweet Treats": "Food Court",
-    "Coffee Kiosk": "Food Court",
-    "Tavern": "Food Court",
-    "Cretaceous Cafe": "Food Court",
-    "Snack Shack": "Food Court",
-
-    # Souvenirs & Crafts -> Artisan Market
-    "Dino Souvenirs": "Artisan Market",
-    "Jurassic Crafts": "Artisan Market",
-    "Artisan Bazaar": "Artisan Market",
-    "Amber Emporium": "Artisan Market",
-    "Gift Shop": "Artisan Market",
-    "Traders Post": "Artisan Market",
-    "Silk & Spice": "Artisan Market",
-    "Fossil Finds": "Artisan Market",
-    "Apparel Mart": "Artisan Market",
-
-    # Discovery & Exhibitions -> Cultural Pavilion
-    "Cultural Pavilion": "Cultural Pavilion",
-    "Prehistoric Museum": "Cultural Pavilion",
-    "Discovery Center": "Cultural Pavilion",
-    "Dino Safari": "Cultural Pavilion",
-    "Kiddie Carousel": "Cultural Pavilion",
-    "Fossil Dig Experience": "Cultural Pavilion",
-    "Herbivore Walkway": "Cultural Pavilion",
-    "Science Dome": "Cultural Pavilion",
-    "Heritage Hall": "Cultural Pavilion",
-
-    # VIP Lounges -> VIP Lounge
-    "VIP Lounge": "VIP Lounge",
-    "Rex Club VIP": "VIP Lounge",
-    "Fast Pass Lounge": "VIP Lounge",
-    "Executive Terrace": "VIP Lounge",
-    "Sky Deck Lounge": "VIP Lounge",
-    "Sponsor Oasis": "VIP Lounge",
-    "Platinum Veranda": "VIP Lounge",
-    "Clubhouse": "VIP Lounge",
-}
-
-def map_attraction_to_zone(attraction_name: str) -> str:
-    if not attraction_name or not isinstance(attraction_name, str):
-        return "Food Court"
-    name = attraction_name.strip()
-    if name in ATTRACTION_ZONE_MAP:
-        return ATTRACTION_ZONE_MAP[name]
-    low = name.lower()
-    if any(k in low for k in ["thrill", "coaster", "falcon", "terror", "stage", "theater", "music", "rock", "amphi", "tower", "drop", "stunt", "ride"]):
-        return "Main Stage"
-    if any(k in low for k in ["food", "diner", "pizza", "burger", "grill", "taco", "cream", "beer", "drink", "snack", "cafe", "eatery", "tavern"]):
-        return "Food Court"
-    if any(k in low for k in ["souvenir", "craft", "bazaar", "amber", "gift", "trader", "fossil", "market", "shop", "apparel", "merch"]):
-        return "Artisan Market"
-    if any(k in low for k in ["museum", "pavilion", "safari", "discovery", "carousel", "science", "dome", "gallery", "culture", "kiddie", "walk"]):
-        return "Cultural Pavilion"
-    if any(k in low for k in ["vip", "lounge", "club", "executive", "pass", "platinum", "oasis", "suite", "terrace", "deck"]):
-        return "VIP Lounge"
-    digest_val = int(hashlib.sha256(name.encode("utf-8")).hexdigest(), 16)
-    return ZONES[digest_val % len(ZONES)]
-
-class DinoFunMovementSimulator:
-    def __init__(self):
-        self.df: Optional[pd.DataFrame] = None
-        self.current_index = 0
-        self.dataset_loaded = False
-
-    def load_dataset(self):
-        paths_to_check = [
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "dinofun_checkins.csv"),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "dinofun_checkins.csv"),
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "dinofun_checkins.csv"),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dinofun_checkins.csv"),
-        ]
-        chosen_path = next((p for p in paths_to_check if os.path.exists(p)), None)
-        if not chosen_path:
-            # Self-generate sample DinoFun dataset so it functions out-of-the-box
-            target_path = paths_to_check[0]
-            os.makedirs(os.path.dirname(target_path), exist_ok=True)
-            from seed_real_traffic import generate_sample_dinofun_csv
-            chosen_path = generate_sample_dinofun_csv(target_path, num_records=3000)
-
-        try:
-            logger.info(f"Loading DinoFun World check-in dataset from: {chosen_path}")
-            df = pd.read_csv(chosen_path)
-            # Normalize column names
-            col_map = {}
-            for col in df.columns:
-                c_low = col.strip().lower()
-                if "time" in c_low: col_map[col] = "Timestamp"
-                elif "visitor" in c_low or "id" in c_low or "cust" in c_low: col_map[col] = "Visitor_ID"
-                elif "attract" in c_low or "loc" in c_low or "place" in c_low or "name" in c_low: col_map[col] = "Attraction_Name"
-            df = df.rename(columns=col_map)
-            self.df = df
-            self.dataset_loaded = True
-            logger.info(f"Successfully loaded {len(df)} DinoFun World check-in rows.")
-        except Exception as e:
-            logger.error(f"Error loading DinoFun dataset: {e}")
-            self.dataset_loaded = False
-
-    def get_next_movement(self) -> Optional[Dict[str, Any]]:
-        if not self.dataset_loaded or self.df is None or len(self.df) == 0:
-            return None
-        row = self.df.iloc[self.current_index % len(self.df)]
-        self.current_index += 1
-        attraction = str(row.get("Attraction_Name", "Main Stage"))
-        zone = map_attraction_to_zone(attraction)
-        return {
-            "visitor_id": str(row.get("Visitor_ID", f"VISITOR_{random.randint(1, 150)}")),
-            "attraction_name": attraction,
-            "zone_name": zone,
-            "timestamp": str(row.get("Timestamp", datetime.now(timezone.utc).isoformat()))
-        }
-
-dino_simulator = DinoFunMovementSimulator()
-
-async def crowd_movement_simulation_loop():
-    logger.info("Starting DinoFun World authentic crowd movement simulation loop (3.5s interval)...")
-    dino_simulator.load_dataset()
-
-    while True:
-        try:
-            await asyncio.sleep(3.5)
-            movement = dino_simulator.get_next_movement()
-            att_list = await db_manager.list_attendees(limit=250)
-
-            if movement and att_list:
-                # Pick matching or random active attendee
-                att = random.choice(att_list)
-                if att.get('status') == 'terminated':
-                    continue
-
-                zone = movement["zone_name"]
-
-                # Check active diversions and re-route if diversion is active
-                active_div = next(
-                    (d for d in db_manager.mem_diversions if d.get('active') and d.get('zone_name') == zone),
-                    None
-                )
-                if active_div and random.random() < 0.65:
-                    zone = active_div.get('target_zone', 'Food Court')
-
-                await db_manager.log_zone_scan(att, zone)
-        except asyncio.CancelledError:
-            logger.info("Crowd movement simulation task cancelled.")
-            break
-        except Exception as e:
-            logger.warning(f"Error in crowd movement loop: {e}")
-
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 2. CASHLESS FEST COIN ECONOMY (Kaggle Retail Transactions Integration)
+# 1. LIVE ROLLING 5-MINUTE SENTIMENT & VIBE ENGINE (Hugging Face validation)
 # ─────────────────────────────────────────────────────────────────────────────
-class KaggleTransactionSimulator:
-    def __init__(self):
-        self.df: Optional[pd.DataFrame] = None
-        self.current_index = 0
-        self.dataset_loaded = False
-
-    def load_dataset(self):
-        paths_to_check = [
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "kaggle_retail_transactions.csv"),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "kaggle_retail_transactions.csv"),
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "kaggle_retail_transactions.csv"),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "kaggle_retail_transactions.csv"),
-        ]
-        chosen_path = next((p for p in paths_to_check if os.path.exists(p)), None)
-        if not chosen_path:
-            # Fallback auto-creation
-            target_path = paths_to_check[0]
-            os.makedirs(os.path.dirname(target_path), exist_ok=True)
-            categories = ['Food & Beverage', 'Fest Merchandise', 'Beverages & Cocktails', 'Artisan Crafts', 'Street Snacks', 'VIP Lounge Cocktails']
-            rows = []
-            for i in range(1, 1000):
-                rows.append({
-                    'Transaction_ID': f'TXN-{100000 + i}',
-                    'Customer_ID': f'CUST-{random.randint(1, 300):04d}',
-                    'Amount': random.randint(40, 250),
-                    'Category': random.choice(categories)
-                })
-            df_gen = pd.DataFrame(rows)
-            df_gen.to_csv(target_path, index=False)
-            chosen_path = target_path
-
-        try:
-            logger.info(f"Loading Kaggle Retail Transactions from: {chosen_path}")
-            df = pd.read_csv(chosen_path)
-            self.df = df
-            self.dataset_loaded = True
-            logger.info(f"Loaded {len(df)} Kaggle retail transactions.")
-        except Exception as e:
-            logger.error(f"Error loading Kaggle dataset: {e}")
-            self.dataset_loaded = False
-
-    def get_next_transaction(self) -> Optional[Dict[str, Any]]:
-        if not self.dataset_loaded or self.df is None or len(self.df) == 0:
-            return None
-        row = self.df.iloc[self.current_index % len(self.df)]
-        self.current_index += 1
-        cat = str(row.get("Category", "Food & Beverage"))
-        raw_amt = float(row.get("Amount", 50))
-        amt = max(10, min(int(raw_amt), 300))
-
-        # Map retail Category to Festival Stall & Zone
-        low = cat.lower()
-        if "vip" in low or "cocktail" in low:
-            stall = "VIP Lounge - Signature Cocktails"
-            zone = "VIP Lounge"
-        elif "merch" in low or "apparel" in low or "craft" in low:
-            stall = "Artisan Market - Silk & Spice Merch"
-            zone = "Artisan Market"
-        elif "beverage" in low or "drink" in low:
-            stall = "Main Stage - Beverage Bar"
-            zone = "Main Stage"
-        elif "culture" in low or "art" in low:
-            stall = "Cultural Pavilion - Craft Hub"
-            zone = "Cultural Pavilion"
-        else:
-            stall = "Food Court - Saffron Grill & Eatery"
-            zone = "Food Court"
-
-        return {
-            "transaction_id": str(row.get("Transaction_ID", f"TXN-{random.randint(10000, 99999)}")),
-            "customer_id": str(row.get("Customer_ID", f"CUST-{random.randint(1, 250)}")),
-            "amount": amt,
-            "category": cat,
-            "stall_name": stall,
-            "zone_name": zone,
-        }
-
-kaggle_simulator = KaggleTransactionSimulator()
-
-async def kaggle_transaction_simulation_loop():
-    logger.info("Starting Kaggle retail transactions background simulation loop (3.0s interval)...")
-    kaggle_simulator.load_dataset()
-
-    while True:
-        try:
-            await asyncio.sleep(3.0)
-            tx_data = kaggle_simulator.get_next_transaction()
-            if not tx_data:
-                continue
-
-            att_list = await db_manager.list_attendees(limit=250)
-            if not att_list:
-                continue
-
-            att = random.choice(att_list)
-            if att.get('status') == 'terminated':
-                continue
-
-            # Ensure attendee has sufficient coins; if low, auto-recharge
-            current_balance = att.get('fest_coins', 0)
-            req_amount = tx_data["amount"]
-            if current_balance < req_amount:
-                # Auto-recharge via UPI
-                await db_manager.create_recharge(
-                    attendee=att,
-                    inr_amount=500,
-                    payment_method="UPI - Auto Reload",
-                    operator_mode="self_service",
-                    notes="Autonomous cashless liquidity reload"
-                )
-                att = await db_manager.get_attendee_by_id(att['_id']) or att
-
-            # Execute coin deduction
-            await db_manager.create_transaction(
-                attendee=att,
-                amount=req_amount,
-                stall_name=tx_data["stall_name"],
-                zone_name=tx_data["zone_name"]
-            )
-        except asyncio.CancelledError:
-            logger.info("Kaggle transaction simulator task cancelled.")
-            break
-        except Exception as e:
-            logger.warning(f"Error in Kaggle transaction simulator: {e}")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 3. LIVE SENTIMENT TRIAGE & FRICTION ALERT (Hugging Face validation.json)
-# ─────────────────────────────────────────────────────────────────────────────
-class SocialSentimentManager:
-    def __init__(self):
+class RollingSentimentEngine:
+    def __init__(self, window_seconds: int = 300):
+        self.window_seconds = window_seconds  # 5-minute rolling window
         self.raw_posts: List[Dict[str, Any]] = []
         self.positive_pool: List[Dict[str, Any]] = []
         self.neutral_pool: List[Dict[str, Any]] = []
         self.negative_pool: List[Dict[str, Any]] = []
-        self.recent_stream: List[Dict[str, Any]] = []
-        self.threshold: int = 8  # Elevated resistance threshold (requires >=8 complaints in 60s)
-        self.cooldown_until: Optional[datetime] = None  # Prevents alert flapping & false alarms
-        self.friction_alert: Dict[str, Any] = {
-            "active": False,
-            "negative_count_60s": 0,
-            "threshold": 8,
-            "window_seconds": 60,
-            "severity": "NORMAL",
-            "message": "Audience sentiment is nominal and positive across all festival sectors.",
-            "triggered_at": None,
-            "cooldown_until": None
-        }
-        self.dataset_loaded = False
+        self.rolling_stream: List[Dict[str, Any]] = []  # Posts in the current 5-min window
+        self.cooldown_until: Optional[datetime] = None
+        self.community_friction_risk: bool = False
+        self.friction_category: Optional[str] = None
+        self.sources = ["Twitter", "Discord", "Feedback"]
+        self.load_dataset()
 
     def load_dataset(self):
         paths_to_check = [
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "huggingface_sentiment.json"),
             os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "huggingface_sentiment.json"),
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "validation.json"),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "validation.json"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "huggingface_sentiment.json"),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "huggingface_sentiment.json"),
         ]
         chosen_path = next((p for p in paths_to_check if os.path.exists(p)), None)
         if chosen_path:
             try:
                 with open(chosen_path, "r", encoding="utf-8") as f:
                     self.raw_posts = json.load(f)
-                self.dataset_loaded = True
                 self._partition_pools()
-                logger.info(f"Loaded {len(self.raw_posts)} Hugging Face social sentiment posts from {chosen_path}.")
+                logger.info(f"Loaded {len(self.raw_posts)} sentiment posts from {chosen_path}.")
+                self._seed_initial_window()
                 return
             except Exception as e:
-                logger.warning(f"Failed to read sentiment JSON ({e}). Falling back to internal generator.")
+                logger.warning(f"Error loading sentiment JSON ({e}). Falling back to internal templates.")
 
+        # Synthetic fallback templates if file is missing
         templates = [
-            ("Main stage visual lasers and sound acoustics are mind-blowing tonight! Pure magic! ✨", "positive"),
-            ("Fastest festival entry ever! Scanned my digital QR pass and got in within 3 seconds.", "positive"),
-            ("Fest Coins contactless payment is crazy fast at the food stalls. Zero lines! 🪙", "positive"),
-            ("The artisan pottery and silk clothing at the market are incredible. Picked up a souvenir!", "positive"),
-            ("VIP Lounge drinks are top-tier. Clean couches, chill ambient lighting, great respite.", "positive"),
-            ("Delicious saffron barbecue at Food Court! Staff was super polite and attentive.", "positive"),
-            ("Unannounced acoustic set just kicked off at Cultural Pavilion! Truly enchanting.", "positive"),
-            ("Water refill station near gate 2 is clean, cold, and free. Excellent organizer planning!", "positive"),
-            ("Heading over to Artisan Market to browse festival merchandise.", "neutral"),
-            ("Line at water station 1 is moving at an average pace.", "neutral"),
-            ("Notice: Northern parking express shuttles depart every 10 minutes.", "neutral"),
-            ("Currently in Food Court dining with friends before the midnight headliner.", "neutral"),
-            ("Just topped up 1,000 Fest Coins via UPI in the app without issues.", "neutral"),
-            ("Water refill queue at station 3 is completely blocked, valve is leaking everywhere! Fix this!", "negative"),
-            ("Massive bottleneck forming at Cultural Pavilion north entrance, people are pushing hard!", "negative"),
-            ("Long wait times at Food Court grill counter, waited 35 minutes for a single taco order.", "negative"),
-            ("Security bottleneck at Gate 2 perimeter! Only one scanner is operational, crowd getting restless.", "negative"),
-            ("Audio glitch and microphone feedback screeching during the headline set near stage left.", "negative"),
-            ("Overcrowding near the main pathway between Artisan Market and Main Stage, need diversion staff ASAP.", "negative"),
-            ("Restroom queue near sector B is backed up by 50 meters, sanitation staff needed immediately.", "negative"),
+            ("The keynote presentation on autonomous multi-agent systems was breathtaking!", "positive"),
+            ("Super fast badge check-in, walked right into the hackathon arena within 30 seconds.", "positive"),
+            ("Discord mentors are answering questions super fast! Loving the developer support.", "positive"),
+            ("Catering and snack tables are stacked with energy drinks. Great fuel for late-night hacking!", "positive"),
+            ("Heading over to the sponsor demo tables to check out new API bounties.", "neutral"),
+            ("Waiting for the 2:00 PM workshop on edge AI inference models.", "neutral"),
+            ("WiFi latency in Section B is unbearable, SSH connection keeps dropping! Fix the router!", "negative"),
+            ("Registration approval took 48 hours and my team pass is still missing in the portal!", "negative"),
+            ("Massive confusion over track submission deadlines! Schedule needs immediate clarification on Discord.", "negative"),
+            ("Power strips at table row 8 tripped the breaker, 20 laptop chargers just died!", "negative"),
         ]
-        authors = ['aarav_fest', 'priya_sound', 'rohan_travels', 'neha_beats', 'aditya_rave', 'ananya_live', 'vikram_t', 'tanvi_vibes']
+        authors = ["@alex_dev", "@priya_coder", "@sam_builds", "@neha_hack", "@jason_ai", "@tanya_ops"]
         self.raw_posts = []
-        for i in range(1000):
+        for i in range(500):
             txt, lbl = random.choice(templates)
             self.raw_posts.append({
-                "id": f"tweet_{10000 + i}",
+                "id": f"post_{10000 + i}",
                 "text": txt,
                 "label": lbl,
-                "author": f"@{random.choice(authors)}{random.randint(10, 99)}"
+                "author": random.choice(authors),
+                "source": random.choice(self.sources)
             })
-        self.dataset_loaded = True
         self._partition_pools()
-        logger.info(f"Initialized {len(self.raw_posts)} sentiment posts.")
+        self._seed_initial_window()
 
     def _partition_pools(self):
         self.positive_pool = [p for p in self.raw_posts if str(p.get("label", "")).lower() == "positive"]
         self.neutral_pool = [p for p in self.raw_posts if str(p.get("label", "")).lower() == "neutral"]
         self.negative_pool = [p for p in self.raw_posts if str(p.get("label", "")).lower() == "negative"]
 
-    def sample_post(self) -> Dict[str, Any]:
-        if not self.raw_posts:
-            self.load_dataset()
+    def _seed_initial_window(self):
+        now = datetime.now(timezone.utc)
+        self.rolling_stream = []
+        # Prepopulate with 20 balanced posts over the last 4 minutes
+        for i in range(20):
+            r = random.random()
+            if r < 0.65: pool = self.positive_pool or self.raw_posts
+            elif r < 0.85: pool = self.neutral_pool or self.raw_posts
+            else: pool = self.negative_pool or self.raw_posts
 
-        # High resistance baseline: 90% positive, 8% neutral, 2% negative ambient drift
-        r = random.random()
-        if r < 0.90 and self.positive_pool:
-            item = random.choice(self.positive_pool)
-        elif r < 0.98 and self.neutral_pool:
-            item = random.choice(self.neutral_pool)
-        elif self.negative_pool:
-            item = random.choice(self.negative_pool)
-        else:
-            item = random.choice(self.raw_posts)
+            if not pool: continue
+            base = random.choice(pool)
+            post_time = now - timedelta(seconds=random.randint(10, self.window_seconds - 20))
+            self.rolling_stream.append({
+                "id": base.get("id", f"post_{random.randint(1000, 9999)}"),
+                "text": base.get("text", "Event attendee update."),
+                "sentiment": str(base.get("label", "neutral")).lower(),
+                "source": base.get("source") or random.choice(self.sources),
+                "author": base.get("author", f"@attendee_{random.randint(10, 99)}"),
+                "timestamp": post_time.isoformat()
+            })
+        self._prune_and_evaluate(now)
 
-        now_dt = datetime.now(timezone.utc)
-        post = {
-            "id": item.get("id", f"tweet_{random.randint(1000, 9999)}"),
-            "text": item.get("text", "Festival atmosphere is electrifying!"),
-            "sentiment": str(item.get("label", "neutral")).lower(),
-            "author": item.get("author", "@festival_guest"),
-            "timestamp": now_dt.isoformat(),
-            "_dt": now_dt,
-            "resolved": False
-        }
-        self.recent_stream.insert(0, post)
-        if len(self.recent_stream) > 100:
-            self.recent_stream = self.recent_stream[:100]
+    def sample_tick(self, count: int = 1):
+        """Samples incoming posts into the rolling window."""
+        now = datetime.now(timezone.utc)
+        for _ in range(count):
+            r = random.random()
+            # If in cooldown, suppress negative frequency
+            in_cooldown = self.cooldown_until and now < self.cooldown_until
+            if in_cooldown:
+                pool = self.positive_pool if r < 0.85 else (self.neutral_pool if r < 0.95 else self.negative_pool)
+            else:
+                pool = self.positive_pool if r < 0.60 else (self.neutral_pool if r < 0.80 else self.negative_pool)
 
-        self._evaluate_friction_alert(now_dt)
-        return post
+            if not pool: pool = self.raw_posts
+            base = random.choice(pool) if pool else {"text": "Great event!", "label": "positive"}
+            self.rolling_stream.insert(0, {
+                "id": f"post_{random.randint(100000, 999999)}",
+                "text": base.get("text", ""),
+                "sentiment": str(base.get("label", "neutral")).lower(),
+                "source": base.get("source") or random.choice(self.sources),
+                "author": base.get("author", f"@attendee_{random.randint(10, 99)}"),
+                "timestamp": now.isoformat()
+            })
+        self._prune_and_evaluate(now)
 
     def inject_negative_spike(self, count: int = 8):
-        """Bypasses cooldown and immediately injects a burst of negative attendee feedback to test friction triage."""
-        self.cooldown_until = None
-        neg_posts = self.negative_pool or [p for p in self.raw_posts if str(p.get("label", "")).lower() == "negative"]
-        if not neg_posts:
-            neg_posts = [{"text": "Major bottleneck at Cultural Pavilion entrance! High friction!", "label": "negative", "author": "@alert_user"}]
-        now_dt = datetime.now(timezone.utc)
+        """Admin trigger: Injects a burst of negative attendee feedback to test risk triage."""
+        now = datetime.now(timezone.utc)
+        friction_samples = [
+            ("Discord general chat is completely blowing up: schedule shifted 4 hours with zero warning!", "Schedule Backlash"),
+            ("Registration portal won't accept student credentials! 50 people stuck at entrance!", "Registration System Friction"),
+            ("Security guards at Gate 2 confiscating hackathon hardware kits! Need organizer intervention ASAP!", "Venue & Rule Grievances"),
+            ("Power blackout on Main Stage floor! Whole row of teams lost unsaved code!", "Operational Bottleneck"),
+            ("Sponsor Discord channel is unmoderated, spammers flooding with phishing links!", "Community Friction"),
+        ]
         for i in range(count):
-            item = random.choice(neg_posts)
-            post = {
-                "id": f"spike_{random.randint(1000, 9999)}",
-                "text": item.get("text", "Overcrowding detected at festival bottleneck!"),
+            txt, cat = random.choice(friction_samples)
+            self.rolling_stream.insert(0, {
+                "id": f"spike_{random.randint(100000, 999999)}",
+                "text": txt,
                 "sentiment": "negative",
-                "author": item.get("author", f"@guest_sos_{i}"),
-                "timestamp": now_dt.isoformat(),
-                "_dt": now_dt,
-                "resolved": False
-            }
-            self.recent_stream.insert(0, post)
-        if len(self.recent_stream) > 100:
-            self.recent_stream = self.recent_stream[:100]
-        self._evaluate_friction_alert(now_dt)
+                "source": random.choice(["Discord", "Twitter", "Feedback"]),
+                "author": f"@urgent_hacker_{i+1}",
+                "timestamp": now.isoformat()
+            })
+        self.cooldown_until = None
+        self._prune_and_evaluate(now)
 
-    def resolve_alert(self, cooldown_seconds: int = 120) -> Dict[str, Any]:
-        """Operator resolution: Marks all recent complaints as resolved and activates resistance cooldown."""
-        now_dt = datetime.now(timezone.utc)
-        self.cooldown_until = now_dt + timedelta(seconds=cooldown_seconds)
-        for p in self.recent_stream:
-            p["resolved"] = True
-        self.friction_alert = {
-            "active": False,
-            "negative_count_60s": 0,
-            "threshold": self.threshold,
-            "window_seconds": 60,
-            "severity": "NORMAL",
-            "message": f"Triage acknowledged: System in {cooldown_seconds}s cooldown. Crowd operations stabilizing.",
-            "triggered_at": None,
-            "cooldown_until": self.cooldown_until.isoformat()
-        }
-        return self.friction_alert
+    def resolve_alert(self, cooldown_seconds: int = 180):
+        now = datetime.now(timezone.utc)
+        self.cooldown_until = now + timedelta(seconds=cooldown_seconds)
+        self.community_friction_risk = False
+        self.friction_category = None
+        # Add positive reassurance posts to rebalance window
+        for _ in range(5):
+            pos = random.choice(self.positive_pool) if self.positive_pool else {"text": "All clear!", "label": "positive"}
+            self.rolling_stream.insert(0, {
+                "id": f"relief_{random.randint(10000, 99999)}",
+                "text": f"Resolved: {pos.get('text', 'Everything moving smoothly again!')}",
+                "sentiment": "positive",
+                "source": "Discord",
+                "author": "@community_mod",
+                "timestamp": now.isoformat()
+            })
+        self._prune_and_evaluate(now)
 
-    def _evaluate_friction_alert(self, current_dt: datetime):
-        # Resistance Hysteresis: Suppress baseline alarms during active cooldown window
-        if self.cooldown_until and current_dt < self.cooldown_until:
-            rem = max(0, int((self.cooldown_until - current_dt).total_seconds()))
-            self.friction_alert["active"] = False
-            self.friction_alert["severity"] = "NORMAL"
-            self.friction_alert["message"] = f"Resistance cooldown active ({rem}s remaining): crowd flow stabilizing."
-            self.friction_alert["cooldown_until"] = self.cooldown_until.isoformat()
+    def _prune_and_evaluate(self, now: datetime):
+        cutoff = now - timedelta(seconds=self.window_seconds)
+        valid = []
+        for p in self.rolling_stream:
+            try:
+                t_str = p.get("timestamp", "")
+                t = datetime.fromisoformat(t_str.replace("Z", "+00:00"))
+                if t >= cutoff:
+                    valid.append(p)
+            except Exception:
+                valid.append(p)
+        self.rolling_stream = valid[:100]  # Cap at 100 recent posts
+
+        total = len(self.rolling_stream)
+        if total == 0:
+            self.community_friction_risk = False
+            self.friction_category = None
             return
-        elif self.cooldown_until and current_dt >= self.cooldown_until:
-            self.cooldown_until = None
 
-        window_cutoff = current_dt - timedelta(seconds=60)
-        recent_60s = [p for p in self.recent_stream if p.get("_dt", current_dt) >= window_cutoff and not p.get("resolved", False)]
-        negative_count = sum(1 for p in recent_60s if p.get("sentiment") == "negative")
+        neg_count = sum(1 for p in self.rolling_stream if p.get("sentiment") == "negative")
+        neg_pct = (neg_count / total) * 100.0
 
-        # Temporal Density Resistance Check:
-        # Require >= self.threshold (8 complaints) total in 60s
-        # AND at least 2 negative complaints in the last 20 seconds (ensures an active ongoing surge, not decaying residue)
-        burst_20s_cutoff = current_dt - timedelta(seconds=20)
-        recent_20s_neg = sum(1 for p in recent_60s if p.get("_dt", current_dt) >= burst_20s_cutoff and p.get("sentiment") == "negative")
-
-        is_cluster_active = (negative_count >= self.threshold) and (recent_20s_neg >= 2)
-
-        if is_cluster_active:
-            severity = "CRITICAL" if negative_count >= 10 else "WARNING"
-            self.friction_alert = {
-                "active": True,
-                "negative_count_60s": negative_count,
-                "threshold": self.threshold,
-                "window_seconds": 60,
-                "severity": severity,
-                "message": f"🚨 FRICTION ALERT ACTIVE: High negative sentiment cluster detected ({negative_count} complaints in last 60s)! Immediate crowd experience triage required.",
-                "triggered_at": current_dt.isoformat(),
-                "cooldown_until": None
-            }
+        in_cooldown = self.cooldown_until and now < self.cooldown_until
+        if in_cooldown:
+            self.community_friction_risk = False
+            self.friction_category = None
+        elif neg_pct >= 60.0 and total >= 5:
+            self.community_friction_risk = True
+            # Determine dominant friction category
+            texts = " ".join([p.get("text", "") for p in self.rolling_stream if p.get("sentiment") == "negative"]).lower()
+            if "schedule" in texts or "time" in texts or "delay" in texts or "shift" in texts:
+                self.friction_category = "Schedule Backlash"
+            elif "registration" in texts or "form" in texts or "portal" in texts or "credential" in texts or "ticket" in texts:
+                self.friction_category = "Registration System Friction"
+            elif "security" in texts or "rule" in texts or "gate" in texts or "confiscat" in texts or "guard" in texts:
+                self.friction_category = "Venue & Rule Grievances"
+            else:
+                self.friction_category = "Operational Bottleneck"
         else:
-            # Flap prevention: if transitioning from active -> inactive, establish automatic 60s cooldown
-            was_active = self.friction_alert.get("active", False)
-            if was_active:
-                self.cooldown_until = current_dt + timedelta(seconds=60)
-            self.friction_alert = {
-                "active": False,
-                "negative_count_60s": negative_count,
-                "threshold": self.threshold,
-                "window_seconds": 60,
-                "severity": "NORMAL",
-                "message": "Audience sentiment is nominal and positive across all festival sectors.",
-                "triggered_at": None,
-                "cooldown_until": self.cooldown_until.isoformat() if self.cooldown_until else None
-            }
+            self.community_friction_risk = False
+            self.friction_category = None
 
-social_manager = SocialSentimentManager()
+    def get_metrics(self) -> Dict[str, Any]:
+        now = datetime.now(timezone.utc)
+        self._prune_and_evaluate(now)
+        total = len(self.rolling_stream)
+        pos = sum(1 for p in self.rolling_stream if p.get("sentiment") == "positive")
+        neu = sum(1 for p in self.rolling_stream if p.get("sentiment") == "neutral")
+        neg = sum(1 for p in self.rolling_stream if p.get("sentiment") == "negative")
 
-async def social_sentiment_streaming_loop():
-    logger.info("Starting Social Listening live sentiment triage stream (4.5s interval)...")
-    social_manager.load_dataset()
-    while True:
-        try:
-            await asyncio.sleep(4.5)
-            social_manager.sample_post()
-        except asyncio.CancelledError:
-            logger.info("Social sentiment streaming task cancelled.")
-            break
-        except Exception as e:
-            logger.warning(f"Error in social sentiment streaming loop: {e}")
+        denom = max(1, total)
+        return {
+            "total_5m": total,
+            "positive_count": pos,
+            "neutral_count": neu,
+            "negative_count": neg,
+            "positive_pct": round((pos / denom) * 100.0, 1),
+            "neutral_pct": round((neu / denom) * 100.0, 1),
+            "negative_pct": round((neg / denom) * 100.0, 1),
+            "community_friction_risk": self.community_friction_risk,
+            "friction_category": self.friction_category,
+            "is_cooldown": bool(self.cooldown_until and now < self.cooldown_until)
+        }
+
+sentiment_engine = RollingSentimentEngine(window_seconds=300)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# APPLICATION LIFESPAN & INITIALIZATION
+# 2. GOOGLE GEMINI NLP COPILOT & RECOVERY ENGINE
+# ─────────────────────────────────────────────────────────────────────────────
+class GeminiOperationsCopilot:
+    def __init__(self):
+        self.api_key = os.getenv("GEMINI_API_KEY", "").strip()
+        self.client = None
+        self.cached_recovery: Optional[Dict[str, Any]] = None
+        self.last_risk_signature: str = ""
+        self.init_client()
+
+    def init_client(self):
+        if self.api_key and genai is not None:
+            try:
+                self.client = genai.Client(api_key=self.api_key)
+                logger.info("Initialized Google Gemini genai.Client successfully.")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Gemini Client ({e}). Fallback active.")
+                self.client = None
+        else:
+            self.client = None
+
+    async def generate_event_plan(self, brief: str, title: str, format_type: str, scale: int, venue: str) -> List[Dict[str, Any]]:
+        """Calls Gemini to parse event brief into 15 structured tasks (3 per role). Fallback if offline."""
+        prompt = f"""You are the Google Gemini Operations Copilot for the Hackingly Intelligent Event Command Centre.
+Parse the following event brief and output EXACTLY 15 actionable operational tasks evenly distributed across the 5 core roles:
+- 3 tasks for 'Marketing'
+- 3 tasks for 'Partnerships'
+- 3 tasks for 'Operations'
+- 3 tasks for 'Programme'
+- 3 tasks for 'Leadership'
+
+Event Title: {title}
+Event Format: {format_type}
+Target Scale: {scale} attendees
+Venue: {venue}
+Event Brief & Objectives:
+{brief}
+
+Requirements for each task:
+1. 'title': Clear, actionable verb-first operational task title.
+2. 'role': Must be exactly one of: 'Marketing', 'Partnerships', 'Operations', 'Programme', 'Leadership'.
+3. 'status': Realistic status ('Pending', 'In Progress', or 'Resolved'). At least 2 tasks should be 'Resolved'.
+4. 'is_blocker': Boolean. Mark 2 to 3 critical path tasks as true (e.g. key contract or safety permit), the rest false.
+5. 'deadline': An ISO timestamp within 2 to 14 days from now.
+6. 'description': Concise operational detail.
+
+Respond ONLY with a valid JSON array of 15 objects matching:
+[
+  {{
+    "title": "Task title",
+    "role": "Marketing",
+    "status": "In Progress",
+    "is_blocker": false,
+    "deadline": "2026-11-01T18:00:00Z",
+    "description": "Details"
+  }}, ...
+]"""
+
+        if self.client:
+            try:
+                # Call Gemini API
+                response = self.client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt
+                )
+                if response and response.text:
+                    cleaned = response.text.strip()
+                    if cleaned.startswith("```"):
+                        cleaned = re.sub(r"^```(?:json)?\n?", "", cleaned)
+                        cleaned = re.sub(r"\n?```$", "", cleaned)
+                    parsed = json.loads(cleaned)
+                    if isinstance(parsed, list) and len(parsed) >= 10:
+                        # Normalize and ensure IDs and roles
+                        normalized = []
+                        roles = ["Marketing", "Partnerships", "Operations", "Programme", "Leadership"]
+                        for i, item in enumerate(parsed[:15]):
+                            role = item.get("role", roles[i % 5])
+                            if role not in roles:
+                                role = roles[i % 5]
+                            normalized.append({
+                                "_id": generate_id(),
+                                "title": str(item.get("title", f"Execute {role} Milestone")),
+                                "role": role,
+                                "status": item.get("status", "In Progress" if i % 2 == 0 else "Pending"),
+                                "is_blocker": bool(item.get("is_blocker", False)),
+                                "deadline": str(item.get("deadline", (datetime.now(timezone.utc) + timedelta(days=i+2)).isoformat())),
+                                "description": str(item.get("description", f"Operational execution step for {role}."))
+                            })
+                        logger.info(f"Successfully generated {len(normalized)} tasks via Gemini API.")
+                        return normalized
+            except Exception as e:
+                logger.warning(f"Gemini API plan generation failed ({e}). Activating intelligent fallback.")
+
+        # High-Fidelity Domain Fallback Generator (Ensures 15 structured tasks)
+        now = datetime.now(timezone.utc)
+        fallback_tasks = [
+            # Marketing (3)
+            {
+                "_id": generate_id(),
+                "title": f"Launch Omnichannel Campaign for {title}",
+                "role": "Marketing",
+                "status": "Resolved",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=2)).isoformat(),
+                "description": f"Target student tech societies, Discord communities, and LinkedIn developers targeting {scale} attendees."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Activate Discord Community Hackathon AMA",
+                "role": "Marketing",
+                "status": "In Progress",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=4)).isoformat(),
+                "description": "Host live audio AMA on Discord answering hacker team formation, API keys, and logistics."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Push 24-Hour Flash Referral Incentive",
+                "role": "Marketing",
+                "status": "Pending",
+                "is_blocker": True,
+                "deadline": (now + timedelta(days=5)).isoformat(),
+                "description": "Release bonus Fest Coins and premium merch tier for attendees inviting 3+ team builders."
+            },
+            # Partnerships (3)
+            {
+                "_id": generate_id(),
+                "title": "Finalize Cloud AI Title Sponsor Contract",
+                "role": "Partnerships",
+                "status": "In Progress",
+                "is_blocker": True,
+                "deadline": (now + timedelta(days=3)).isoformat(),
+                "description": "Secure master sponsorship agreement for GPU compute credits and hackathon track awards."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Coordinate Partner Booth Hardware Logistics",
+                "role": "Partnerships",
+                "status": "Pending",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=7)).isoformat(),
+                "description": f"Confirm display monitors, power drops, and exhibition banners for {venue}."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Sponsor Mentors & Judge Onboarding Call",
+                "role": "Partnerships",
+                "status": "Resolved",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=8)).isoformat(),
+                "description": "Distribute evaluation rubric, scoring portals, and mentoring slot schedules."
+            },
+            # Operations (3)
+            {
+                "_id": generate_id(),
+                "title": "Deploy Gigabit High-Density Venue WiFi",
+                "role": "Operations",
+                "status": "In Progress",
+                "is_blocker": True,
+                "deadline": (now + timedelta(days=6)).isoformat(),
+                "description": f"Test failover multi-WAN connection and configure dedicated SSID for {scale} simultaneous devices."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Setup Digital Badging & NFC Scanner Kiosks",
+                "role": "Operations",
+                "status": "In Progress",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=9)).isoformat(),
+                "description": f"Stage 10 high-speed check-in terminals at {venue} to prevent gate bottlenecks."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Catering & Midnight Energy Ration Allocation",
+                "role": "Operations",
+                "status": "Pending",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=10)).isoformat(),
+                "description": "Confirm meal passes, dietary options, and 24-hour hydration stations across the arena."
+            },
+            # Programme (3)
+            {
+                "_id": generate_id(),
+                "title": "Lock Opening Keynote & VIP Speaker Lineup",
+                "role": "Programme",
+                "status": "Resolved",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=3)).isoformat(),
+                "description": "Reconfirm technical talk abstracts and AV deck specs with AI keynote leaders."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Publish Hackathon Problem Statements & API Docs",
+                "role": "Programme",
+                "status": "In Progress",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=5)).isoformat(),
+                "description": "Review problem tracks: Generative AI, Intelligent Event Command, and Edge Agents."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Schedule Demo Day & Pitch Finalist Showcase",
+                "role": "Programme",
+                "status": "Pending",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=12)).isoformat(),
+                "description": "Configure 3-minute hard stop timers and investor evaluation scoring boards."
+            },
+            # Leadership (3)
+            {
+                "_id": generate_id(),
+                "title": "Approve Budget Allocations & Prize Pool Escrow",
+                "role": "Leadership",
+                "status": "Resolved",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=2)).isoformat(),
+                "description": "Verify developer bounty disbursement pipeline and legal disclaimers."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Establish Cross-Functional Emergency Response Matrix",
+                "role": "Leadership",
+                "status": "In Progress",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=4)).isoformat(),
+                "description": "Designate leads for medical SOS, cyber security incident response, and crowd diversion."
+            },
+            {
+                "_id": generate_id(),
+                "title": "Sign Off Municipal Safety Clearance & Permits",
+                "role": "Leadership",
+                "status": "Pending",
+                "is_blocker": False,
+                "deadline": (now + timedelta(days=7)).isoformat(),
+                "description": "Complete on-site fire department and local governance capacity audits."
+            }
+        ]
+        return fallback_tasks
+
+    async def execute_nlp_query(self, query: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Translates executive plain-English queries into synthesized insights using Gemini."""
+        q_low = query.lower()
+        event = context.get("event", {})
+        tasks = context.get("tasks", [])
+        reg_metrics = context.get("registration_metrics", {})
+        sentiment_metrics = context.get("sentiment_metrics", {})
+        reg_risk = context.get("registration_risk", False)
+        fric_risk = context.get("community_friction_risk", False)
+
+        # Categorize
+        if any(w in q_low for w in ["blocker", "critical", "blocking", "blocked", "barrier"]):
+            category = "blockers"
+        elif any(w in q_low for w in ["velocity", "registration", "pacing", "reach", "pace", "attendee", "scale"]):
+            category = "velocity"
+        elif any(w in q_low for w in ["sentiment", "vibe", "mood", "discord", "twitter", "feedback", "friction", "social"]):
+            category = "sentiment"
+        elif any(w in q_low for w in ["partner", "sponsor", "contract"]):
+            category = "partnerships"
+        elif any(w in q_low for w in ["marketing", "campaign", "outreach"]):
+            category = "marketing"
+        elif any(w in q_low for w in ["operation", "wifi", "badge", "venue", "food"]):
+            category = "operations"
+        else:
+            category = "executive"
+
+        # Build fallback / deterministic summary first
+        blockers = [t for t in tasks if t.get("is_blocker")]
+        resolved = [t for t in tasks if t.get("status") == "Resolved"]
+        pending = [t for t in tasks if t.get("status") != "Resolved"]
+
+        target_reg = reg_metrics.get("target_registrations", 2500)
+        curr_reg = reg_metrics.get("current_registrations", 1620)
+        days_rem = reg_metrics.get("days_remaining", 14)
+        daily_vel = reg_metrics.get("daily_velocity", 42.5)
+        req_vel = reg_metrics.get("required_daily_velocity", 62.8)
+        vel_pct = reg_metrics.get("velocity_ratio", 0.68) * 100.0
+
+        metrics_pills: List[MetricItem] = [
+            MetricItem(label="Total Tasks", value=f"{len(tasks)} (5 Roles)"),
+            MetricItem(label="Critical Blockers", value=f"{len(blockers)} Active", alert=len(blockers) > 0),
+            MetricItem(label="Reg Velocity", value=f"{daily_vel}/day ({vel_pct:.0f}% Pace)", alert=reg_risk),
+            MetricItem(label="Community Mood", value=f"{sentiment_metrics.get('positive_pct', 70)}% Positive", alert=fric_risk)
+        ]
+
+        quick_actions: List[QuickActionItem] = []
+        if blockers:
+            quick_actions.append(QuickActionItem(label="Inspect Blockers", action="scroll_blockers"))
+        if reg_risk:
+            quick_actions.append(QuickActionItem(label="Trigger Velocity Boost", action="execute_recovery"))
+        if fric_risk:
+            quick_actions.append(QuickActionItem(label="Clear Friction Alert", action="clear_friction"))
+
+        # Base default calculated answer
+        if category == "blockers":
+            if blockers:
+                b_titles = "; ".join([f"**{b.get('title')}** ({b.get('role')})" for b in blockers])
+                answer = f"Found **{len(blockers)} critical blocker(s)** in the command pipeline: {b_titles}. Resolving these unlocks downstream execution across {', '.join(set(b.get('role') for b in blockers))}."
+            else:
+                answer = "All clear! Zero critical blockers detected across Marketing, Partnerships, Operations, Programme, and Leadership."
+        elif category == "velocity":
+            risk_text = "⚠️ **Registration Risk ACTIVE**: Daily run rate is pacing below 80% of target." if reg_risk else "✅ **Velocity Nominal**: Pacing on schedule."
+            answer = f"{risk_text} Current registrations stand at **{curr_reg:,} / {target_reg:,}** with {days_rem} days remaining. Pacing at **{daily_vel:.1f}/day** vs required **{req_vel:.1f}/day** ({vel_pct:.1f}% pace)."
+        elif category == "sentiment":
+            mood = "CRITICAL FRICTION" if fric_risk else "HEALTHY"
+            answer = f"Rolling 5-minute sentiment is **{mood}**: {sentiment_metrics.get('positive_pct')}% Positive, {sentiment_metrics.get('neutral_pct')}% Neutral, and {sentiment_metrics.get('negative_pct')}% Negative across {sentiment_metrics.get('total_5m')} live posts. "
+            if fric_risk:
+                answer += f"🚨 **Friction Risk Detected**: Category: *{sentiment_metrics.get('friction_category')}*. Urgent community outreach recommended."
+            else:
+                answer += "Community buzz across Discord and Twitter is nominal with strong excitement."
+        else:
+            answer = f"Executive Command Summary for **{event.get('title', 'Event')}**: {len(resolved)}/{len(tasks)} tasks resolved. Active blockers: {len(blockers)}. Registration pacing at {vel_pct:.0f}% with audience sentiment at {sentiment_metrics.get('positive_pct')}% positive."
+
+        # If Gemini client is available, refine and enhance the answer
+        if self.client:
+            try:
+                gemini_prompt = f"""You are the Executive NLP Operations Copilot for the Hackingly Intelligent Event Command Centre.
+The Event Director asked: "{query}"
+
+Real-Time Telemetry Context:
+- Event: {event.get('title', 'Summit')} ({event.get('format', 'Hybrid')} | Target: {target_reg} | Venue: {event.get('venue')})
+- Tasks: {len(tasks)} total across 5 roles ({len(resolved)} resolved, {len(pending)} pending)
+- Critical Blockers ({len(blockers)}): {[b.get('title') + ' (' + b.get('role') + ')' for b in blockers]}
+- Registration Metrics: Current {curr_reg} / Target {target_reg} | Days left: {days_rem} | Pacing: {daily_vel}/day (Required: {req_vel}/day, {vel_pct:.1f}% pace) | Reg Risk: {reg_risk}
+- Live Sentiment (Rolling 5m): {sentiment_metrics.get('positive_pct')}% Pos, {sentiment_metrics.get('negative_pct')}% Neg | Friction Risk: {fric_risk} (Category: {sentiment_metrics.get('friction_category')})
+- Base Calculation: "{answer}"
+
+Instructions:
+Provide a crisp, authoritative executive briefing answering the director's query in 2 to 3 sentences formatted with bold highlights. Suggest the single most impactful immediate action."""
+
+                res = self.client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=gemini_prompt
+                )
+                if res and res.text:
+                    answer = res.text.strip()
+            except Exception as e:
+                logger.debug(f"Gemini API copilot query fallback: {e}")
+
+        return {
+            "query": query,
+            "response": answer,
+            "answer": answer,
+            "category": category,
+            "metrics": metrics_pills,
+            "quick_actions": quick_actions,
+            "result_count": len(blockers) if category == "blockers" else len(tasks)
+        }
+
+    async def get_recovery_recommendation(self, reg_risk: bool, fric_risk: bool, fric_category: Optional[str], reg_gap: int) -> Dict[str, str]:
+        """Synthesizes concrete recovery action using Gemini when risks are detected."""
+        if not reg_risk and not fric_risk:
+            return {
+                "action": "All operational indicators within nominal thresholds. Maintain current campaign execution.",
+                "title": "Nominal Pacing",
+                "type": "nominal"
+            }
+
+        risk_sig = f"{reg_risk}_{fric_risk}_{fric_category}_{reg_gap}"
+        if self.cached_recovery and self.last_risk_signature == risk_sig:
+            return self.cached_recovery
+
+        # Rule-based default
+        if reg_risk and fric_risk:
+            title = "Dual Risk: Velocity Lag & Community Friction"
+            action = f"Friction drop ({fric_category}) compounding registration lag. Release Discord FAQ addressing rules immediately, and launch 24-hr referral bonus to recover {reg_gap} attendee pace deficit."
+            action_type = "critical_dual"
+        elif reg_risk:
+            title = "Velocity Lag Recovery"
+            action = f"Pacing lag detected ({reg_gap} registrations behind target). Launch 24-hr peer referral incentive offering 500 bonus Fest Coins and priority VIP hackathon workspace."
+            action_type = "velocity_boost"
+        else:
+            title = f"Community Sentiment Recovery: {fric_category}"
+            action = f"Negative feedback spiked above 60% due to {fric_category}. Deploy community manager response on Discord and publish transparent organizer clarification."
+            action_type = "friction_mitigation"
+
+        if self.client:
+            try:
+                rec_prompt = f"""You are the Google Gemini Event Risk Recovery Engine.
+The event command centre has detected operational risk:
+- Registration Risk: {reg_risk} (Lagging behind target by ~{reg_gap} registrations)
+- Community Sentiment Risk: {fric_risk} (Category: {fric_category}, Negative sentiment > 60%)
+
+Formulate a single concrete, decisive 1-sentence recovery action that the event director can trigger immediately with one click.
+Also provide a 3-word action title."""
+
+                res = self.client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=rec_prompt
+                )
+                if res and res.text:
+                    lines = [l.strip() for l in res.text.strip().split("\n") if l.strip()]
+                    if len(lines) >= 1:
+                        action = lines[0]
+            except Exception as e:
+                logger.debug(f"Gemini recovery recommendation fallback: {e}")
+
+        result = {
+            "action": action,
+            "title": title,
+            "type": action_type
+        }
+        self.cached_recovery = result
+        self.last_risk_signature = risk_sig
+        return result
+
+copilot = GeminiOperationsCopilot()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. BACKGROUND SIMULATION RUNNERS
+# ─────────────────────────────────────────────────────────────────────────────
+async def social_stream_tick_loop():
+    """Simulates realistic incoming social listening traffic every 3 seconds."""
+    while True:
+        try:
+            await asyncio.sleep(3.0)
+            sentiment_engine.sample_tick(count=1)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.warning(f"Error in social stream tick loop: {e}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. FASTAPI APP LIFECYCLE & INITIALIZATION
 # ─────────────────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Connect database
+    logger.info("Initializing Hackingly Intelligent Event Command Centre...")
     await db_manager.connect()
-
-    # Pre-seed DinoFun dataset if database is fresh
-    dino_simulator.load_dataset()
-    kaggle_simulator.load_dataset()
-    social_manager.load_dataset()
-
-    # Start all 3 background task loops
-    sim_crowd_task = asyncio.create_task(crowd_movement_simulation_loop())
-    sim_tx_task = asyncio.create_task(kaggle_transaction_simulation_loop())
-    sim_social_task = asyncio.create_task(social_sentiment_streaming_loop())
-
-    logger.info("All 3 Real-World Dataset Simulator Tasks Active (Crowd Movement, Fest Coins, Social Triage)!")
+    sentiment_engine.load_dataset()
+    copilot.init_client()
+    task = asyncio.create_task(social_stream_tick_loop())
     yield
+    task.cancel()
+    logger.info("Command Centre shutting down.")
 
-    # Shutdown
-    sim_crowd_task.cancel()
-    sim_tx_task.cancel()
-    sim_social_task.cancel()
-    await asyncio.gather(sim_crowd_task, sim_tx_task, sim_social_task, return_exceptions=True)
-
-    if db_manager.client:
-        db_manager.client.close()
-
-# Initialize FastAPI app
 app = FastAPI(
-    title="Cultura Festival Hub API",
-    description="Live festival crowd-management telemetry, pass checkpoint verification, cashless Fest Coin economy, and real-time social sentiment triage.",
-    version="2.5.0",
-    lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc"
+    title="Hackingly Intelligent Event Command Centre (PS1)",
+    description="Full-stack Event Operations Command Centre powered by Google Gemini NLP Copilot, MongoDB Atlas, and Hugging Face Sentiment Analyzer.",
+    version="3.0.0",
+    lifespan=lifespan
 )
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -632,698 +728,289 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# No-Cache Middleware
-@app.middleware("http")
-async def add_no_cache_headers(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
 
-# ─────────────────────── System & Health Endpoints ───────────────────────
-@app.get("/api/health", response_model=HealthCheckResponse, tags=["Health"])
-async def get_health():
-    status_info = db_manager.get_status_summary()
-    return {
-        "status": "healthy",
-        "framework": "FastAPI (Python 3.11)",
-        "server": "Uvicorn ASGI",
-        "validation": "Pydantic v2",
-        "database_driver": "Motor (async MongoDB Atlas) with Resilient Fallback",
-        "database_status": status_info["connection_message"],
-        "database_uri_configured": status_info["database_uri_configured"],
-        "active_connections": 1,
-        "version": "2.5.0"
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. CORE API ENDPOINTS (PHASES 1 & 2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# PHASE 2.1: Intelligent Event Setup
+@app.post("/api/generate_plan", response_model=GeneratePlanResponse, tags=["Event Setup"])
+async def generate_plan_endpoint(payload: GeneratePlanRequest):
+    """Parses event brief using Gemini API into 15 actionable tasks (3 per role) and initializes MongoDB Atlas."""
+    title = payload.title or "Hackingly AI Innovations Summit 2026"
+    format_type = payload.format or "Hybrid"
+    target_scale = payload.target_scale or 2500
+    venue = payload.venue or "Cyber Arena & Virtual Metaverse"
+    objectives = payload.objectives or "Deliver autonomous event operations with Gemini NLP copilot, live sentiment triage, and zero registration friction."
+    start_date = payload.start_date or (datetime.now(timezone.utc) + timedelta(days=14)).strftime("%Y-%m-%d")
+
+    # 1. Save Event
+    event_dict = {
+        "_id": generate_id(),
+        "title": title,
+        "format": format_type,
+        "target_scale": target_scale,
+        "start_date": start_date,
+        "venue": venue,
+        "objectives": objectives,
+        "created_at": datetime.now(timezone.utc).isoformat()
     }
+    saved_event = await db_manager.save_event(event_dict)
 
-@app.get("/zones", tags=["Zones"])
-async def get_zones():
-    return {"zones": ZONES}
-
-# ─────────────────────── Attendee Registration & Lookup ───────────────────────
-@app.post("/register_attendee", status_code=status.HTTP_201_CREATED, tags=["Attendees"])
-async def register_attendee(payload: AttendeeCreate):
-    initial_coins = payload.initial_coins if payload.initial_coins is not None else payload.fest_coins
-    attendee = await db_manager.create_attendee(
-        name=payload.name,
-        role=payload.role,
-        ticket_type=payload.ticket_type,
-        initial_coins=initial_coins
+    # 2. Call Gemini Copilot to generate 15 tasks
+    tasks = await copilot.generate_event_plan(
+        brief=objectives,
+        title=title,
+        format_type=format_type,
+        scale=target_scale,
+        venue=venue
     )
-    return {
-        "message": "Attendee registered successfully",
-        "qr_code_hash": attendee["qr_code_hash"],
-        "attendee": attendee
+    saved_tasks = await db_manager.save_tasks(tasks, clear_existing=True)
+
+    # 3. Initialize RegistrationMetrics
+    initial_current = int(target_scale * random.uniform(0.55, 0.70))
+    days_left = 14
+    daily_vel = round((initial_current / 16.0), 1)
+    metrics_dict = {
+        "target_registrations": target_scale,
+        "current_registrations": initial_current,
+        "days_remaining": days_left,
+        "daily_velocity": daily_vel
     }
-
-@app.get("/attendee/{qr_code_hash}", tags=["Attendees"])
-async def get_attendee_by_qr(qr_code_hash: str = Path(..., description="16-byte QR pass hash")):
-    attendee = await db_manager.get_attendee_by_qr(qr_code_hash)
-    if not attendee:
-        raise HTTPException(status_code=404, detail="Attendee not found")
-    return attendee
-
-@app.get("/api/attendees/search", tags=["Attendees"])
-async def search_attendees(q: Optional[str] = Query("", description="Query string for name, role, ticket, or ID")):
-    results = await db_manager.list_attendees(query=q or "", limit=50)
-    return {"attendees": results}
-
-@app.get("/api/attendee/{attendee_id}/history", response_model=AttendeeHistoryResponse, tags=["Attendees"])
-async def get_attendee_history(attendee_id: str):
-    history = await db_manager.get_attendee_history(attendee_id)
-    if not history:
-        raise HTTPException(status_code=404, detail="Attendee not found")
-    return history
-
-# ─────────────────────── Gate Checkpoint Scanning ───────────────────────
-@app.post("/scan", status_code=status.HTTP_201_CREATED, tags=["Field Scanning"])
-async def scan_checkpoint(payload: ScanRequest):
-    if payload.zone_name not in ZONES:
-        raise HTTPException(status_code=400, detail="Invalid scan payload or zone")
-
-    attendee = await db_manager.get_attendee_by_qr(payload.qr_code_hash)
-    if not attendee:
-        raise HTTPException(status_code=404, detail="Attendee not found")
-
-    if attendee.get("status") == "terminated":
-        return JSONResponse(
-            status_code=403,
-            content={
-                "detail": f"SECURITY ALERT: QR Pass is REVOKED/TERMINATED ({attendee.get('termination_reason') or 'Access Revoked'})",
-                "terminated": True,
-                "attendee": attendee
-            }
-        )
-
-    log_entry = await db_manager.log_zone_scan(attendee, payload.zone_name)
-    updated_attendee = await db_manager.get_attendee_by_id(attendee["_id"])
+    saved_metrics = await db_manager.save_registration_metrics(metrics_dict)
 
     return {
-        "message": f"Scan logged at {payload.zone_name}!",
-        "attendee": updated_attendee or attendee,
-        "zone_log": log_entry
+        "message": f"Successfully initialized operating plan for '{title}' with 15 role-wise tasks!",
+        "event": saved_event,
+        "tasks_generated": len(saved_tasks),
+        "tasks": saved_tasks,
+        "registration_metrics": saved_metrics
     }
 
-# ─────────────────────── Cashless Fest Coin Transactions ───────────────────────
-async def _execute_transaction_deduction(payload: TransactionRequest, is_simulator: bool = False):
-    has_identifier = bool(payload.qr_code_hash or payload.attendee_id or payload.customer_id)
-    attendee = None
-    if payload.qr_code_hash:
-        attendee = await db_manager.get_attendee_by_qr(payload.qr_code_hash)
-    elif payload.attendee_id:
-        attendee = await db_manager.get_attendee_by_id(payload.attendee_id)
-    elif payload.customer_id:
-        attendee = await db_manager.get_attendee_by_id(payload.customer_id)
 
-    if has_identifier:
-        if not attendee:
-            raise HTTPException(
-                status_code=404,
-                detail="Attendee not found for supplied identifier."
-            )
-    elif is_simulator:
-        att_list = await db_manager.list_attendees(limit=50)
-        attendee = next((a for a in att_list if a.get("status") != "terminated"), None)
-        if not attendee:
-            # Create an attendee if store is fresh
-            attendee = await db_manager.create_attendee(
-                name="Attendee General",
-                role="General",
-                ticket_type="Standard Pass",
-                initial_coins=1000
-            )
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="Attendee identifier (qr_code_hash, attendee_id, or customer_id) is required."
-        )
+# PHASE 2.2: Executive NLP Copilot
+@app.post("/api/admin/nlp_query", response_model=NLPQueryResponse, tags=["AI Command Assistant"])
+async def executive_nlp_query_endpoint(payload: NLPQueryRequest):
+    """Executes conversational plain-English queries against MongoDB state using Gemini."""
+    event = await db_manager.get_active_event()
+    tasks = await db_manager.get_tasks()
+    reg_raw = await db_manager.get_registration_metrics()
+    sent_metrics = sentiment_engine.get_metrics()
 
-    if not attendee:
-        raise HTTPException(status_code=404, detail="Attendee not found.")
+    # Compute velocity metrics
+    target_reg = reg_raw.get("target_registrations", 2500)
+    curr_reg = reg_raw.get("current_registrations", 1620)
+    days_rem = max(1, reg_raw.get("days_remaining", 14))
+    daily_vel = reg_raw.get("daily_velocity", 42.5)
+    req_vel = round((target_reg - curr_reg) / days_rem, 1)
+    vel_ratio = round(daily_vel / max(0.01, req_vel), 2)
+    reg_risk = daily_vel < (0.8 * req_vel)
 
-    if attendee.get("status") == "terminated":
-        return JSONResponse(
-            status_code=403,
-            content={
-                "detail": f"SECURITY ALERT: Payment Denied! QR Pass is REVOKED ({attendee.get('termination_reason') or 'Pass Revoked'})",
-                "terminated": True,
-                "attendee": attendee
-            }
-        )
-
-    current_balance = attendee.get("fest_coins", 0)
-    if current_balance < payload.amount:
-        if is_simulator:
-            # Confine automatic wallet reload behavior to the simulator
-            await db_manager.create_recharge(
-                attendee=attendee,
-                inr_amount=payload.amount + 500,
-                payment_method="UPI - Auto Reload",
-                operator_mode="self_service",
-                notes="Auto cashless liquidity top-up"
-            )
-            updated = await db_manager.get_attendee_by_id(attendee["_id"])
-            if updated:
-                attendee = updated
-                current_balance = attendee.get("fest_coins", 0)
-        else:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "detail": f"Insufficient Fest Coins. Current balance: {current_balance} coins, Required: {payload.amount} coins",
-                    "current_balance": current_balance,
-                    "required_amount": payload.amount
-                }
-            )
-
-    stall = payload.stall_name or "Vendor Stall"
-    zone = payload.zone_name or "Food Court"
-    tx = await db_manager.create_transaction(
-        attendee=attendee,
-        amount=payload.amount,
-        stall_name=stall,
-        zone_name=zone
-    )
-    updated_attendee = await db_manager.get_attendee_by_id(attendee["_id"])
-
-    return {
-        "message": f"Successfully deducted {payload.amount} Fest Coins for {stall}",
-        "transaction": tx,
-        "attendee": {
-            "name": updated_attendee["name"] if updated_attendee else attendee["name"],
-            "fest_coins": updated_attendee["fest_coins"] if updated_attendee else current_balance - payload.amount
-        }
+    reg_metrics = {
+        **reg_raw,
+        "required_daily_velocity": req_vel,
+        "velocity_ratio": vel_ratio,
+        "registration_risk": reg_risk,
+        "reach_gap": max(0, int(round((0.8 * req_vel - daily_vel) * days_rem)))
     }
 
-@app.post("/api/transaction", status_code=status.HTTP_201_CREATED, tags=["Fest Coins"])
-async def api_process_transaction(payload: TransactionRequest):
-    return await _execute_transaction_deduction(payload)
-
-@app.post("/transaction", status_code=status.HTTP_201_CREATED, tags=["Fest Coins"])
-async def public_process_transaction(payload: TransactionRequest):
-    return await _execute_transaction_deduction(payload)
-
-# ─────────────────────── Rupee-to-Coin Cashless Top-up ───────────────────────
-@app.post("/api/recharge", status_code=status.HTTP_201_CREATED, tags=["Recharges"])
-async def recharge_wallet(payload: RechargeRequest):
-    attendee = None
-    if payload.attendee_id:
-        attendee = await db_manager.get_attendee_by_id(payload.attendee_id)
-    elif payload.qr_code_hash:
-        attendee = await db_manager.get_attendee_by_qr(payload.qr_code_hash)
-
-    if not attendee:
-        raise HTTPException(
-            status_code=404,
-            detail="Attendee not found. Please verify attendee name or scan QR pass."
-        )
-
-    if attendee.get("status") == "terminated":
-        return JSONResponse(
-            status_code=403,
-            content={
-                "detail": f"SECURITY ALERT: Recharge Rejected! QR Pass is REVOKED ({attendee.get('termination_reason') or 'Administrative Hold'}).",
-                "terminated": True,
-                "attendee": attendee
-            }
-        )
-
-    recharge_entry = await db_manager.create_recharge(
-        attendee=attendee,
-        inr_amount=payload.inr_amount,
-        payment_method=payload.payment_method or "UPI",
-        operator_mode=payload.operator_mode or "self_service",
-        operator_name=payload.operator_name,
-        notes=payload.notes or ""
-    )
-
-    updated_attendee = await db_manager.get_attendee_by_id(attendee["_id"])
-
-    return {
-        "message": f"Payment of ₹{payload.inr_amount:,} successful! Added {payload.inr_amount:,} Fest Coins (1:1 conversion).",
-        "recharge": recharge_entry,
-        "attendee": updated_attendee or attendee
+    context = {
+        "event": event,
+        "tasks": tasks,
+        "registration_metrics": reg_metrics,
+        "sentiment_metrics": sent_metrics,
+        "registration_risk": reg_risk,
+        "community_friction_risk": sent_metrics["community_friction_risk"]
     }
 
-@app.get("/api/recharges", tags=["Recharges"])
-async def list_recharges():
-    recharges_list, summary = await db_manager.get_recharges_summary(limit=100)
-    return {
-        "recharges": recharges_list,
-        "summary": summary
-    }
+    result = await copilot.execute_nlp_query(payload.query, context)
+    return result
 
-# ─────────────────────── Live Social Sentiment & Triage ───────────────────────
-@app.get("/api/social/feed", tags=["Social Listening"])
-async def get_social_feed():
-    feed_items = [
-        {
-            "id": p["id"],
-            "text": p["text"],
-            "sentiment": p["sentiment"],
-            "author": p.get("author", "@attendee"),
-            "timestamp": p["timestamp"]
-        }
-        for p in social_manager.recent_stream[:25]
-    ]
-    # Calculate breakdown
-    pos = sum(1 for p in social_manager.recent_stream if p.get("sentiment") == "positive")
-    neu = sum(1 for p in social_manager.recent_stream if p.get("sentiment") == "neutral")
-    neg = sum(1 for p in social_manager.recent_stream if p.get("sentiment") == "negative")
 
+# PHASE 2.3: Live Community Sentiment & Vibe Engine Endpoints
+@app.get("/api/social/feed", tags=["Community Sentiment"])
+async def get_social_feed_endpoint():
+    """Returns rolling 5-minute social listening feed and real-time vibe metrics."""
+    metrics = sentiment_engine.get_metrics()
+    feed_items = sentiment_engine.rolling_stream[:30]
     return {
         "feed": feed_items,
-        "friction_alert": social_manager.friction_alert,
-        "sentiment_summary": {
-            "positive_count": pos,
-            "neutral_count": neu,
-            "negative_count": neg,
-            "total_sampled": len(social_manager.recent_stream)
-        }
-    }
-
-@app.post("/api/social/simulate_spike", tags=["Social Listening"])
-async def simulate_negative_sentiment_spike(is_admin: bool = Depends(verify_admin)):
-    """Admin utility to test Friction Alert immediately by injecting a cluster of 8 negative attendee reports."""
-    social_manager.inject_negative_spike(count=8)
-    return {
-        "message": "Simulated negative sentiment spike injected successfully!",
-        "friction_alert": social_manager.friction_alert
-    }
-
-@app.post("/api/social/clear_alert", tags=["Social Listening"])
-async def clear_friction_alert(is_admin: bool = Depends(verify_admin)):
-    alert_state = social_manager.resolve_alert(cooldown_seconds=120)
-    return {
-        "message": "Friction Alert cleared successfully. 120s operational resistance cooldown activated.",
-        "friction_alert": alert_state
-    }
-
-# ─────────────────────── Emergency Incidents (God's Eye) ───────────────────────
-@app.post("/api/incident", status_code=status.HTTP_201_CREATED, tags=["Incidents"])
-async def report_incident(payload: IncidentCreate):
-    valid_types = ["Medical", "Security", "Logistics"]
-    if payload.type not in valid_types:
-        raise HTTPException(status_code=400, detail="Invalid incident type. Must be Medical, Security, or Logistics.")
-
-    incident = await db_manager.create_incident(
-        incident_type=payload.type,
-        zone_name=payload.zone_name or "Main Stage",
-        notes=payload.notes or ""
-    )
-    return {
-        "message": f"🚨 Emergency {payload.type} incident logged at {incident['zone_name']}!",
-        "incident": incident
-    }
-
-@app.patch("/api/incident/{incident_id}/resolve", tags=["Incidents"])
-@app.post("/api/incident/{incident_id}/resolve", tags=["Incidents"])
-async def resolve_incident_endpoint(incident_id: str, is_admin: bool = Depends(verify_admin)):
-    resolved = await db_manager.resolve_incident(incident_id)
-    if not resolved:
-        raise HTTPException(status_code=404, detail="Incident not found")
-    return {
-        "message": f"{resolved['type']} incident resolved successfully",
-        "incident": resolved
-    }
-
-# ─────────────────────── Crowd Crush Prevention & Diversions ───────────────────────
-@app.post("/api/admin/trigger_diversion", status_code=status.HTTP_201_CREATED, tags=["Crowd Control"])
-async def trigger_diversion_endpoint(payload: DiversionCreate, is_admin: bool = Depends(verify_admin)):
-    if payload.zone_name not in ZONES:
-        raise HTTPException(status_code=400, detail="Invalid zone name for diversion")
-
-    diversion, relieved_count = await db_manager.trigger_diversion(
-        zone_name=payload.zone_name,
-        target_zone=payload.target_zone or "Food Court",
-        message=payload.message or ""
-    )
-    return {
-        "message": f"Diversion activated for {payload.zone_name}! {relieved_count} attendees re-routed to {diversion['target_zone']}.",
-        "diversion": diversion
-    }
-
-@app.post("/api/admin/clear_diversion/{diversion_id}", tags=["Crowd Control"])
-async def clear_diversion_endpoint(diversion_id: str, is_admin: bool = Depends(verify_admin)):
-    success = await db_manager.clear_diversion(diversion_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Diversion not found")
-    return {"message": "Diversion marked inactive"}
-
-@app.post("/api/admin/throttle_zone", tags=["Crowd Control"])
-async def throttle_zone_endpoint(payload: ThrottleRequest, is_admin: bool = Depends(verify_admin)):
-    if payload.zone_name not in ZONES:
-        raise HTTPException(status_code=400, detail="Invalid zone")
-
-    other_zones = [z for z in ZONES if z != payload.zone_name]
-    target = payload.target_zone if payload.target_zone and payload.target_zone in ZONES else random.choice(other_zones)
-    relieved = await db_manager.reroute_recent_scans(payload.zone_name, target, limit=payload.count or 150)
-
-    if relieved == 0:
-        return {"message": f"No active attendees found in {payload.zone_name}."}
-    return {"message": f"SUCCESS! Diverted {relieved} attendees from {payload.zone_name} to {target}."}
-
-# ─────────────────────── Simulation Endpoints ───────────────────────
-@app.post("/api/admin/simulate_surge", tags=["Simulation"])
-async def simulate_surge_endpoint(is_admin: bool = Depends(verify_admin)):
-    count = await db_manager.simulate_surge()
-    return {"message": f"Surge simulated! {count} attendees rushed the Cultural Pavilion."}
-
-@app.post("/api/admin/revert_simulation", tags=["Simulation"])
-async def revert_simulation_endpoint(is_admin: bool = Depends(verify_admin)):
-    reverted = await db_manager.revert_simulation()
-    return {"message": f"Simulation stopped. Reverted {reverted} simulated scans."}
-
-# ─────────────────────── Admin Stats & Live Telemetry ───────────────────────
-@app.get("/api/admin/stats", tags=["Admin Operations"])
-async def get_admin_stats_endpoint(is_admin: bool = Depends(verify_admin)):
-    stats = await db_manager.get_admin_stats()
-    # Attach Live Social Listening Feed and Friction Alert for single 3-second polling roundtrip
-    stats["social_feed"] = [
-        {
-            "id": p["id"],
-            "text": p["text"],
-            "sentiment": p["sentiment"],
-            "author": p.get("author", "@attendee"),
-            "timestamp": p["timestamp"]
-        }
-        for p in social_manager.recent_stream[:15]
-    ]
-    stats["friction_alert"] = social_manager.friction_alert
-
-    # Ensure live_transactions is populated in financials
-    if "financials" in stats:
-        stats["financials"]["live_transactions"] = stats["financials"].get("transaction_volume", 0)
-
-    return stats
-
-@app.get("/api/admin/attendees", tags=["Admin Operations"])
-async def list_admin_attendees(is_admin: bool = Depends(verify_admin)):
-    attendees = await db_manager.list_attendees(limit=500)
-    return {"attendees": attendees}
-
-@app.delete("/api/admin/delete_attendee/{attendee_id}", tags=["Admin Operations"])
-async def delete_attendee_endpoint(attendee_id: str, is_admin: bool = Depends(verify_admin)):
-    existing = await db_manager.get_attendee_by_id(attendee_id)
-    if not existing:
-        raise HTTPException(status_code=404, detail="Attendee not found")
-    await db_manager.delete_attendee(attendee_id)
-    return {"message": "Attendee deleted permanently."}
-
-async def _terminate_qr_logic(attendee_id: str, reason: Optional[str]):
-    attendee = await db_manager.get_attendee_by_id(attendee_id)
-    if not attendee:
-        raise HTTPException(status_code=404, detail="Attendee not found")
-
-    revocation_reason = (reason and reason.strip()) or "Administrative revocation"
-    updated = await db_manager.update_attendee(
-        attendee_id,
-        {
-            "status": "terminated",
-            "terminated_at": datetime.now(timezone.utc).isoformat(),
-            "termination_reason": revocation_reason,
-        }
-    )
-    return {
-        "message": f"QR Pass for {attendee['name']} has been terminated.",
-        "attendee": updated
-    }
-
-@app.post("/api/admin/attendee/{attendee_id}/terminate_qr", tags=["Pass Security"])
-async def admin_terminate_qr(attendee_id: str, payload: Optional[TerminateQrRequest] = None, is_admin: bool = Depends(verify_admin)):
-    return await _terminate_qr_logic(attendee_id, payload.reason if payload else None)
-
-@app.post("/attendee/{attendee_id}/terminate_qr", tags=["Pass Security"])
-async def public_terminate_qr(attendee_id: str, payload: Optional[TerminateQrRequest] = None):
-    return await _terminate_qr_logic(attendee_id, payload.reason if payload else None)
-
-async def _reinstate_qr_logic(attendee_id: str, regenerate: bool):
-    attendee = await db_manager.get_attendee_by_id(attendee_id)
-    if not attendee:
-        raise HTTPException(status_code=404, detail="Attendee not found")
-
-    updates: Dict[str, Any] = {
-        "status": "active",
-        "terminated_at": None,
-        "termination_reason": None,
-    }
-    if regenerate:
-        import secrets
-        updates["qr_code_hash"] = secrets.token_hex(16)
-
-    updated = await db_manager.update_attendee(attendee_id, updates)
-    msg = f"New QR Pass generated and activated for {attendee['name']}." if regenerate else f"QR Pass for {attendee['name']} has been reinstated."
-    return {
-        "message": msg,
-        "attendee": updated
-    }
-
-@app.post("/api/admin/attendee/{attendee_id}/reinstate_qr", tags=["Pass Security"])
-async def admin_reinstate_qr(attendee_id: str, payload: Optional[ReinstateQrRequest] = None, is_admin: bool = Depends(verify_admin)):
-    return await _reinstate_qr_logic(attendee_id, payload.regenerate if payload else False)
-
-@app.post("/attendee/{attendee_id}/reinstate_qr", tags=["Pass Security"])
-async def public_reinstate_qr(attendee_id: str, payload: Optional[ReinstateQrRequest] = None):
-    return await _reinstate_qr_logic(attendee_id, payload.regenerate if payload else False)
-
-# ─────────────────────── NLP Assistant & Intelligence ───────────────────────
-@app.post("/api/admin/nlp_query", tags=["AI Command Assistant"])
-async def nlp_query_endpoint(request_body: Dict[str, Any], is_admin: bool = Depends(verify_admin)):
-    original_query = str(request_body.get("query", "")).strip()
-    query = original_query.lower()
-
-    stats = await db_manager.get_admin_stats()
-    all_att = await db_manager.list_attendees(limit=500)
-
-    zone_counts = {z["zone_name"]: z["total_scans"] for z in stats["zones"]}
-    bottlenecks = [z["zone_name"] for z in stats["zones"] if z["recent_scans"] >= BOTTLENECK_THRESHOLD]
-
-    total_attendees = len(all_att)
-    active_count = sum(1 for a in all_att if a.get("status") == "active")
-    terminated_count = total_attendees - active_count
-    total_coins = sum(a.get("fest_coins", 0) for a in all_att)
-    role_counts = {}
-    for a in all_att:
-        r = a.get("role", "General")
-        role_counts[r] = role_counts.get(r, 0) + 1
-
-    fin = stats.get("financials", {})
-    total_inr_collected = fin.get("total_inr_recharged", 0)
-    recharge_volume = fin.get("recharge_volume", 0)
-    active_incidents = stats.get("active_incidents", [])
-    # Live Social Sentiment Telemetry
-    social_manager._evaluate_friction_alert(datetime.now(timezone.utc))
-    total_sampled = len(social_manager.recent_stream)
-    pos_count = sum(1 for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "positive")
-    neu_count = sum(1 for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "neutral")
-    neg_count = sum(1 for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "negative")
-    denom = max(1, total_sampled)
-    pos_pct = round((pos_count / denom) * 100, 1)
-    neu_pct = round((neu_count / denom) * 100, 1)
-    neg_pct = round((neg_count / denom) * 100, 1)
-
-    f_alert_global = social_manager.friction_alert
-    is_friction_active_global = bool(f_alert_global.get("active", False))
-    if is_friction_active_global:
-        mood_rating = "CRITICAL FRICTION"
-    elif pos_pct >= 75:
-        mood_rating = "OVERWHELMINGLY POSITIVE"
-    elif pos_pct >= 50:
-        mood_rating = "MOSTLY POSITIVE"
-    elif neg_pct >= 30:
-        mood_rating = "HIGH FRICTION"
-    else:
-        mood_rating = "BALANCED"
-
-    is_sentiment = bool(re.search(r"sentiment|social|listening|mood|vibe|feedback|review|tweet|reaction|feeling|opinion|complaint|friction|\bposts?\b|(?:friction|sentiment|social|feedback)\s+triage", query)) and not bool(re.search(r"\bsos\b|emergency|medical|hazard", query))
-    is_crowd = bool(re.search(r"crowd|bottleneck|congest|traffic|capacity|dens|packed|fullest|busy|divert", query))
-    is_coin = bool(re.search(r"coin|recharge|inr|rupee|wallet|cash|money|top-up|balance|revenue|minted|fest coin", query))
-    is_pass = bool(re.search(r"pass|attendee|guest|ticket|revok|terminat|status|register|vip", query)) and not is_crowd
-    is_incident = bool(re.search(r"incident|\bsos\b|emergency|medical|security|logistics|hazard|\btriage\b", query))
-
-    category = "general"
-    answer = ""
-    metrics: List[Dict[str, Any]] = []
-    quick_actions: List[Dict[str, Any]] = []
-    result_count = 0
-
-    if is_sentiment:
-        category = "sentiment"
-        f_alert = social_manager.friction_alert
-        is_friction_active = bool(f_alert.get("active", False))
-        neg_60s = f_alert.get("negative_count_60s", 0)
-        severity = f_alert.get("severity", "NORMAL")
-
-        latest_neg = next((p for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "negative"), None)
-        latest_pos = next((p for p in social_manager.recent_stream if str(p.get("sentiment", "")).lower() == "positive"), None)
-
-        if is_friction_active:
-            answer = f"🚨 Social Sentiment Alert ({severity}): Friction alert is ACTIVE with {neg_60s} negative attendee complaints in the last 60 seconds! Stream breakdown: {pos_pct}% Positive, {neu_pct}% Neutral, {neg_pct}% Negative across {total_sampled} live posts."
-            if latest_neg:
-                answer += f' Highlighted complaint: "{latest_neg.get("text")}" ({latest_neg.get("author")}). Immediate triage recommended.'
-        else:
-            answer = f"Live Sentiment Telemetry: Audience mood is {mood_rating} ({pos_pct}% positive, {neu_pct}% neutral, {neg_pct}% negative across {total_sampled} live posts). Friction alert is NOMINAL with {neg_60s} complaints in the 60s window."
-            if latest_pos:
-                answer += f' Recent guest buzz: "{latest_pos.get("text")}" ({latest_pos.get("author")}).'
-
-        metrics = [
-            {"label": "Audience Mood", "value": f"{pos_pct}% Positive", "alert": is_friction_active or neg_pct > 25},
-            {"label": "Friction Alert", "value": "ACTIVE" if is_friction_active else "NOMINAL", "alert": is_friction_active},
-            {"label": "Positive Posts", "value": f"{pos_count} ({pos_pct}%)"},
-            {"label": "Negative Reports", "value": f"{neg_count} ({neg_pct}%)", "alert": is_friction_active or neg_count >= 8}
-        ]
-        quick_actions = [
-            {"label": "Open Live Social Radar", "url": "/#social-ticker-container"}
-        ]
-        if is_friction_active:
-            quick_actions.append({"label": "Resolve Friction Alert", "action": "clear_alert"})
-        else:
-            quick_actions.append({"label": "Test Friction Spike", "action": "simulate_spike"})
-
-        result_count = total_sampled
-
-    elif is_crowd:
-        category = "crowd"
-        if bottlenecks:
-            b_str = ", ".join([f"{b} ({zone_counts.get(b, 0)} scans)" for b in bottlenecks])
-            answer = f"⚠️ Alert: {len(bottlenecks)} festival zone(s) currently at or above bottleneck threshold (≥150 scans): {b_str}. Crowd diversion is recommended."
-        else:
-            top_zone = max(zone_counts.items(), key=lambda x: x[1]) if zone_counts else ("Main Stage", 0)
-            answer = f"Flow is steady across all festival zones. No critical bottlenecks detected. The highest density is currently at {top_zone[0]} with {top_zone[1]} recorded scans."
-
-        metrics = [
-            {"label": z, "value": f"{zone_counts.get(z, 0)} scans", "alert": zone_counts.get(z, 0) >= BOTTLENECK_THRESHOLD}
-            for z in ZONES
-        ]
-        quick_actions = [
-            {"label": "View Live Telemetry", "url": "/"},
-            {"label": "Trigger Crowd Diversion", "action": "diversion"}
-        ]
-        result_count = len(bottlenecks)
-
-    elif is_coin:
-        category = "financial"
-        answer = f"Cashless Economy Status: Total Fest Coins in attendee circulation: 🪙 {total_coins:,}. Total INR collected via top-ups: ₹{total_inr_collected:,} across {recharge_volume} transactions (Standard rate: 1 INR = 1 Fest Coin)."
-        metrics = [
-            {"label": "Coins in Circulation", "value": f"🪙 {total_coins:,}"},
-            {"label": "Total INR Collected", "value": f"₹{total_inr_collected:,}"},
-            {"label": "Top-up Transactions", "value": str(recharge_volume)},
-            {"label": "Rate", "value": "1 ₹ = 1 🪙"}
-        ]
-        quick_actions = [
-            {"label": "Open Coin Top-up Hub", "url": "/recharge.html"},
-            {"label": "View Guest Balances", "url": "/attendees.html"}
-        ]
-        result_count = total_coins
-
-    elif is_incident:
-        category = "security"
-        f_alert = social_manager.friction_alert
-        if f_alert.get("active"):
-            answer = f"🚨 High Alert: Active Friction Alert in progress with {f_alert.get('negative_count_60s')} negative attendee complaints in the last 60 seconds. SOS triage required."
-        elif active_incidents:
-            answer = f"Active Security Alerts: {len(active_incidents)} pending incident(s) require dispatcher triage. Latest incident in {active_incidents[0].get('zone_name', 'Festival Grounds')}."
-        else:
-            answer = f"All clear. Zero unresolved SOS incidents. Audience mood is {mood_rating.lower()} ({pos_pct}% positive)."
-        metrics = [
-            {"label": "Active Incidents", "value": str(len(active_incidents)), "alert": len(active_incidents) > 0},
-            {"label": "Friction Alert", "value": "ACTIVE" if f_alert.get("active") else "NOMINAL", "alert": f_alert.get("active")},
-            {"label": "Diversions Active", "value": str(len(stats.get("active_diversions", [])))}
-        ]
-        quick_actions = [
-            {"label": "Open Incident Radar", "url": "/"},
-            {"label": "Scanner Station SOS", "url": "/scanner.html"}
-        ]
-        result_count = len(active_incidents)
-
-    elif is_pass:
-        category = "attendees"
-        vip_count = role_counts.get("VIP", 0)
-        answer = f"Attendee Directory: {total_attendees} total registered attendees. {active_count} passes active, {terminated_count} passes revoked/terminated. VIP passes: {vip_count}."
-        metrics = [
-            {"label": "Total Registered", "value": str(total_attendees)},
-            {"label": "Active Passes", "value": str(active_count)},
-            {"label": "Revoked Passes", "value": str(terminated_count)},
-            {"label": "VIP Passholders", "value": str(vip_count)}
-        ]
-        quick_actions = [
-            {"label": "Open Guest Directory", "url": "/attendees.html"},
-            {"label": "Field Scanner Hub", "url": "/scanner.html"}
-        ]
-        result_count = total_attendees
-
-    else:
-        answer = f"Festival Telemetry Status: {total_attendees} registered attendees with {active_count} active passes. Current cashless balance: 🪙 {total_coins:,} Fest Coins."
-        metrics = [
-            {"label": "Registered Guests", "value": str(total_attendees)},
-            {"label": "Active Zones", "value": str(len(ZONES))},
-            {"label": "Cashless Balance", "value": f"🪙 {total_coins:,}"}
-        ]
-        quick_actions = [
-            {"label": "Command Center", "url": "/"},
-            {"label": "Live Analytics", "url": "/analytics.html"}
-        ]
-        result_count = total_attendees
-
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if gemini_key and len(gemini_key) > 10:
-        try:
-            from google import genai
-            client = genai.Client()
-            sentiment_summary = {
-                "positive_pct": f"{pos_pct}%",
-                "neutral_pct": f"{neu_pct}%",
-                "negative_pct": f"{neg_pct}%",
-                "total_posts_sampled": total_sampled,
-                "audience_mood": mood_rating,
-                "friction_alert": social_manager.friction_alert,
-                "recent_sample": [
-                    {"author": p.get("author"), "sentiment": p.get("sentiment"), "text": p.get("text")}
-                    for p in social_manager.recent_stream[:3]
-                ]
-            }
-            prompt = f"""You are the Cultura Festival AI Command Assistant.
-The festival administrator asked: "{original_query}".
-Telemetry Snapshot:
-- Zones: {json.dumps(zone_counts)}
-- Bottlenecks: {json.dumps(bottlenecks)}
-- Total Attendees: {total_attendees} ({active_count} active passes, {terminated_count} revoked)
-- Total Fest Coins in Circulation: {total_coins}
-- Total INR Cashless Collected: ₹{total_inr_collected}
-- Active SOS Incidents: {len(active_incidents)}
-- Sentiment Analyzer & Social Telemetry: {json.dumps(sentiment_summary)}
-- Friction Alert: {json.dumps(social_manager.friction_alert)}
-Base calculated response: "{answer}"
-
-Provide a concise, direct, professional response in 1-2 clear sentences. Include specific numbers where relevant."""
-            
-            ai_res = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-            if ai_res and ai_res.text:
-                answer = ai_res.text.strip()
-        except Exception as ai_err:
-            logger.debug(f"Gemini API enhancement fallback: {ai_err}")
-
-    return {
-        "query": original_query,
-        "response": answer,
-        "answer": answer,
-        "category": category,
         "metrics": metrics,
-        "quick_actions": quick_actions,
-        "result_count": result_count,
+        "community_friction_risk": metrics["community_friction_risk"],
+        "friction_category": metrics["friction_category"],
     }
 
-# Database test config
-@app.post("/api/admin/config", tags=["Admin Operations"])
-async def config_test_endpoint(is_admin: bool = Depends(verify_admin)):
-    status_info = db_manager.get_status_summary()
-    return {"message": f"Database operational. {status_info['connection_message']}"}
+@app.post("/api/social/simulate_spike", tags=["Community Sentiment"])
+async def simulate_sentiment_spike_endpoint():
+    """Simulates a sudden negative feedback surge to test automated friction triage."""
+    sentiment_engine.inject_negative_spike(count=8)
+    metrics = sentiment_engine.get_metrics()
+    return {
+        "message": "Simulated negative sentiment spike injected! Community Friction Alert is now ACTIVE.",
+        "metrics": metrics
+    }
 
-# ─────────────────────── Static Frontend Serving ───────────────────────
+@app.post("/api/social/clear_alert", tags=["Community Sentiment"])
+async def clear_sentiment_alert_endpoint():
+    """Resolves friction alert and establishes 3-minute operational cooldown."""
+    sentiment_engine.resolve_alert(cooldown_seconds=180)
+    metrics = sentiment_engine.get_metrics()
+    return {
+        "message": "Community Friction Alert cleared! Cooldown initiated.",
+        "metrics": metrics
+    }
+
+
+# PHASE 2.4: Risk Calculation & Live Stats Engine (Polled every 3s)
+@app.get("/api/admin/stats", tags=["Command Telemetry"])
+async def get_admin_stats_endpoint():
+    """Consolidated command telemetry polled every 3s by frontend."""
+    event = await db_manager.get_active_event()
+    tasks = await db_manager.get_tasks()
+    reg_raw = await db_manager.get_registration_metrics()
+    sent_metrics = sentiment_engine.get_metrics()
+
+    # Calculate Registration Velocity
+    target_reg = reg_raw.get("target_registrations", 2500)
+    curr_reg = reg_raw.get("current_registrations", 1620)
+    days_rem = max(1, reg_raw.get("days_remaining", 14))
+    daily_vel = reg_raw.get("daily_velocity", 42.5)
+    req_vel = round((target_reg - curr_reg) / days_rem, 1)
+    vel_ratio = round(daily_vel / max(0.01, req_vel), 2)
+    reg_risk = daily_vel < (0.8 * req_vel)
+    reach_gap = max(0, int(round((0.8 * req_vel - daily_vel) * days_rem)))
+
+    reg_metrics = {
+        "target_registrations": target_reg,
+        "current_registrations": curr_reg,
+        "days_remaining": days_rem,
+        "daily_velocity": daily_vel,
+        "required_daily_velocity": req_vel,
+        "velocity_ratio": vel_ratio,
+        "registration_risk": reg_risk,
+        "reach_gap": reach_gap
+    }
+
+    fric_risk = sent_metrics["community_friction_risk"]
+    fric_cat = sent_metrics["friction_category"]
+
+    # Generate Recovery Action via Gemini
+    recovery = await copilot.get_recovery_recommendation(
+        reg_risk=reg_risk,
+        fric_risk=fric_risk,
+        fric_category=fric_cat,
+        reg_gap=reach_gap
+    )
+
+    # Group tasks by role
+    roles = ["Marketing", "Partnerships", "Operations", "Programme", "Leadership"]
+    tasks_by_role: Dict[str, List[Dict[str, Any]]] = {r: [] for r in roles}
+    blocker_count = 0
+    resolved_count = 0
+
+    for t in tasks:
+        r = t.get("role", "Operations")
+        if r not in tasks_by_role:
+            tasks_by_role[r] = []
+        tasks_by_role[r].append(t)
+        if t.get("is_blocker"):
+            blocker_count += 1
+        if t.get("status") == "Resolved":
+            resolved_count += 1
+
+    return {
+        "event": event,
+        "registration_metrics": reg_metrics,
+        "registration_risk": reg_risk,
+        "community_friction_risk": fric_risk,
+        "friction_category": fric_cat,
+        "recovery_action": recovery.get("action"),
+        "recovery_action_title": recovery.get("title"),
+        "recovery_action_type": recovery.get("type"),
+        "sentiment_metrics": sent_metrics,
+        "tasks_by_role": tasks_by_role,
+        "blocker_count": blocker_count,
+        "total_tasks": len(tasks),
+        "resolved_tasks": resolved_count,
+        "system_status": {
+            "mongodb_atlas": db_manager.is_connected_to_atlas,
+            "gemini_copilot": bool(copilot.client),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    }
+
+
+# PHASE 2.5: Task Resolution & One-Click Recovery Action
+@app.patch("/api/tasks/{task_id}/resolve", response_model=TaskResolveResponse, tags=["Workflow Tasks"])
+@app.post("/api/tasks/{task_id}/resolve", response_model=TaskResolveResponse, tags=["Workflow Tasks"])
+async def resolve_task_endpoint(task_id: str):
+    """Marks a task as Resolved, clearing blocker state and recalculating risks immediately."""
+    updated = await db_manager.resolve_task(task_id)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # If resolving a blocker task, boost registration velocity slightly
+    if updated.get("role") in ["Marketing", "Partnerships"]:
+        await db_manager.update_registration_progress(added_registrations=25, delta_velocity=2.5)
+
+    stats = await get_admin_stats_endpoint()
+    return {
+        "message": f"Task '{updated.get('title')}' successfully marked as Resolved!",
+        "task": updated,
+        "registration_risk": stats["registration_risk"],
+        "community_friction_risk": stats["community_friction_risk"],
+        "recovery_action": stats["recovery_action"]
+    }
+
+@app.post("/api/admin/execute_recovery_action", tags=["Command Telemetry"])
+async def execute_recovery_action_endpoint():
+    """One-click resolution of the AI recommended recovery action from the Risk Banner."""
+    sent_metrics = sentiment_engine.get_metrics()
+    reg_raw = await db_manager.get_registration_metrics()
+
+    # 1. Clear any friction alert
+    if sent_metrics["community_friction_risk"]:
+        sentiment_engine.resolve_alert(cooldown_seconds=180)
+
+    # 2. Boost velocity to alleviate registration risk
+    target = reg_raw.get("target_registrations", 2500)
+    current = reg_raw.get("current_registrations", 1620)
+    days = max(1, reg_raw.get("days_remaining", 14))
+    needed_vel = round((target - current) / days, 1)
+
+    # Set velocity comfortably at 85% of target to clear risk
+    new_vel = round(needed_vel * 0.90, 1)
+    await db_manager.update_registration_progress(added_registrations=80, delta_velocity=(new_vel - reg_raw.get("daily_velocity", 40.0)))
+
+    # Also resolve any pending blocker in Marketing or Partnerships
+    tasks = await db_manager.get_tasks()
+    for t in tasks:
+        if t.get("is_blocker") and t.get("role") in ["Marketing", "Partnerships"]:
+            await db_manager.resolve_task(t.get("_id") or t.get("id"))
+            break
+
+    return {
+        "message": "⚡ AI Recovery Action executed! Community friction cleared and registration referral boost activated (+80 attendees, daily velocity restored)."
+    }
+
+
+# System Health
+@app.get("/api/health", response_model=HealthCheckResponse, tags=["Health"])
+async def health_check_endpoint():
+    db_summary = db_manager.get_status_summary()
+    return {
+        "status": "healthy",
+        "database_status": db_summary["connection_message"],
+        "database_uri_configured": db_summary["database_uri_configured"],
+        "gemini_ai_copilot": "Google Gemini 2.5 Flash SDK Active" if copilot.client else "Autonomous AI Copilot Engine Active",
+        "sentiment_analyzer": "Hugging Face 5-Minute Rolling Vibe Engine Active",
+        "version": "3.0.0"
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. STATIC FRONTEND SERVING
+# ─────────────────────────────────────────────────────────────────────────────
 base_dir = os.path.dirname(os.path.abspath(__file__))
 static_dir = os.path.join(os.path.dirname(base_dir), "frontend")
 if not os.path.exists(static_dir):
@@ -1341,30 +1028,6 @@ async def serve_index():
 @app.api_route("/admin.html", methods=["GET", "HEAD"], include_in_schema=False)
 async def serve_admin():
     return FileResponse(os.path.join(static_dir, "index.html"))
-
-@app.api_route("/scanner.html", methods=["GET", "HEAD"], include_in_schema=False)
-async def serve_scanner():
-    return FileResponse(os.path.join(static_dir, "scanner.html"))
-
-@app.api_route("/analytics.html", methods=["GET", "HEAD"], include_in_schema=False)
-async def serve_analytics():
-    return FileResponse(os.path.join(static_dir, "analytics.html"))
-
-@app.api_route("/attendees.html", methods=["GET", "HEAD"], include_in_schema=False)
-async def serve_attendees():
-    return FileResponse(os.path.join(static_dir, "attendees.html"))
-
-@app.api_route("/recharge.html", methods=["GET", "HEAD"], include_in_schema=False)
-async def serve_recharge():
-    return FileResponse(os.path.join(static_dir, "recharge.html"))
-
-@app.api_route("/payment.html", methods=["GET", "HEAD"], include_in_schema=False)
-async def serve_payment():
-    return FileResponse(os.path.join(static_dir, "recharge.html"))
-
-@app.api_route("/settings.html", methods=["GET", "HEAD"], include_in_schema=False)
-async def serve_settings():
-    return FileResponse(os.path.join(static_dir, "settings.html"))
 
 @app.api_route("/{file_path:path}", methods=["GET", "HEAD"], include_in_schema=False)
 async def serve_static_fallback(file_path: str):

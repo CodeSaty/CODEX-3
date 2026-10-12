@@ -1,162 +1,104 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Union
 from pydantic import BaseModel, Field
 
-# ─────────────────────── Attendees ───────────────────────
-class AttendeeBase(BaseModel):
-    name: str = Field(..., description="Full name of attendee", example="Aarav Sharma")
-    role: str = Field(..., description="Ticket tier role (General, Early Bird, VIP, Organizer, Sponsor)", example="VIP")
-    ticket_type: str = Field(..., description="Specific pass type", example="Platinum")
-    fest_coins: int = Field(1000, description="Current Fest Coin cashless balance", example=1000)
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. HACKATHON PS1 COMMAND CENTRE CORE MODELS
+# ─────────────────────────────────────────────────────────────────────────────
 
-class AttendeeCreate(AttendeeBase):
-    initial_coins: Optional[int] = Field(None, description="Optional initial Fest Coins override", example=500)
-
-class AttendeeResponse(AttendeeBase):
-    id: str = Field(..., alias="_id", description="Unique attendee ID")
-    engagement_score: int = Field(0, description="Cumulative engagement points")
-    fest_coins: int = Field(1000, description="Current Fest Coin balance")
-    qr_code_hash: str = Field(..., description="Unique hexadecimal QR pass identifier")
-    status: str = Field("active", description="Status: 'active' or 'terminated'")
-    terminated_at: Optional[str] = Field(None, description="ISO timestamp if terminated")
-    termination_reason: Optional[str] = Field(None, description="Reason for pass revocation")
-    registered_at: str = Field(..., description="ISO registration timestamp")
+class Event(BaseModel):
+    id: Optional[str] = Field(None, alias="_id", description="Unique Event identifier")
+    title: str = Field(..., description="Event Title", example="Hackingly AI Tech Summit 2026")
+    format: str = Field("Hybrid", description="Event Format: In-person, Hybrid, or Virtual", example="Hybrid")
+    target_scale: int = Field(2500, description="Target attendee capacity / scale", example=2500)
+    start_date: str = Field(..., description="Event Start Date (ISO or string)", example="2026-11-15")
+    venue: str = Field(..., description="Venue name or physical/virtual platform", example="Cyber Arena & Spatial Hub")
+    objectives: str = Field(..., description="Primary objectives and goals of the event", example="Unite 2,500 builders, launch 50 AI sponsor challenges, and achieve 95% attendee engagement.")
+    created_at: Optional[str] = Field(None, description="ISO timestamp when event plan was initialized")
 
     class Config:
         populate_by_name = True
 
-class AttendeeRegisterResult(BaseModel):
-    message: str
-    qr_code_hash: str
-    attendee: Dict[str, Any]
 
-class TerminateQrRequest(BaseModel):
-    reason: Optional[str] = Field("Administrative revocation", description="Reason for revoking pass")
-
-class ReinstateQrRequest(BaseModel):
-    regenerate: Optional[bool] = Field(False, description="Whether to generate a fresh QR token hash")
-
-# ─────────────────────── Scans & Checkpoints ───────────────────────
-class ScanRequest(BaseModel):
-    qr_code_hash: str = Field(..., description="Attendee QR code hash", example="a9f4c3b2810e746d")
-    zone_name: str = Field(..., description="Target festival zone", example="Main Stage")
-
-class ZoneLogResponse(BaseModel):
-    id: str = Field(..., alias="_id")
-    attendee_id: str
-    qr_code_hash: str
-    role: str
-    zone_name: str
-    timestamp: str
-    seeded: Optional[bool] = False
-    simulated: Optional[bool] = False
+class Task(BaseModel):
+    id: Optional[str] = Field(None, alias="_id", description="Unique Task identifier")
+    title: str = Field(..., description="Actionable task title", example="Finalize Title Sponsor Agreement with Cloud Provider")
+    role: str = Field(..., description="Role department: Marketing, Partnerships, Operations, Programme, Leadership", example="Partnerships")
+    status: str = Field("Pending", description="Task Status: Pending, In Progress, Resolved", example="In Progress")
+    is_blocker: bool = Field(False, description="Flag indicating if this task is a critical blocker")
+    deadline: str = Field(..., description="Deadline timestamp or formatted date", example="2026-10-25T18:00:00Z")
+    description: Optional[str] = Field(None, description="Detailed actionable operational notes")
+    resolved_at: Optional[str] = Field(None, description="ISO timestamp when task was resolved")
 
     class Config:
         populate_by_name = True
 
-class ScanResponse(BaseModel):
+
+class RegistrationMetrics(BaseModel):
+    target_registrations: int = Field(2500, description="Target total registrations", example=2500)
+    current_registrations: int = Field(1620, description="Current confirmed registrations", example=1620)
+    days_remaining: int = Field(14, description="Days remaining until the event", example=14)
+    daily_velocity: float = Field(42.5, description="Current daily registration run rate / pace", example=42.5)
+    required_daily_velocity: Optional[float] = Field(None, description="Required run rate to hit target registrations")
+    velocity_ratio: Optional[float] = Field(None, description="Ratio of current velocity to required velocity")
+    registration_risk: bool = Field(False, description="True if current daily velocity paces below 80% of target")
+    reach_gap: Optional[int] = Field(0, description="Quantified registrations lag / deficit")
+
+
+class SentimentPost(BaseModel):
+    id: Optional[str] = Field(None, description="Unique post identifier")
+    text: str = Field(..., description="Content of the social post or review")
+    sentiment: str = Field("neutral", description="Sentiment rating: positive, negative, or neutral")
+    source: str = Field("Twitter", description="Source channel: Twitter, Discord, or Feedback")
+    timestamp: str = Field(..., description="Timestamp of post creation")
+    author: Optional[str] = Field("@attendee", description="User handle or author name")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. API REQUEST & RESPONSE MODELS
+# ─────────────────────────────────────────────────────────────────────────────
+
+class GeneratePlanRequest(BaseModel):
+    title: Optional[str] = Field("Hackingly AI Innovations Summit 2026", description="Event Title")
+    format: Optional[str] = Field("Hybrid", description="In-person, Hybrid, or Virtual")
+    target_scale: Optional[int] = Field(2500, description="Target attendee capacity")
+    start_date: Optional[str] = Field(None, description="Start date (YYYY-MM-DD)")
+    venue: Optional[str] = Field("Cyber Arena & Virtual Metaverse", description="Event Venue")
+    objectives: Optional[str] = Field(None, description="Raw event brief or executive goals")
+
+
+class GeneratePlanResponse(BaseModel):
     message: str
-    attendee: Dict[str, Any]
-    zone_log: Dict[str, Any]
+    event: Event
+    tasks_generated: int
+    tasks: List[Task]
+    registration_metrics: RegistrationMetrics
 
-# ─────────────────────── Fest Coin Cashless Transactions ───────────────────────
-class TransactionRequest(BaseModel):
-    qr_code_hash: Optional[str] = Field(None, description="Attendee QR hash")
-    customer_id: Optional[str] = Field(None, description="Customer or Visitor ID from retail dataset")
-    attendee_id: Optional[str] = Field(None, description="Internal Attendee ID")
-    amount: int = Field(..., gt=0, description="Amount of Fest Coins to deduct")
-    stall_name: Optional[str] = Field("Vendor Stall", description="Name of vendor stall")
-    zone_name: Optional[str] = Field("Food Court", description="Festival zone where transaction occurred")
-    category: Optional[str] = Field(None, description="Transaction retail category")
 
-class TransactionResponse(BaseModel):
+class TaskResolveResponse(BaseModel):
     message: str
-    transaction: Dict[str, Any]
-    attendee: Dict[str, Any]
+    task: Task
+    registration_risk: bool
+    community_friction_risk: bool
+    recovery_action: Optional[str] = None
 
-# ─────────────────────── Live Social Sentiment & Triage ───────────────────────
-class SocialPost(BaseModel):
-    id: str
-    text: str
-    sentiment: str = Field("neutral", description="positive, neutral, or negative")
-    author: Optional[str] = "Festival Guest"
-    timestamp: str
-
-class FrictionAlert(BaseModel):
-    active: bool = False
-    negative_count_60s: int = 0
-    threshold: int = 8
-    window_seconds: int = 60
-    severity: str = "NORMAL"
-    message: str = "Sentiment is nominal across festival grounds."
-    triggered_at: Optional[str] = None
-    cooldown_until: Optional[str] = None
-
-# ─────────────────────── Rupee-to-Coin Cashless Top-up ───────────────────────
-class RechargeRequest(BaseModel):
-    attendee_id: Optional[str] = Field(None, description="Attendee ID")
-    qr_code_hash: Optional[str] = Field(None, description="Attendee QR hash")
-    inr_amount: int = Field(..., gt=0, description="Amount in Indian Rupees to top up")
-    payment_method: Optional[str] = Field("UPI", description="Payment method: UPI, Card, NetBanking, Cash Desk")
-    operator_mode: Optional[str] = Field("self_service", description="'self_service' or 'staff_desk'")
-    operator_name: Optional[str] = Field(None, description="Name of desk cashier or portal")
-    notes: Optional[str] = Field(None, description="Optional payment reference or cashier note")
-
-class RechargeResponse(BaseModel):
-    message: str
-    recharge: Dict[str, Any]
-    attendee: Dict[str, Any]
-
-class FinancialSummary(BaseModel):
-    total_inr_collected: int
-    total_coins_issued: int
-    conversion_ratio: str = "1 Rupee = 1 Fest Coin"
-    total_transactions: int
-    method_counts: Dict[str, int]
-    mode_counts: Dict[str, int]
-
-class RechargesListResponse(BaseModel):
-    recharges: List[Dict[str, Any]]
-    summary: FinancialSummary
-
-# ─────────────────────── Emergency Incidents & Triage ───────────────────────
-class IncidentCreate(BaseModel):
-    type: str = Field(..., description="Medical, Security, or Logistics", example="Medical")
-    zone_name: Optional[str] = Field("Main Stage", description="Festival zone", example="Cultural Pavilion")
-    notes: Optional[str] = Field(None, description="Specific incident notes", example="Heat exhaustion near gate 2")
-
-class IncidentResponse(BaseModel):
-    message: str
-    incident: Dict[str, Any]
-
-# ─────────────────────── Crowd Crushing Prevention & Diversion ───────────────────────
-class DiversionCreate(BaseModel):
-    zone_name: str = Field(..., description="Congested origin zone", example="Cultural Pavilion")
-    target_zone: Optional[str] = Field("Food Court", description="Destination relief zone", example="Food Court")
-    message: Optional[str] = Field(None, description="Broadcast push offer message", example="50% discount on artisan snacks at Food Court!")
-
-class DiversionResponse(BaseModel):
-    message: str
-    diversion: Dict[str, Any]
-
-class ThrottleRequest(BaseModel):
-    zone_name: str = Field(..., description="Overloaded zone to divert")
-    target_zone: Optional[str] = Field(None, description="Target destination zone")
-    count: Optional[int] = Field(150, description="Number of scans to re-route")
-
-# ─────────────────────── NLP & AI Assistant ───────────────────────
-class NLPQueryRequest(BaseModel):
-    query: str = Field(..., description="Natural language question or command", example="Which zone has the biggest bottleneck right now?")
 
 class MetricItem(BaseModel):
     label: str
     value: str
     alert: Optional[bool] = False
 
+
 class QuickActionItem(BaseModel):
     label: str
     url: Optional[str] = None
     action: Optional[str] = None
+    query: Optional[str] = None
+
+
+class NLPQueryRequest(BaseModel):
+    query: str = Field(..., description="Natural language question or command", example="What are the critical blockers in Partnerships?")
+
 
 class NLPQueryResponse(BaseModel):
     query: str
@@ -167,39 +109,69 @@ class NLPQueryResponse(BaseModel):
     quick_actions: List[QuickActionItem] = []
     result_count: int = 0
 
-# ─────────────────────── Admin Stats ───────────────────────
-class ZoneStatItem(BaseModel):
-    zone_name: str
-    total_scans: int
-    recent_scans: int
-    capacity_warning: bool
-    active_diversion: Optional[Dict[str, Any]] = None
 
 class AdminStatsResponse(BaseModel):
-    zones: List[ZoneStatItem]
-    recent_logs: List[Dict[str, Any]]
-    total_attendees: int
-    total_engagement: int
-    financials: Dict[str, Any]
-    active_incidents: List[Dict[str, Any]]
-    active_diversions: List[Dict[str, Any]]
+    event: Optional[Dict[str, Any]] = None
+    registration_metrics: Dict[str, Any]
+    registration_risk: bool
+    community_friction_risk: bool
+    friction_category: Optional[str] = None
+    recovery_action: Optional[str] = None
+    recovery_action_title: Optional[str] = None
+    recovery_action_type: Optional[str] = None
+    sentiment_metrics: Dict[str, Any]
+    tasks_by_role: Dict[str, List[Dict[str, Any]]]
+    blocker_count: int
+    total_tasks: int
+    resolved_tasks: int
+    system_status: Dict[str, Any]
 
-# ─────────────────────── Attendee History ───────────────────────
-class AttendeeHistoryResponse(BaseModel):
-    attendee: Dict[str, Any]
-    recharges: List[Dict[str, Any]]
-    transactions: List[Dict[str, Any]]
-    scans: List[Dict[str, Any]]
-    summary: Dict[str, Any]
 
-# ─────────────────────── System Health & Config ───────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. ATTENDEE & CASHLESS COMPATIBILITY MODELS (Retained for Full Integration)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class AttendeeBase(BaseModel):
+    name: str = Field(..., description="Full name of attendee", example="Aarav Sharma")
+    role: str = Field("General", description="Ticket tier role (General, Early Bird, VIP, Organizer, Sponsor)")
+    ticket_type: str = Field("Standard", description="Specific pass type")
+    fest_coins: int = Field(1000, description="Current Fest Coin cashless balance")
+
+class AttendeeCreate(AttendeeBase):
+    initial_coins: Optional[int] = Field(None, description="Optional initial Fest Coins override")
+
+class AttendeeResponse(AttendeeBase):
+    id: str = Field(..., alias="_id", description="Unique attendee ID")
+    engagement_score: int = Field(0, description="Cumulative engagement points")
+    qr_code_hash: str = Field(..., description="Unique hexadecimal QR pass identifier")
+    status: str = Field("active", description="Status: 'active' or 'terminated'")
+    registered_at: str = Field(..., description="ISO registration timestamp")
+
+    class Config:
+        populate_by_name = True
+
+class ScanRequest(BaseModel):
+    qr_code_hash: str = Field(..., description="Attendee QR code hash")
+    zone_name: str = Field(..., description="Target festival zone")
+
+class RechargeRequest(BaseModel):
+    attendee_id: Optional[str] = Field(None, description="Attendee ID")
+    qr_code_hash: Optional[str] = Field(None, description="Attendee QR hash")
+    inr_amount: int = Field(..., gt=0, description="Amount in Indian Rupees to top up")
+    payment_method: Optional[str] = Field("UPI", description="Payment method: UPI, Card, NetBanking")
+
+class IncidentCreate(BaseModel):
+    type: str = Field(..., description="Medical, Security, or Logistics")
+    zone_name: Optional[str] = Field("Main Stage", description="Festival zone")
+    notes: Optional[str] = Field(None, description="Specific incident notes")
+
 class HealthCheckResponse(BaseModel):
     status: str
     framework: str = "FastAPI (Python 3.11)"
     server: str = "Uvicorn ASGI"
-    validation: str = "Pydantic v2"
     database_driver: str = "Motor (async MongoDB Atlas) with Resilient Fallback"
     database_status: str
     database_uri_configured: bool
-    active_connections: int
-    version: str = "2.0.0"
+    gemini_ai_copilot: str = "Google Gemini 2.5/3.8 Flash SDK Active"
+    sentiment_analyzer: str = "Hugging Face 5-Minute Rolling Vibe Engine Active"
+    version: str = "3.0.0"
