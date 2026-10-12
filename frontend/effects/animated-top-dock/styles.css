@@ -1,0 +1,318 @@
+/* ==========================================================================
+   Animated Top Dock — Scoped Glass & Spring Layout Styles
+   Sable proximity-spring menu in four fits:
+   - Centred Dock (sable)
+   - Modern Command Bar
+   - Retro Pixel Terminal
+   - Vertical Refracting Glass Rail
+   ========================================================================== */
+
+@import url('../fonts/fragment-mono.css');
+
+:root {
+  --dock-bg: rgba(14, 18, 24, 0.76);
+  --dock-border: rgba(255, 255, 255, 0.12);
+  --dock-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --dock-item-color: #a1a1aa;
+  --dock-item-hover-color: #ffffff;
+  --dock-item-hover-bg: rgba(255, 255, 255, 0.08);
+  --dock-paper-bg: #f5f2eb;
+  --dock-paper-color: #12151a;
+  --dock-paper-border: rgba(0, 0, 0, 0.14);
+  --dock-radius: 9999px;
+  --dock-font: var(--font-fragment-mono, 'Fragment Mono', 'Space Grotesk', monospace);
+}
+
+/* Base Host Frame */
+.top-dock-host {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  font-family: var(--dock-font);
+  z-index: 50;
+  box-sizing: border-box;
+}
+
+/* Inner Dock Shell */
+.top-dock-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--dock-bg);
+  border: 1px solid var(--dock-border);
+  border-radius: var(--dock-radius);
+  box-shadow: var(--dock-shadow);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  overflow: visible;
+}
+
+/* Background Canvas Pass Container */
+.top-dock-field-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* Brand / Logo Item */
+.top-dock-brand {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f43f5e;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.top-dock-brand:hover {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.4);
+  transform: scale(1.06);
+  color: #fb7185;
+}
+
+.top-dock-brand:active {
+  transform: scale(0.94);
+}
+
+.top-dock-brand svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.top-dock-brand:hover svg {
+  transform: rotate(30deg);
+}
+
+/* Divider */
+.top-dock-divider {
+  position: relative;
+  z-index: 2;
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Nav Menu Items List */
+.top-dock-items {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Individual Item Button */
+.top-dock-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  color: var(--dock-item-color);
+  font-family: var(--dock-font);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transform-origin: center top;
+  will-change: transform, width, height, background-color;
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.top-dock-item:hover {
+  color: var(--dock-item-hover-color);
+  background: var(--dock-item-hover-bg);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.top-dock-item:focus-visible {
+  outline: 2px solid #f43f5e;
+  outline-offset: 2px;
+}
+
+.top-dock-item svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.8;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, stroke 0.2s ease;
+}
+
+.top-dock-item:hover svg {
+  transform: scale(1.12);
+}
+
+.top-dock-label {
+  display: inline-block;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   SELECTED-ITEM PAPER STATE
+   Authored high-contrast tactile paper sheet highlight
+   ========================================================================== */
+.top-dock-item.is-selected {
+  background: var(--dock-paper-bg) !important;
+  color: var(--dock-paper-color) !important;
+  border-color: var(--dock-paper-border) !important;
+  box-shadow: 0 3px 12px -2px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  font-weight: 600;
+}
+
+.top-dock-item.is-selected svg {
+  stroke: var(--dock-paper-color) !important;
+}
+
+.top-dock-item.is-selected::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: #f43f5e;
+  box-shadow: 0 0 6px #f43f5e;
+}
+
+/* ==========================================================================
+   FIT VARIANTS: centred | modern | retro | glass | vertical
+   ========================================================================== */
+
+/* 1. Fit: Centred (Authored Sable Dock) */
+.top-dock-host.fit-centred .top-dock-container,
+.top-dock-host.fit-sable .top-dock-container {
+  border-radius: 9999px;
+  margin: 0 auto;
+}
+
+/* 2. Fit: Modern (Command Bar Strip) */
+.top-dock-host.fit-modern .top-dock-container {
+  border-radius: 14px;
+  padding: 6px 14px;
+  background: rgba(12, 16, 22, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.top-dock-host.fit-modern .top-dock-item {
+  border-radius: 8px;
+}
+
+/* 3. Fit: Retro (Pixel-Terminal Strip) */
+.top-dock-host.fit-retro .top-dock-container {
+  border-radius: 4px;
+  background: rgba(6, 12, 8, 0.92);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), inset 0 0 12px rgba(16, 185, 129, 0.08);
+}
+
+.top-dock-host.fit-retro .top-dock-brand {
+  border-radius: 3px;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+.top-dock-host.fit-retro .top-dock-item {
+  border-radius: 3px;
+  color: #34d399;
+}
+
+.top-dock-host.fit-retro .top-dock-item:hover {
+  background: rgba(16, 185, 129, 0.18);
+  color: #a7f3d0;
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.top-dock-host.fit-retro .top-dock-item.is-selected {
+  background: #10b981 !important;
+  color: #022c22 !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.8) !important;
+}
+
+.top-dock-host.fit-retro .top-dock-item.is-selected svg {
+  stroke: #022c22 !important;
+}
+
+/* 4. Fit: Glass / Vertical (Refracting Glass Rail) */
+.top-dock-host.fit-vertical .top-dock-container {
+  flex-direction: column;
+  border-radius: 20px;
+  padding: 12px 6px;
+  width: auto;
+}
+
+.top-dock-host.fit-vertical .top-dock-divider {
+  width: 20px;
+  height: 1px;
+  margin: 4px 0;
+}
+
+.top-dock-host.fit-vertical .top-dock-items {
+  flex-direction: column;
+  gap: 6px;
+}
+
+.top-dock-host.fit-vertical .top-dock-item {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0 12px;
+}
+
+/* ==========================================================================
+   ADAPTIVE CAPABILITY CHECKS:
+   Coarse Pointers, Small Screens (< 768px), and Prefers-Reduced-Motion
+   ========================================================================== */
+@media (pointer: coarse), (max-width: 768px) {
+  .top-dock-item {
+    transform: none !important;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-dock-item {
+    transform: none !important;
+    transition: none !important;
+  }
+  .top-dock-brand svg {
+    transition: none !important;
+  }
+}

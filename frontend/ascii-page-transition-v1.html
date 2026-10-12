@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sable Animated Top Dock — Authored Proximity-Spring Menu</title>
+  <meta name="description" content="Sable proximity-spring menu in four fits: centred dock, modern command bar, fitted pixel-terminal strip, and vertical refracting Three.js glass rail.">
+  <link rel="stylesheet" href="/effects/animated-top-dock/styles.css">
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      min-height: 100vh;
+      background-color: transparent !important;
+      color: #e4e4e7;
+      font-family: 'Fragment Mono', 'Outfit', monospace;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .demo-stage {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+    }
+    .dock-viewport {
+      width: 100%;
+      min-height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      margin-bottom: 30px;
+      background: radial-gradient(circle at 50% 50%, rgba(24, 28, 40, 0.45) 0%, transparent 70%);
+      border-radius: 24px;
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+    .panel-card {
+      background: rgba(18, 22, 32, 0.82);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.5);
+    }
+    .fit-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #d4d4d8;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .fit-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+    }
+    .fit-btn.active {
+      background: #f43f5e;
+      border-color: #f43f5e;
+      color: #fff;
+      box-shadow: 0 0 16px rgba(244, 63, 94, 0.5);
+      font-weight: 600;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .metric-box {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .metric-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #71717a;
+      margin-bottom: 4px;
+    }
+    .metric-val {
+      font-size: 16px;
+      font-weight: 600;
+      color: #10b981;
+    }
+    .pointer-reticle {
+      position: fixed;
+      pointer-events: none;
+      width: 244px;
+      height: 244px;
+      border-radius: 50%;
+      border: 1px dashed rgba(244, 63, 94, 0.35);
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="reticle" class="pointer-reticle"></div>
+
+  <div class="demo-stage">
+    <div style="text-align: center; margin-bottom: 28px;">
+      <div style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 9999px; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); font-size: 11px; color: #fb7185; margin-bottom: 12px;">
+        <span>Sable Proximity-Spring Architecture</span>
+      </div>
+      <h1 style="font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: #fff; margin-bottom: 8px;">
+        Animated Top Dock
+      </h1>
+      <p style="font-size: 13px; color: #a1a1aa; max-width: 600px; margin: 0 auto; line-height: 1.5;">
+        DOM + CSS + WebGL + Three.js r128 proximity-spring interaction with smoothstep horizontal influence (122px radius), 17px/16px growth bounds, and paper selected state.
+      </p>
+    </div>
+
+    <!-- FIT SWITCHER CONTROLS -->
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 24px;">
+      <button class="fit-btn active" data-fit="centred">1. Centred (Sable)</button>
+      <button class="fit-btn" data-fit="modern">2. Modern Command Bar</button>
+      <button class="fit-btn" data-fit="retro">3. Retro Pixel Field</button>
+      <button class="fit-btn" data-fit="vertical">4. Vertical Glass Rail</button>
+    </div>
+
+    <!-- DOCK VIEWPORT -->
+    <div class="dock-viewport" id="dock-anchor">
+      <!-- AnimatedTopDock instance injected here -->
+    </div>
+
+    <!-- TELEMETRY & BEHAVIOR INSPECTOR -->
+    <div class="panel-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <div>
+          <h2 style="font-size: 14px; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.08em;">Physics & Interaction Telemetry</h2>
+          <span style="font-size: 11px; color: #71717a;">Proximity 122px · Spring 0.19 · Damping 0.70</span>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button id="toggle-reticle-btn" class="fit-btn" style="font-size: 10px; padding: 4px 10px;">Toggle 122px Radius</button>
+          <button id="reboot-dock-btn" class="fit-btn" style="font-size: 10px; padding: 4px 10px;">Test Teardown / Rebuild</button>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric-box">
+          <div class="metric-title">Pointer Coordinates</div>
+          <div class="metric-val" id="metric-pointer">0 px, 0 px</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-title">Active Fit Mode</div>
+          <div class="metric-val" id="metric-fit" style="color: #38bdf8;">Centred (Sable)</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-title">Selected State</div>
+          <div class="metric-val" id="metric-selected" style="color: #fbbf24;">SYSTEM (Paper)</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-title">Hardware Capabilities</div>
+          <div class="metric-val" id="metric-caps" style="color: #a78bfa;">Fine Pointer / 60 FPS</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 32px; text-align: center;">
+      <a href="/" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #10b981; text-decoration: none; border-bottom: 1px dashed #10b981; padding-bottom: 2px;">
+        <span>← Return to Command Centre</span>
+      </a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createAnimatedTopDock } from '/effects/animated-top-dock/AnimatedTopDock.js';
+
+    const anchor = document.getElementById('dock-anchor');
+    const metricPointer = document.getElementById('metric-pointer');
+    const metricFit = document.getElementById('metric-fit');
+    const metricSelected = document.getElementById('metric-selected');
+    const reticle = document.getElementById('reticle');
+    let showReticle = false;
+
+    let currentFit = 'centred';
+    let dock = null;
+
+    function buildDock(fit) {
+      if (dock) dock.dispose();
+      dock = createAnimatedTopDock(anchor, {
+        fit: fit,
+        proximity: 122,
+        spring: 0.19,
+        damping: 0.70,
+        activeItem: 0,
+        onItemClick: (item, idx) => {
+          metricSelected.textContent = `${item.label} (Paper State)`;
+        }
+      });
+      metricFit.textContent = fit.toUpperCase();
+    }
+
+    buildDock(currentFit);
+
+    // Fit switching
+    document.querySelectorAll('.fit-btn[data-fit]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.fit-btn[data-fit]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFit = btn.dataset.fit;
+        buildDock(currentFit);
+      });
+    });
+
+    // Pointer telemetry
+    window.addEventListener('pointermove', (e) => {
+      metricPointer.textContent = `${e.clientX} px, ${e.clientY} px`;
+      if (showReticle) {
+        reticle.style.left = `${e.clientX}px`;
+        reticle.style.top = `${e.clientY}px`;
+        reticle.style.opacity = '1';
+      }
+    });
+
+    document.getElementById('toggle-reticle-btn').addEventListener('click', () => {
+      showReticle = !showReticle;
+      reticle.style.opacity = showReticle ? '1' : '0';
+    });
+
+    document.getElementById('reboot-dock-btn').addEventListener('click', () => {
+      buildDock(currentFit);
+    });
+  </script>
+</body>
+</html>

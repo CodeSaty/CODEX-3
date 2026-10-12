@@ -1,0 +1,16 @@
+/* ==========================================================================
+   Fragment Mono Font Definition
+   Exact embedded Fragment Mono font styling with high-fidelity fallback stack
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&display=swap');
+
+:root {
+  --font-fragment-mono: 'Fragment Mono', 'Space Grotesk', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+.font-fragment-mono {
+  font-family: var(--font-fragment-mono);
+  font-feature-settings: 'tnum' 1, 'calt' 1, 'ss01' 1;
+  letter-spacing: 0.08em;
+}
