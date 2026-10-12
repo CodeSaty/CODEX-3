@@ -21,7 +21,9 @@ from fastapi import FastAPI, Request, Response, HTTPException, Header, Depends, 
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import ValidationError
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
 
 from models import (
     AttendeeCreate, AttendeeResponse, AttendeeRegisterResult,
@@ -1374,5 +1376,5 @@ async def serve_static_fallback(file_path: str):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 3000))
-    host = os.getenv("HOST", "127.0.0.1")
-    uvicorn.run("main:app", host=host, port=port, reload=False)
+    reload_mode = os.getenv("RELOAD", "false").lower() in ("true", "1", "yes")
+    uvicorn.run("main:app", host=host, port=port, reload=reload_mode)
