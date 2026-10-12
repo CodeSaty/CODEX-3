@@ -133,9 +133,9 @@ export function createTopDockController(container, options = {}) {
       const growthH = state.value * 16;
 
       el.style.transform = `translateY(${translateY.toFixed(2)}px)`;
-      el.style.paddingLeft = `${(13 + growthW * 0.5).toFixed(2)}px`;
-      el.style.paddingRight = `${(13 + growthW * 0.5).toFixed(2)}px`;
-      el.style.height = `${(34 + growthH * 0.35).toFixed(2)}px`;
+      el.style.paddingLeft = `${(14 + growthW * 0.5).toFixed(2)}px`;
+      el.style.paddingRight = `${(14 + growthW * 0.5).toFixed(2)}px`;
+      el.style.height = `${(36 + growthH * 0.35).toFixed(2)}px`;
       el.style.setProperty('--spring-val', state.value.toFixed(3));
     });
 

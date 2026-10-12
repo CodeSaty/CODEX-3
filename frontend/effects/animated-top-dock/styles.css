@@ -132,17 +132,17 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 34px;
-  padding: 0 13px;
+  height: 36px;
+  padding: 0 14px;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid transparent;
-  color: var(--dock-item-color);
-  font-family: var(--dock-font);
-  font-size: 11px;
+  color: #d1d5db;
+  font-family: 'Outfit', var(--dock-font), sans-serif;
+  font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   text-decoration: none;
   cursor: pointer;
   outline: none;
@@ -154,9 +154,9 @@
 }
 
 .top-dock-item:hover {
-  color: var(--dock-item-hover-color);
-  background: var(--dock-item-hover-bg);
-  border-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .top-dock-item:focus-visible {
@@ -165,8 +165,8 @@
 }
 
 .top-dock-item svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   stroke-width: 1.8;
   flex-shrink: 0;
   transition: transform 0.2s ease, stroke 0.2s ease;
@@ -182,19 +182,18 @@
 }
 
 /* ==========================================================================
-   SELECTED-ITEM PAPER STATE
-   Authored high-contrast tactile paper sheet highlight
+   SELECTED-ITEM ACTIVE STATE (Matching Authored Vibrant Pill)
    ========================================================================== */
 .top-dock-item.is-selected {
-  background: var(--dock-paper-bg) !important;
-  color: var(--dock-paper-color) !important;
-  border-color: var(--dock-paper-border) !important;
-  box-shadow: 0 3px 12px -2px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  background: linear-gradient(135deg, #e11d48, #ea580c) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 18px -2px rgba(225, 29, 72, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
   font-weight: 600;
 }
 
 .top-dock-item.is-selected svg {
-  stroke: var(--dock-paper-color) !important;
+  stroke: #ffffff !important;
 }
 
 .top-dock-item.is-selected::after {
@@ -203,11 +202,11 @@
   bottom: -4px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 9999px;
-  background: #f43f5e;
-  box-shadow: 0 0 6px #f43f5e;
+  background: #fbbf24;
+  box-shadow: 0 0 8px #fbbf24;
 }
 
 /* ==========================================================================

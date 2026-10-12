@@ -76,11 +76,11 @@ export const AUTHORED_ICONS = {
 };
 
 export const DEFAULT_DOCK_ITEMS = [
-  { id: 'overview', label: 'OVERVIEW', href: '/', icon: 'OVERVIEW', description: 'Executive Command Overview' },
-  { id: 'workflows', label: 'WORKFLOWS', href: '/workflows.html', icon: 'WORKFLOWS', description: 'Cross-Functional Role Boards' },
-  { id: 'analytics', label: 'ANALYTICS', href: '/analytics.html', icon: 'ANALYTICS', description: 'Velocity & Trajectory Analytics' },
-  { id: 'sentiment', label: 'SENTIMENT', href: '/sentiment.html', icon: 'SENTIMENT', description: 'Community Sentiment Radar' },
-  { id: 'copilot', label: 'COPILOT', href: '/copilot.html', icon: 'COPILOT', description: 'Gemini AI Copilot War Room' },
+  { id: 'overview', label: 'Overview', href: '/', icon: 'OVERVIEW', description: 'Executive System Overview' },
+  { id: 'workflows', label: 'Workflows', href: '/workflows.html', icon: 'WORKFLOWS', description: 'Cross-Functional Role Boards' },
+  { id: 'sentiment', label: 'Sentiment Radar', href: '/sentiment.html', icon: 'SENTIMENT', description: 'Community Sentiment Radar' },
+  { id: 'analytics', label: 'Velocity & Analytics', href: '/analytics.html', icon: 'ANALYTICS', description: 'Registration Velocity & Trajectory' },
+  { id: 'copilot', label: 'AI Copilot', href: '/copilot.html', icon: 'COPILOT', description: 'Gemini AI Copilot War Room' },
 ];
 
 /**
