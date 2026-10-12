@@ -95,6 +95,8 @@ export function createAnimatedTopDock(hostEl, options = {}) {
     items = DEFAULT_DOCK_ITEMS,
     activeItem = null,
     onItemClick = null,
+    showBrand = false,
+    showIcons = false,
   } = options;
 
   const isVertical = fit === 'vertical';
@@ -112,22 +114,23 @@ export function createAnimatedTopDock(hostEl, options = {}) {
   fieldContainer.className = 'top-dock-field-canvas';
   container.appendChild(fieldContainer);
 
-  // Logo Brand Control
-  const brandBtn = document.createElement('button');
-  brandBtn.type = 'button';
-  brandBtn.className = 'top-dock-brand';
-  brandBtn.setAttribute('aria-label', 'Command Centre Core');
-  brandBtn.innerHTML = AUTHORED_ICONS.brand;
-  brandBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    window.location.href = '/';
-  });
-  container.appendChild(brandBtn);
+  // Logo Brand Control (optional, default hidden for clean pill navigation)
+  if (showBrand) {
+    const brandBtn = document.createElement('button');
+    brandBtn.type = 'button';
+    brandBtn.className = 'top-dock-brand';
+    brandBtn.setAttribute('aria-label', 'Command Centre Core');
+    brandBtn.innerHTML = AUTHORED_ICONS.brand;
+    brandBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.href = '/';
+    });
+    container.appendChild(brandBtn);
 
-  // Divider
-  const divider = document.createElement('div');
-  divider.className = 'top-dock-divider';
-  container.appendChild(divider);
+    const divider = document.createElement('div');
+    divider.className = 'top-dock-divider';
+    container.appendChild(divider);
+  }
 
   // Menu items list
   const ul = document.createElement('ul');
@@ -137,7 +140,9 @@ export function createAnimatedTopDock(hostEl, options = {}) {
   const itemButtons = [];
 
   // Determine current active item from URL pathname if not explicitly passed
-  const currentPath = (window.location.pathname || '').replace(/\/$/, '') || '/';
+  const rawPath = (window.location.pathname || '').toLowerCase();
+  const currentPath = rawPath.replace(/\/$/, '') || '/';
+  const cleanPath = currentPath.replace(/\.html$/, '');
 
   items.forEach((item, index) => {
     const li = document.createElement('li');
@@ -151,19 +156,32 @@ export function createAnimatedTopDock(hostEl, options = {}) {
     a.title = item.description || item.label;
 
     const iconSvg = AUTHORED_ICONS[item.icon] || AUTHORED_ICONS[item.id?.toUpperCase()] || AUTHORED_ICONS.OVERVIEW;
-    a.innerHTML = `${iconSvg}<span class="top-dock-label">${item.label}</span>`;
+    if (showIcons) {
+      a.innerHTML = `${iconSvg}<span class="top-dock-label">${item.label}</span>`;
+    } else {
+      a.innerHTML = `<span class="top-dock-label">${item.label}</span>`;
+    }
 
-    const itemPath = (item.href || '').replace(/\/$/, '') || '/';
+    const itemPath = (item.href || '').toLowerCase().replace(/\/$/, '') || '/';
+    const itemClean = itemPath.replace(/\.html$/, '');
     let isSelected = false;
 
     if (activeItem !== null && activeItem !== undefined) {
-      isSelected = (typeof activeItem === 'number' && index === activeItem) ||
-                   (typeof activeItem === 'string' && (item.id === activeItem || item.href === activeItem));
+      if (typeof activeItem === 'number') {
+        isSelected = (index === activeItem);
+      } else {
+        const needle = String(activeItem).toLowerCase().replace(/^\//, '').replace(/\.html$/, '');
+        const targetId = (item.id || '').toLowerCase();
+        const targetClean = itemClean.replace(/^\//, '');
+        isSelected = (targetId === needle || targetClean === needle);
+      }
     } else {
       // Auto-detect from current URL
-      isSelected = (currentPath === itemPath) ||
-                   ((currentPath === '/index.html' || currentPath === '/admin.html') && itemPath === '/') ||
-                   (currentPath.endsWith(itemPath) && itemPath !== '/');
+      if (itemClean === '/' || itemClean === '') {
+        isSelected = (cleanPath === '/' || cleanPath === '' || cleanPath === '/index' || cleanPath === '/admin');
+      } else {
+        isSelected = (cleanPath === itemClean) || cleanPath.endsWith(itemClean);
+      }
     }
 
     if (isSelected) {

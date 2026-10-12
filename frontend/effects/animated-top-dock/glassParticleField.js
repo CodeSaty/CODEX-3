@@ -4,9 +4,23 @@
  * Used by the Glass / Vertical fits of the Animated Top Dock.
  */
 
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+function getThree() {
+  if (typeof window !== 'undefined' && window.THREE) return window.THREE;
+  return null;
+}
 
 export function createGlassParticleField(container) {
+  const THREE = getThree();
+  if (!THREE) {
+    return {
+      start() {},
+      stop() {},
+      resize() {},
+      updatePointer() {},
+      dispose() {}
+    };
+  }
+
   const canvas = document.createElement('canvas');
   canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;border-radius:inherit;';
   container.appendChild(canvas);

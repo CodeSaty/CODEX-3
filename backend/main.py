@@ -1021,20 +1021,34 @@ if not os.path.exists(static_dir):
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+NO_CACHE_HEADERS = {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
 @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 async def serve_index():
-    return FileResponse(os.path.join(static_dir, "index.html"))
+    return FileResponse(os.path.join(static_dir, "index.html"), headers=NO_CACHE_HEADERS)
 
 @app.api_route("/admin.html", methods=["GET", "HEAD"], include_in_schema=False)
 async def serve_admin():
-    return FileResponse(os.path.join(static_dir, "index.html"))
+    return FileResponse(os.path.join(static_dir, "index.html"), headers=NO_CACHE_HEADERS)
 
 @app.api_route("/{file_path:path}", methods=["GET", "HEAD"], include_in_schema=False)
 async def serve_static_fallback(file_path: str):
-    full_path = os.path.join(static_dir, file_path)
+    clean_path = file_path.strip("/")
+    full_path = os.path.join(static_dir, clean_path)
+
     if os.path.isfile(full_path):
-        return FileResponse(full_path)
-    return FileResponse(os.path.join(static_dir, "index.html"))
+        return FileResponse(full_path, headers=NO_CACHE_HEADERS)
+
+    # Check with .html appended (e.g. /workflows -> frontend/workflows.html)
+    html_path = full_path + ".html"
+    if os.path.isfile(html_path):
+        return FileResponse(html_path, headers=NO_CACHE_HEADERS)
+
+    return FileResponse(os.path.join(static_dir, "index.html"), headers=NO_CACHE_HEADERS)
 
 if __name__ == "__main__":
     import uvicorn
