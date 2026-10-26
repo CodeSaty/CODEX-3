@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Satyam Gupta — 3D Motion Graphics Portfolio</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Three.js WebGL -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- GSAP + ScrollTrigger + Lenis Smooth Scroll -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="antialiased selection:bg-orange-600 selection:text-white">
+
+  <!-- ================= STICKY NAVBAR ================= -->
+  <header class="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-5 flex items-center justify-between backdrop-blur-md bg-black/25 border-b border-white/5">
+    <a href="#" class="text-lg md:text-xl tracking-tight font-light uppercase">
+      SATYAM<span class="font-bold">GUPTA</span>
+    </a>
+
+    <nav class="hidden md:flex items-center gap-8 text-sm text-white/75">
+      <a href="#work" class="hover:text-white transition">Projects</a>
+      <a href="#capabilities" class="hover:text-white transition">Capabilities</a>
+      <a href="#experience" class="hover:text-white transition">Experience & Hackathons</a>
+      <a href="#faq" class="hover:text-white transition">FAQ</a>
+    </nav>
+
+    <button onclick="toggleContactModal()" class="group bg-white text-black px-5 py-2.5 rounded-full text-sm font-medium flex items-center gap-2.5 hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-lg">
+      <span class="w-2 h-2 rounded-full bg-black group-hover:bg-white transition"></span>
+      <span>Get in Touch</span>
+    </button>
+  </header>
+
+  <!-- ================= SECTION 1: 3D WEBGL HERO ================= -->
+  <section id="hero-section" class="relative min-h-screen w-full hero-atmosphere flex items-center overflow-hidden pt-20">
+    <canvas id="hero-3d-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#060606] z-10 pointer-events-none"></div>
+
+    <div id="hero-content" class="relative z-20 max-w-7xl mx-auto w-full px-6 md:px-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div class="lg:col-span-8 space-y-6">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs uppercase tracking-widest text-orange-200">
+          <span class="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></span>
+          AI/ML & Full-Stack Motion Portfolio
+        </div>
+
+        <h1 class="text-5xl sm:text-7xl lg:text-[5.4rem] font-normal tracking-tight leading-[1.03]">
+          Visualise <br />
+          Your Code <br />
+          <span class="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white via-orange-100 to-orange-300">in Motion</span>
+        </h1>
+
+        <p class="max-w-xl text-base md:text-lg text-white/80 font-light leading-relaxed">
+          Engineering real-time FastAPI command centers, machine learning pipelines, and interactive 3D web experiences.
+        </p>
+
+        <div class="flex flex-wrap items-center gap-4 pt-2">
+          <a href="#work" class="px-7 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:bg-orange-500 hover:text-white transition-all duration-300">
+            Scroll to Explore ↓
+          </a>
+          <a href="https://github.com/DevSaty-py" target="_blank" rel="noopener" class="px-6 py-3.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-sm hover:border-orange-400 transition">
+            github.com/DevSaty-py ↗
+          </a>
+        </div>
+      </div>
+
+      <div class="lg:col-span-4 flex flex-row lg:flex-col justify-between lg:items-end gap-8 lg:gap-24 pt-6 lg:pt-0">
+        <div class="text-left lg:text-right border-t border-white/40 pt-3 w-48">
+          <p class="text-sm font-medium text-white">Award-Winning AI</p>
+          <p class="text-xs text-white/70 mt-0.5">Prompt & System Design</p>
+        </div>
+
+        <div class="text-left lg:text-right border-t border-white/40 pt-3 w-48">
+          <p class="text-sm font-medium text-white">B.Tech CSE (AI & ML)</p>
+          <p class="text-xs text-white/70 mt-0.5">Kurukshetra University (KU)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 2: PINNED CURVED DOME & STACKING 3D WORK ================= -->
+  <section id="work" class="relative z-20 lava-dome-section min-h-screen flex flex-col justify-center py-16 px-6 md:px-12 -mt-20">
+    <div class="max-w-7xl mx-auto w-full">
+      <div class="text-center mb-10">
+        <p class="text-xs uppercase tracking-[0.25em] text-white/80 mb-2">Scroll to Stack Projects</p>
+        <h2 id="work-heading" class="text-4xl md:text-6xl font-normal tracking-tight">Award Winning Work</h2>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <!-- Left Column: Dynamic Tabs -->
+        <div class="lg:col-span-4 space-y-3" id="project-tabs-container"></div>
+
+        <!-- Right Column: 3D Stacked Browser Screenshot Stage -->
+        <div class="lg:col-span-8 perspective-stage relative h-[500px] sm:h-[540px] overflow-hidden rounded-2xl" id="project-cards-stage"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 3: WHY WORK WITH ME (SCROLL-SCRUBBED BARS) ================= -->
+  <section id="why-section" class="py-28 px-6 md:px-12 bg-[#060606]">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-20">
+        <h2 class="why-reveal text-4xl md:text-6xl font-normal tracking-tight">Why Work With Me?</h2>
+        <p class="why-reveal text-white/60 mt-3 text-sm md:text-base">Fast-track your AI & Full-Stack Digital Projects</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div class="why-card space-y-5">
+          <div class="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-500 text-2xl">🚀</div>
+          <h3 class="text-2xl font-medium">Rapid Project Delivery</h3>
+          <p class="text-white/65 text-sm leading-relaxed">
+            Shipping production-ready FastAPI backends, MongoDB schemas, and reactive Tailwind command centers in hackathon timeframes.
+          </p>
+          <div class="w-full h-[2px] bg-white/10 overflow-hidden">
+            <div class="why-progress-bar w-0 h-full bg-gradient-to-r from-orange-600 to-amber-400"></div>
+          </div>
+        </div>
+
+        <div class="why-card space-y-5">
+          <div class="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-500 text-2xl">✨</div>
+          <h3 class="text-2xl font-medium">Precision & Aesthetics</h3>
+          <p class="text-white/65 text-sm leading-relaxed">
+            Meticulous engineering craftsmanship combining high-throughput API architecture with glassmorphic Web OS interfaces and 3D motion polish.
+          </p>
+          <div class="w-full h-[2px] bg-white/10 overflow-hidden">
+            <div class="why-progress-bar w-0 h-full bg-gradient-to-r from-orange-600 to-amber-400"></div>
+          </div>
+        </div>
+
+        <div class="why-card space-y-5">
+          <div class="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-500 text-2xl">⚡</div>
+          <h3 class="text-2xl font-medium">Future-Proofed AI Systems</h3>
+          <p class="text-white/65 text-sm leading-relaxed">
+            Integrating Gemini API NLP querying, local Ollama LLMs, and custom Scikit-Learn models directly into live operational dashboards.
+          </p>
+          <div class="w-full h-[2px] bg-white/10 overflow-hidden">
+            <div class="why-progress-bar w-0 h-full bg-gradient-to-r from-orange-600 to-amber-400"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 4: PINNED HORIZONTAL CAPABILITIES TRACK ================= -->
+  <section id="capabilities" class="min-h-screen flex flex-col justify-center py-20 px-6 md:px-12 bg-[#060606] overflow-hidden">
+    <div class="max-w-7xl mx-auto w-full">
+      <div class="max-w-2xl mb-14">
+        <h2 class="text-4xl md:text-6xl font-normal tracking-tight leading-tight">
+          Design & Systems That <br />Speak to Your Audience
+        </h2>
+        <p class="text-white/65 text-sm md:text-base mt-4 leading-relaxed">
+          Scroll down to glide horizontally across my core engineering capabilities—from real-time telemetry dashboards to predictive ML models.
+        </p>
+      </div>
+
+      <!-- Horizontal Sliding Track Driven by Vertical Scroll -->
+      <div id="capabilities-track" class="flex gap-7 w-max pr-24">
+        <div class="service-card w-[340px] sm:w-[390px] shrink-0 rounded-3xl p-8 flex flex-col justify-between min-h-[360px]">
+          <div class="flex justify-end"><span class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold">↗</span></div>
+          <div>
+            <h3 class="text-2xl font-medium mb-4">AI & Machine Learning</h3>
+            <ul class="space-y-2.5 text-sm text-white/85">
+              <li>• Scikit-Learn Predictive Models</li>
+              <li>• Gemini API & NLP Pipelines</li>
+              <li>• Local LLMs (Ollama & Qwen)</li>
+              <li>• Pandas, NumPy & Matplotlib</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="service-card active-card w-[340px] sm:w-[390px] shrink-0 rounded-3xl p-8 flex flex-col justify-between min-h-[360px]">
+          <div class="flex justify-end"><span class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold">↗</span></div>
+          <div>
+            <h3 class="text-2xl font-medium mb-4">Admin & Full-Stack Systems</h3>
+            <ul class="space-y-2.5 text-sm text-white/95">
+              <li>• FastAPI Asynchronous Backends</li>
+              <li>• Real-Time Telemetry Dashboards</li>
+              <li>• MongoDB Atlas, PostgreSQL, MySQL</li>
+              <li>• TypeScript & REST Architecture</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="service-card w-[340px] sm:w-[390px] shrink-0 rounded-3xl p-8 flex flex-col justify-between min-h-[360px]">
+          <div class="flex justify-end"><span class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold">↗</span></div>
+          <div>
+            <h3 class="text-2xl font-medium mb-4">UI/UX & 3D Web Design</h3>
+            <ul class="space-y-2.5 text-sm text-white/85">
+              <li>• Three.js & WebGL Motion</li>
+              <li>• Glassmorphic Web OS Design</li>
+              <li>• GSAP & ScrollTrigger Choreography</li>
+              <li>• Responsive Command Panels</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="service-card w-[340px] sm:w-[390px] shrink-0 rounded-3xl p-8 flex flex-col justify-between min-h-[360px]">
+          <div class="flex justify-end"><span class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold">↗</span></div>
+          <div>
+            <h3 class="text-2xl font-medium mb-4">Motion & Creative Tech</h3>
+            <ul class="space-y-2.5 text-sm text-white/85">
+              <li>• DaVinci Resolve Video Editing</li>
+              <li>• Chroma Keying & Audio Sync</li>
+              <li>• AI Prompt Engineering</li>
+              <li>• Systems Programming in C</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="service-card w-[340px] sm:w-[390px] shrink-0 rounded-3xl p-8 flex flex-col justify-between min-h-[360px]">
+          <div class="flex justify-end"><span class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold">↗</span></div>
+          <div>
+            <h3 class="text-2xl font-medium mb-4">Hackathon & Rapid Ops</h3>
+            <ul class="space-y-2.5 text-sm text-white/85">
+              <li>• Ralph Loop Autonomous Builds</li>
+              <li>• Bottleneck Detection Engines</li>
+              <li>• Guided Setup Task Generators</li>
+              <li>• Live Crowd Telemetry Mapping</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 5: SCROLL-LINKED EXPERIENCE & HACKATHONS ================= -->
+  <section id="experience" class="py-28 px-6 md:px-12 bg-[#060606] relative">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-4xl md:text-6xl font-normal tracking-tight mb-16 max-w-xl leading-tight">
+        Experience, Hackathons & Recognition
+      </h2>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <!-- Left Rows -->
+        <div class="lg:col-span-7 divide-y divide-white/15 border-t border-b border-white/15" id="experience-list-container"></div>
+
+        <!-- Right Sticky Floating Preview Card -->
+        <div class="lg:col-span-5 lg:sticky lg:top-28 perspective-stage">
+          <div id="exp-preview-card" class="rounded-2xl overflow-hidden bg-[#121212] border border-white/20 shadow-2xl transition-all duration-500">
+            <div class="h-52 w-full overflow-hidden bg-black relative border-b border-white/10">
+              <img id="exp-screenshot" src="" alt="Experience Preview" class="w-full h-full object-cover object-top transition-transform duration-500" />
+              <span id="exp-badge" class="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-mono bg-black/80 backdrop-blur-md text-orange-300 border border-orange-500/40"></span>
+            </div>
+            <div class="p-6">
+              <h4 id="exp-title" class="text-xl font-semibold mb-2"></h4>
+              <p id="exp-desc" class="text-sm text-white/70 leading-relaxed mb-5"></p>
+              <div id="exp-metrics" class="grid grid-cols-2 gap-3 pt-4 border-t border-white/10 text-xs font-mono"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 6: 3D PARALLAX TECH CLOUD & SPOTLIGHT ================= -->
+  <section id="cloud-section" class="py-32 px-6 md:px-12 bg-[#060606] relative overflow-hidden">
+    <div class="max-w-6xl mx-auto relative py-24 text-center">
+      <!-- Scroll-Parallax Floating Badges -->
+      <span data-speed="-120" class="parallax-badge absolute top-0 left-[10%] px-4 py-2 rounded-full bg-white/5 border border-white/15 text-xs sm:text-sm font-mono text-orange-400">FastAPI</span>
+      <span data-speed="-180" class="parallax-badge absolute -top-6 right-[14%] px-4 py-2 rounded-full bg-white/5 border border-white/15 text-xs sm:text-sm font-mono text-blue-400">Python 3.12</span>
+      <span data-speed="-90" class="parallax-badge absolute bottom-0 left-[15%] px-4 py-2 rounded-full bg-white/5 border border-white/15 text-xs sm:text-sm font-mono text-emerald-400">MongoDB Atlas</span>
+      <span data-speed="-160" class="parallax-badge absolute -bottom-6 right-[18%] px-4 py-2 rounded-full bg-white/5 border border-white/15 text-xs sm:text-sm font-mono text-amber-300">Gemini API</span>
+      <span data-speed="-140" class="parallax-badge hidden md:inline-block absolute top-1/2 left-2 px-4 py-2 rounded-full bg-white/5 border border-white/15 text-xs font-mono text-purple-300">Scikit-Learn</span>
+      <span data-speed="-110" class="parallax-badge hidden md:inline-block absolute top-1/2 right-2 px-4 py-2 rounded-full bg-white/5 border border-white/15 text-xs font-mono text-cyan-300">TypeScript</span>
+
+      <h2 class="text-4xl md:text-6xl font-normal tracking-tight max-w-3xl mx-auto leading-tight relative z-10">
+        Trusted by Founders & <br />Built for Ambitious Teams.
+      </h2>
+    </div>
+
+    <div class="max-w-3xl mx-auto mt-6">
+      <div id="spotlight-card" class="rounded-3xl bg-[#111111]/90 backdrop-blur-xl border border-white/15 p-8 md:p-12 text-center shadow-2xl">
+        <p class="text-xs font-mono uppercase tracking-widest text-orange-400 mb-2" id="spotlight-tag"></p>
+        <h3 class="text-2xl font-medium text-orange-400 mb-1" id="spotlight-heading"></h3>
+        <p class="text-xs text-white/55 mb-6" id="spotlight-sub"></p>
+        <p class="text-sm md:text-base text-white/85 leading-relaxed italic" id="spotlight-quote"></p>
+
+        <div class="flex items-center justify-center gap-4 mt-8">
+          <button onclick="cycleSpotlight(-1)" class="w-10 h-10 rounded-full border border-white/20 hover:border-orange-500 hover:bg-orange-500/20 flex items-center justify-center transition">←</button>
+          <button onclick="cycleSpotlight(1)" class="w-10 h-10 rounded-full border border-white/20 hover:border-orange-500 hover:bg-orange-500/20 flex items-center justify-center transition">→</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 7: FAQ ACCORDION ================= -->
+  <section id="faq" class="py-24 px-6 md:px-12 bg-[#060606]">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-4xl md:text-6xl font-normal tracking-tight text-center mb-16">Frequently Asked Questions</h2>
+      <div class="divide-y divide-white/15 border-t border-b border-white/15" id="faq-container"></div>
+    </div>
+  </section>
+
+  <!-- ================= GLOWING FOOTER ================= -->
+  <footer class="px-6 md:px-12 pb-12 pt-8 bg-[#060606]">
+    <div id="footer-card" class="max-w-7xl mx-auto footer-glow-card rounded-[32px] p-8 md:p-14">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 pb-16">
+        <a href="#" class="text-2xl tracking-tight font-light uppercase">SATYAM<span class="font-bold">GUPTA</span></a>
+        <div class="md:text-right space-y-5">
+          <h3 class="text-3xl md:text-4xl font-normal tracking-tight">Ready to Bring Your <br />Vision to Life?</h3>
+          <div class="flex md:justify-end">
+            <button onclick="toggleContactModal()" class="bg-white text-black px-6 py-3 rounded-full text-sm font-medium inline-flex items-center gap-2.5 hover:bg-orange-500 hover:text-white transition">
+              <span class="w-2 h-2 rounded-full bg-black"></span>
+              <span>Get in Touch</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 pt-8 border-t border-white/15">
+        <div class="space-y-1 text-sm">
+          <p class="text-xs font-mono uppercase tracking-widest text-white/60">REACH OUT</p>
+          <p class="font-medium">B.Tech CSE (AI & ML) • Kurukshetra University (KU)</p>
+          <a href="https://codesaty.github.io" target="_blank" class="text-orange-300 hover:underline block">codesaty.github.io</a>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="https://github.com/DevSaty-py" target="_blank" class="px-4 py-2 rounded-full border border-white/25 text-xs hover:bg-white hover:text-black transition">GitHub (DevSaty-py)</a>
+          <a href="https://codesaty.github.io" target="_blank" class="px-4 py-2 rounded-full border border-white/25 text-xs hover:bg-white hover:text-black transition">Web OS Portfolio</a>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-between text-xs text-white/50 pt-8 mt-8 border-t border-white/10">
+        <p>Copyright © Satyam Gupta 2026</p>
+        <p>Engineered with Three.js, GSAP ScrollTrigger & Lenis</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= CONTACT MODAL ================= -->
+  <div id="contact-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-md p-6">
+    <div class="max-w-md w-full rounded-3xl bg-[#121212] border border-white/20 p-8 relative shadow-2xl">
+      <button onclick="toggleContactModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-sm">✕</button>
+      <span class="text-xs font-mono uppercase tracking-widest text-orange-400">Direct Connect</span>
+      <h3 class="text-2xl font-semibold mt-1 mb-2">Let's Build Together</h3>
+      <p class="text-xs text-white/65 mb-6">Connect with Satyam Gupta for AI/ML internships, FastAPI backend systems, or hackathon collaborations.</p>
+      <div class="space-y-3 text-sm">
+        <a href="https://github.com/DevSaty-py" target="_blank" class="flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-orange-500/20 border border-white/10 transition">
+          <span>GitHub Profile</span>
+          <span class="font-mono text-xs text-orange-300">github.com/DevSaty-py ↗</span>
+        </a>
+        <a href="https://codesaty.github.io" target="_blank" class="flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-orange-500/20 border border-white/10 transition">
+          <span>Interactive Web Portfolio</span>
+          <span class="font-mono text-xs text-orange-300">codesaty.github.io ↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/scene3d.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

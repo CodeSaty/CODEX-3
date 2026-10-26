@@ -1,0 +1,83 @@
+:root {
+    --lava: #ff2a00;
+    --amber: #ff6b00;
+    --obsidian: #060606;
+    --dome-curve: 160px;
+}
+
+html.lenis,
+html.lenis body {
+    height: auto;
+}
+
+.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+}
+
+body {
+    background-color: var(--obsidian);
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+}
+
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Hero Crimson-Orange Atmospheric Gradient */
+.hero-atmosphere {
+    background: radial-gradient(circle at 52% 42%,
+            rgba(255, 65, 0, 0.75) 0%,
+            rgba(215, 25, 0, 0.48) 35%,
+            rgba(15, 3, 0, 0.92) 72%,
+            #060606 100%);
+}
+
+/* Rising Curved Orange Dome (Morphs on Scroll via --dome-curve) */
+.lava-dome-section {
+    background: linear-gradient(180deg, #ff2a00 0%, #ff5500 32%, #8c1400 72%, #060606 100%);
+    border-top-left-radius: 50% var(--dome-curve);
+    border-top-right-radius: 50% var(--dome-curve);
+    box-shadow: 0 -30px 100px rgba(255, 42, 0, 0.5);
+    will-change: border-radius, transform;
+}
+
+/* 3D Stacked Browser Cards */
+.perspective-stage {
+    perspective: 1400px;
+}
+
+.project-card-3d {
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.65);
+}
+
+/* Capability Card Hover & Active Scroll Ignition */
+.service-card {
+    background: #0d0d0d;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
+}
+
+.service-card:hover,
+.service-card.active-card {
+    background: linear-gradient(145deg, #ff2200 0%, #ff6b00 60%, #c81e00 100%);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 24px 60px rgba(255, 42, 0, 0.35);
+}
+
+/* Active Experience Row Highlight */
+.exp-row.active-exp h3 {
+    color: #ff6b00;
+    transform: translateX(8px);
+}
+
+.footer-glow-card {
+    background: radial-gradient(circle at 50% 105%,
+            rgba(255, 68, 0, 0.85) 0%,
+            rgba(180, 24, 0, 0.45) 38%,
+            rgba(16, 16, 16, 0.96) 76%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
