@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan to replace the hero 3D torus knot with an interactive 3D neural network with firing synapses and add a minimalist neural pulse preloader that fades out once the WebGL scene is initialized.",
+  "updatedAt":  "2026-10-26T08:47:21.314668126Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
